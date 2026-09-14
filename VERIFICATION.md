@@ -2,6 +2,40 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## Build 5 follow-up acceptance and review-policy preparation
+
+A clean isolated checkout of the review-cadence branch built in release mode
+and passed all **60 regression scenarios**. YAML parsing and assertions confirmed
+that every pre-existing CodeRabbit setting is preserved; automatic reviews,
+chat replies, and issue automation remain disabled. Shell syntax, source plist
+lint, existing app/helper strict signature verification, and whitespace checks
+passed. No running app bundle was replaced, no permission was refreshed, and
+no CodeRabbit review was requested.
+
+The currently running build 5 recognizes Accessibility and ScreenCaptureKit.
+After restarting only the disposable helper to recreate its three windows,
+the production live fixture runner passed **all 11 checks** on the display left
+of the primary screen: actual thumbnails, three exact half-screen pairs,
+60/40 linked resizing, group recall after move/minimize, thirds, stacked layout,
+three members of a four-zone layout, refused-size rollback, and restoration of
+starting frames/visibility. This refreshes the older full-suite result for
+build 5; it still bypasses physical input delivery.
+
+The helper's focus control now confirmed foreground/key-window status. A
+synthetic Control–Option–Right increased its delivered-key count but did not
+produce a snap or change Pane Management's status. This is not a physical-key
+pass and does not establish whether the automation reaches the global hotkey
+registration. Title-bar drags were attempted on both the negative-origin and
+primary displays; desktop automation returned `windowNotFoundAtPosition` before
+delivery, with zero fixture drag events and no changed frame. Physical shortcut,
+drag/unsnap, native resize, and monitor-transfer acceptance remain open.
+
+The additional primary-display setup moved only a disposable window. The helper
+was quit after testing; no other app's window, network, or security settings were
+changed. System Settings was inspected read-only and still lists Pane Management
+under **Open at Login**. No reboot was performed. Developer ID signing and
+notarization remain prerequisites for distributing an installable release.
+
 ## Automatic fitting (build 5)
 
 The explicit wider-split card action has been replaced by a shared automatic placement path for both the first snapped window and subsequent Assist selections. It verifies every member of the current placement transaction, retries a wider two-column layout after a real candidate refusal, and restores the same baseline on failure. Successful adjusted widths are hints for that specific AX window during this process only; they are not saved to disk or declared as minimum sizes. Narrower manual resizing or a failed hint causes fresh fitting. At most three distinct attempts are made; cancellation or incomplete restoration stops further attempts.
