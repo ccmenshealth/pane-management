@@ -16,9 +16,14 @@
   passed, as did YAML parsing/preservation assertions, script syntax, source
   plists, existing bundle signatures, and `git diff --check`. The primary
   checkout is clean on `main`; its installed executable was not rebuilt.
-- Publication handoff: open a draft PR for this branch and check its remote CI.
-  Independent review has not run; leave the PR draft until that gate is met.
-  CodeRabbit was not requested (the
+- [Draft PR #1](https://github.com/ccmenshealth/pane-management/pull/1) is open.
+  [GitHub CI](https://github.com/ccmenshealth/pane-management/actions/runs/34904318429)
+  passed on `3baf1bcacfb6c34ca167498f02d5a6250b9f9bd2`, including app/helper
+  packaging, 60 regression scenarios, and bundle verification. A subsequent
+  status-only commit records this result; inspect the PR for its latest checks.
+- Independent review has not run; leave the PR draft until that gate is met.
+  Permission to use a separate review agent was requested but not yet received.
+  CodeRabbit was not requested and no bot reviews/comments were present (the
   cadence explicitly prohibits spending reviews to test this configuration);
   security review and deployment are not applicable to this policy-only diff.
 - Next action: obtain independent review and inspect the draft PR's attached
