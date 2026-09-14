@@ -1,7 +1,13 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-# Automatic CodeRabbit activity is intentionally disabled for this repository.
-# Manual @coderabbitai commands remain possible if its GitHub App has access.
+# Shared on-demand review cadence adopted 2026-09-14; see AGENTS.md.
+# Automatic initial/incremental reviews remain disabled. Finish local checks
+# and independent review before any substantive manual review request.
+# Pane Management remains excluded from the GitHub App installation by the
+# user's separate instruction. Do not expand access to test this configuration.
+# If access is explicitly authorized later, follow the cadence in AGENTS.md.
 reviews:
+  profile: chill
+  request_changes_workflow: false
   high_level_summary: false
   poem: false
   review_status: false
@@ -9,9 +15,12 @@ reviews:
     enabled: false
     auto_incremental_review: false
     drafts: false
+    base_branches:
+      - main
     labels: []
     description_keyword: ""
 chat:
+  # Preserve this repository's quiet configuration and installation exclusion.
   auto_reply: false
 issue_enrichment:
   auto_enrich:
