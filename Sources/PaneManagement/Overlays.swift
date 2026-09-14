@@ -230,7 +230,6 @@ final class LayoutOverlay {
 
 struct AssistCardFeedback {
     let detail: String
-    let actionLabel: String?
 }
 
 final class AssistView: NSView {
@@ -285,7 +284,7 @@ final class AssistView: NSView {
         }
     }
     private func canChoose(_ candidate: ManagedWindow) -> Bool {
-        feedback[candidate.id].map { $0.actionLabel != nil } ?? true
+        feedback[candidate.id] == nil
     }
     private func activate(_ candidate: ManagedWindow) {
         if canChoose(candidate) { choose?(candidate) }
@@ -293,7 +292,7 @@ final class AssistView: NSView {
     private func cardLabel(_ candidate: ManagedWindow) -> String {
         let base = "\(candidate.appName): \(candidate.title)"
         guard let issue = feedback[candidate.id] else { return base }
-        return "\(base). \(issue.detail). \(issue.actionLabel ?? "Unavailable for this zone; choose another window")"
+        return "\(base). \(issue.detail). Unavailable for this zone; choose another window"
     }
     var columns: Int { bounds.width > 650 ? 3 : (bounds.width > 370 ? 2 : 1) }
     var rows: Int { max(1, min(3, Int((bounds.height - 150) / 160))) }
@@ -363,7 +362,7 @@ final class AssistView: NSView {
             if let issue {
                 label(window.appName, rect: CGRect(x: rect.minX+10, y: rect.maxY-60, width: rect.width-20, height: 17), size: 12, weight: .medium)
                 label(issue.detail, rect: CGRect(x: rect.minX+10, y: rect.maxY-42, width: rect.width-20, height: 16), size: 10, color: .systemOrange)
-                label(issue.actionLabel ?? "Choose another window", rect: CGRect(x: rect.minX+10, y: rect.maxY-23, width: rect.width-20, height: 17), size: 11, color: issue.actionLabel == nil ? secondary : accent)
+                label("Choose another window", rect: CGRect(x: rect.minX+10, y: rect.maxY-23, width: rect.width-20, height: 17), size: 11, color: secondary)
             } else {
                 label(window.title, rect: CGRect(x: rect.minX + 10, y: rect.maxY - 38, width: rect.width - 20, height: 17), size: 12, weight: .medium)
                 label(window.appName, rect: CGRect(x: rect.minX + 10, y: rect.maxY - 20, width: rect.width - 20, height: 16), size: 10, color: secondary)

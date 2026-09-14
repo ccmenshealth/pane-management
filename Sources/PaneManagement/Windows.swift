@@ -62,6 +62,9 @@ final class ManagedWindow: Identifiable {
     var windowID: CGWindowID?
     var originalFrame: CGRect?
     var snappedFrame: CGRect?
+    // A successful adjusted width, scoped to this AX window and this process.
+    // It is a preference for the next fit attempt, never a persisted minimum.
+    var accommodatedWidth: CGFloat?
     var thumbnail: NSImage?
     var frame: CGRect? { AXRead.frame(ax) }
     var isAvailable: Bool {
@@ -259,6 +262,23 @@ final class WindowService {
                 guard let window = members[id] else { return .failed }
                 return await self.place(frame, to: window, cancelled: cancelled)
             }, cancelled: cancelled)
+    }
+
+    @MainActor
+    func fit(_ window: ManagedWindow, zone: Int, layout: SnapLayout, display: DisplaySpace,
+             members: [Int: ManagedWindow], originals: [Int: CGRect], cancelled: () -> Bool) async -> AdaptivePlacementResult {
+        let result = await AdaptivePlacement.place(layout: layout, zone: zone, work: display.work,
+            originals: originals, widthHint: window.accommodatedWidth,
+            read: { members[$0]?.frame }, place: { id, frame in
+                guard let member = members[id], member.isAvailable else { return .failed }
+                return await self.place(frame, to: member, cancelled: cancelled)
+            }, cancelled: cancelled)
+        if result.outcome == .placed {
+            window.accommodatedWidth = result.layout.zones == layout.zones ? nil : result.layout.frames(in: display.work)[zone].width
+        } else if result.outcome != .cancelled {
+            window.accommodatedWidth = nil
+        }
+        return result
     }
 
     func raise(_ window: ManagedWindow) {

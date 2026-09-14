@@ -150,7 +150,7 @@ public struct SharedBoundary: Equatable {
 }
 
 extension SnapLayout {
-    /// An observed size is not a proven minimum. Offer one explicit wider retry
+    /// An observed size is not a proven minimum. Suggest one bounded wider retry
     /// for a two-column layout, then verify both windows transactionally.
     /// Never squeeze the neighbor below a useful width or widen a stacked grid.
     public func widerSplit(for zone: Int, observed: CGSize, in work: CGRect,

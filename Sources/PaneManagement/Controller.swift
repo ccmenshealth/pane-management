@@ -60,11 +60,6 @@ private struct KeyboardSession {
     var sequence: KeyboardSequence
 }
 
-private struct AssistFailure {
-    let restoredFrame: CGRect
-    let widerLayout: SnapLayout?
-}
-
 final class SnapController {
     let preferences: Preferences
     let windows = WindowService()
@@ -82,7 +77,7 @@ final class SnapController {
     private var session: AssistSession<UUID>?
     private var sessionDisplay: DisplaySpace?
     private var sessionPIDs: Set<pid_t>?
-    private var assistFailures: [UUID: AssistFailure] = [:]
+    private var assistFailures: Set<UUID> = []
     private var thumbnailTask: Task<Void, Never>?
     private var operation = 0
     private var busy = false
@@ -515,31 +510,30 @@ final class SnapController {
         guard let previous = window.frame else { return }
         operation += 1; let token = operation; busy = true
         finishAssist()
-        let destination = target.layout.frames(in: display.work)[target.zone]
         // macOS may finish a native drag asynchronously; commit after its mouse-up handling.
         Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 100_000_000)
             guard let self, token == self.operation else { return }
-            let result = await self.windows.place(destination, to: window, cancelled: { token != self.operation })
+            let result = await self.windows.fit(window, zone: target.zone, layout: target.layout, display: display,
+                members: [target.zone: window], originals: [target.zone: previous], cancelled: { token != self.operation })
             guard token == self.operation else { return }
-            guard result == .placed else {
-                let diagnostic = "\(self.windows.lastPlacementResult); actual \(String(describing: window.frame)); requested \(destination)"
-                let rollback = await self.windows.place(previous, to: window, cancelled: { token != self.operation })
-                guard token == self.operation else { return }
+            guard result.outcome == .placed else {
+                let diagnostic = "\(result.outcome); observed \(String(describing: result.observedFailure)); requested \(target.layout.frames(in: display.work)[target.zone])"
                 self.busy = false
                 self.preferences.status = "Placement did not settle: \(diagnostic)"
-                self.toast.show(rollback == .placed
-                    ? "\(window.appName) didn’t accept this size. The previous position was restored."
-                    : "\(window.appName) didn’t accept this size. Please reposition the window.")
+                self.toast.show(result.outcome == .rolledBack
+                    ? "\(window.appName) didn’t accept an available size. Its previous position was restored."
+                    : "\(window.appName) couldn’t be restored. Please reposition the window.")
                 return
             }
+            let destination = result.layout.frames(in: display.work)[target.zone]
             self.detach(window)
             if window.originalFrame == nil { window.originalFrame = previous }
             window.snappedFrame = destination
-            self.preferences.status = "Snapped \(window.appName) · \(target.layout.name)"
+            self.preferences.status = "Snapped \(window.appName) · \(result.layout.name)"
             self.windows.raise(window)
             if self.preferences.assist, target.layout.zones.count > 1 {
-                self.session = AssistSession(layout: target.layout, firstZone: target.zone, window: window.id)
+                self.session = AssistSession(layout: result.layout, firstZone: target.zone, window: window.id)
                 self.sessionDisplay = display
                 self.sessionPIDs = candidatesFrom
                 self.showNextChoice()
@@ -573,95 +567,60 @@ final class SnapController {
 
     private func choose(_ window: ManagedWindow) {
         guard !busy, let session, let zone = session.nextZone, let display = sessionDisplay,
-              !session.usedWindows.contains(window.id), let previous = window.frame else { return }
-        if let failure = assistFailures[window.id] {
-            if let layout = failure.widerLayout {
-                tryWiderSplit(window, layout: layout, restoredFrame: failure.restoredFrame)
-            }
-            return
+              !session.usedWindows.contains(window.id), !assistFailures.contains(window.id), window.isAvailable else { return }
+        var members = session.assignments.compactMapValues { id in windows.known.first { $0.id == id } }
+        let existingFrames = session.layout.frames(in: display.work)
+        guard members.count == session.assignments.count,
+              members.allSatisfy({ index, member in
+                  member.isAvailable && member.frame.map { SnapGeometry.nearlyEqual($0, existingFrames[index]) } == true
+              }) else {
+            cancel(); toast.show("A snapped window moved or closed. Start a new snap to continue."); return
         }
+        members[zone] = window
+        let originals = members.compactMapValues { $0.frame }
+        guard originals.count == members.count else { return }
         let target = session.layout.frames(in: display.work)[zone]
         busy = true; operation += 1; let token = operation
         preferences.status = "Placing \(window.appName) · position \(zone+1)"
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let result = await self.windows.place(target, to: window, cancelled: { token != self.operation })
+            let result = await self.windows.fit(window, zone: zone, layout: session.layout, display: display,
+                members: members, originals: originals, cancelled: { token != self.operation })
             guard token == self.operation else { return }
-            guard result == .placed else {
-                let observed = window.frame
-                let diagnostic = "\(self.windows.lastPlacementResult); actual \(String(describing: observed)); requested \(target)"
-                let rollback = await self.windows.place(previous, to: window, cancelled: { token != self.operation })
-                guard token == self.operation else { return }
+            guard result.outcome == .placed else {
                 self.busy = false
-                self.preferences.status = "Second placement did not settle: \(diagnostic)"
-                let wider = rollback == .placed && session.assignments.count == 1
-                    ? observed.flatMap { session.layout.widerSplit(for: zone, observed: $0.size, in: display.work) } : nil
-                self.assistFailures[window.id] = AssistFailure(restoredFrame: previous, widerLayout: wider)
-                let detail = observed.map { String(format: "Stayed %.0f×%.0f; zone %.0f×%.0f", $0.width, $0.height, target.width, target.height) }
-                    ?? "Window size could not be verified"
-                let action = wider.map { "Try wider split (\(Int($0.frames(in: display.work)[zone].width)) pt)" }
-                self.assistant.view?.feedback[window.id] = AssistCardFeedback(detail: detail, actionLabel: action)
-                self.toast.show(rollback == .placed
-                    ? "\(window.appName) didn’t accept this size. \(wider == nil ? "Choose another window." : "Try wider split on its card.")"
-                    : "\(window.appName) couldn’t be restored. Please reposition it.")
+                self.preferences.status = "Automatic fit did not settle: \(result.outcome); observed \(String(describing: result.observedFailure)); requested \(target)"
+                if result.outcome == .rolledBack {
+                    self.assistFailures.insert(window.id)
+                    self.assistant.view?.feedback[window.id] = AssistCardFeedback(detail: "Auto-fit failed; windows restored")
+                    self.toast.show("These windows didn’t accept an available split. Choose another window.")
+                } else {
+                    self.finishAssist()
+                    for member in members.values { self.detach(member); member.snappedFrame = nil }
+                    self.toast.show("Restoration was incomplete. Please reposition the windows.")
+                }
                 return
             }
-            if window.originalFrame == nil { window.originalFrame = previous }
-            self.detach(window); window.snappedFrame = target
-            self.windows.raise(window)
-            self.session?.choose(window.id)
-            self.showNextChoice()
-            self.busy = false
-        }
-    }
-
-    /// The user explicitly chooses this alternative on the failed window's card.
-    /// An observed width only suggests a retry; it is never cached as a minimum.
-    private func tryWiderSplit(_ window: ManagedWindow, layout: SnapLayout, restoredFrame: CGRect) {
-        guard !busy, let session, let zone = session.nextZone, let display = sessionDisplay,
-              session.assignments.count == 1, layout.zones.count == 2,
-              let first = session.assignments.first,
-              let neighbor = windows.known.first(where: { $0.id == first.value }),
-              window.isAvailable, neighbor.isAvailable,
-              let current = window.frame, let neighborFrame = neighbor.frame else { return }
-        guard SnapGeometry.nearlyEqual(current, restoredFrame),
-              SnapGeometry.nearlyEqual(neighborFrame, session.layout.frames(in: display.work)[first.key]) else {
-            cancel(); toast.show("A window moved since the last attempt. Start a new snap to try again."); return
-        }
-        let members = [first.key: neighbor, zone: window]
-        let originals = [first.key: neighborFrame, zone: current]
-        let targets = Dictionary(uniqueKeysWithValues: layout.frames(in: display.work).enumerated().map { ($0.offset, $0.element) })
-        busy = true; operation += 1; let token = operation
-        preferences.status = "Trying wider split for \(window.appName); both windows must accept it"
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            let result = await self.windows.placeGroup(members, targets: targets, originals: originals, cancelled: { token != self.operation })
-            guard token == self.operation else { return }
-            if result == .placed {
-                for (index, member) in members {
-                    self.detach(member)
-                    if member.originalFrame == nil { member.originalFrame = originals[index] }
-                    member.snappedFrame = targets[index]
-                }
-                var adjusted = AssistSession(layout: layout, firstZone: first.key, window: neighbor.id)
+            let targets = result.layout.frames(in: display.work)
+            for (index, member) in members {
+                self.detach(member)
+                if member.originalFrame == nil { member.originalFrame = originals[index] }
+                member.snappedFrame = targets[index]
+            }
+            if result.layout.zones == session.layout.zones {
+                self.session?.choose(window.id)
+            } else if let first = session.assignments.first {
+                // Adaptive changes are limited to a two-column layout. Preserve
+                // zone identities when the candidate is on either side.
+                var adjusted = AssistSession(layout: result.layout, firstZone: first.key, window: first.value)
                 adjusted.choose(window.id)
                 self.session = adjusted
-                self.windows.raise(window)
-                self.showNextChoice()
-                self.preferences.status = "Snap group ready · Adjusted split · \(Int(targets[zone]!.width)) pt for \(window.appName)"
-            } else if result == .rolledBack {
-                self.assistFailures[window.id] = AssistFailure(restoredFrame: current, widerLayout: nil)
-                self.assistant.view?.feedback[window.id] = AssistCardFeedback(detail: "Wider split refused; both restored", actionLabel: nil)
-                self.preferences.status = "Wider split did not settle. Both windows restored; choose another window."
-                self.toast.show("These windows didn’t accept the wider split. Both were restored.")
-            } else {
-                // Do not leave an actionable retry or stale group when rollback
-                // could not be verified. A newer gesture is handled by its token.
-                self.finishAssist()
-                for member in members.values { self.detach(member); member.snappedFrame = nil }
-                self.preferences.status = "Wider split failed and restoration was incomplete. Please reposition the windows."
-                self.toast.show(self.preferences.status)
             }
+            self.windows.raise(window)
+            self.showNextChoice()
+            self.preferences.status = self.session == nil
+                ? "Snap group ready · \(result.layout.name) · \(Int(targets[zone].width)) pt for \(window.appName)"
+                : "Placed \(window.appName) · Choose the next window"
             self.busy = false
         }
     }

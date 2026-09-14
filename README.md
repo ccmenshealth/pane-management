@@ -67,7 +67,7 @@ Keyboard placement previews are cancellable with Escape before release. Opposite
 | Snap groups | In-memory menu/hotkey recall and an app-owned visual chooser; verified placement, including unminimizing members; no native Dock/Mission Control/Command–Tab integration |
 | Multiple monitors | Per-monitor work area, picker placement, transfer shortcuts; advanced hot-plug restoration is not implemented |
 | Full-screen Spaces | Excluded; exit native full screen to use normal desktop snapping |
-| Apps with minimum sizes / denied AX actions | Verify and revert failed placement; show the observed/requested sizes and offer one explicit wider two-column retry when space permits; does not override app constraints |
+| Apps with minimum sizes / denied AX actions | Automatically rebalance two-column snaps using observed sizes, verify the whole pair, and restore failed attempts; does not override app constraints |
 | Restore groups after app restart / reopening documents | Not implemented |
 
 The group chooser is Pane Management’s own overlay, not an extension of the native Dock or app switcher. Groups remain session-only. Full Windows shell parity is not claimed.
@@ -76,12 +76,13 @@ Drag ownership is deliberately conservative: a recent blank-title-bar hit test, 
 
 Native group resizing links a single internal edge only. Outer-edge and corner resizing are left native. A window’s minimum size cannot be overridden: a refused group change rolls back the group, with an explicit warning if restoration also fails. Starting a new gesture cancels outstanding writes instead of moving windows back underneath the new gesture.
 
-If a Snap Assist candidate refuses a narrow zone, its card shows the size mismatch. For a two-column layout, **Try wider split** can use its observed width while leaving at least 320 points for the neighboring window. This is a proposed retry, not a claim that the observed width is the app's minimum. The neighboring window is resized only when that card is selected again; both frames must verify, or both are restored. A failed wider retry disables that candidate for the current zone to avoid repeating the same error. Starting a new snap resets these session-only hints. Stacked layouts and windows taller than the display do not get a wider retry.
+Two-column snapping automatically accommodates a window that refuses the requested width: after verified restoration, it tries the observed width while leaving at least 320 points for the neighbor. This works for the first snapped window and for a window selected in Snap Assist, without a second click or confirmation. The complete pair must verify; if either app refuses, the attempt is restored. The last successful adjusted width is remembered for that particular open window until Pane Management quits, so repeated snaps can skip the rejected half-width attempt. A narrower manually resized window invalidates its hint; a stale hint falls back to a fresh fit attempt. Hints are not persisted or treated as proven minimum sizes. There are at most three distinct, bounded attempts, and a new gesture cancels outstanding work. If automatic fitting still fails, that candidate is disabled for the current Assist zone. Stacked layouts, windows taller than the display, and combined size limits that exceed the work area cannot be solved by widening a column.
 
 ## Architecture
 
 - `SnapCore/Layout.swift`: normalized layouts, monitor coordinate transforms, drag targeting, shared-divider geometry, and the Snap Assist state machine. No UI or permission dependencies.
 - `SnapCore/Placement.swift`: cancellable frame-settling verification with bounded retries and an injectable clock for regression tests.
+- `SnapCore/AdaptivePlacement.swift`: automatic two-column fitting, verified working-width hints, bounded fallback attempts, and whole-pair rollback.
 - `SnapCore/Keyboard.swift`: pure, tested keyboard placement transitions and geometry recognition.
 - `SnapCore/PreviewPermission.swift`: tested permission-check state, explicit retries, and revocation handling.
 - `PreviewAccess.swift`: ScreenCaptureKit access verification and actionable permission/error feedback; preflight is only a startup hint, not a hard veto on explicit checks.

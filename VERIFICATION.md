@@ -2,6 +2,23 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## Automatic fitting (build 5)
+
+The explicit wider-split card action has been replaced by a shared automatic placement path for both the first snapped window and subsequent Assist selections. It verifies every member of the current placement transaction, retries a wider two-column layout after a real candidate refusal, and restores the same baseline on failure. Successful adjusted widths are hints for that specific AX window during this process only; they are not saved to disk or declared as minimum sizes. Narrower manual resizing or a failed hint causes fresh fitting. At most three distinct attempts are made; cancellation or incomplete restoration stops further attempts.
+
+The release build passes **60 automated scenarios, zero failures**. Nine new scenarios cover a single-call automatic pair fit, first-window adjustment on either side, skipping a rejected half-width using a verified hint, hint invalidation, recovery from changed constraints, impossible-pair restoration, cancellation, failed-rollback termination, and not inventing a width constraint from a move failure. The 51 prior scenarios still pass. The package passes strict signature verification, plist lint, and whitespace checks.
+
+Only this app's existing Accessibility and Screen Recording registrations were refreshed for the new executable. Both are recognized by the running app. No VPN connection or security settings were changed.
+
+Live checks on build 5:
+
+- A single actual NordVPN card press completed a verified 900/570 split and dismissed Assist automatically. There was no recovery button or second press. The Blue fixture independently reported Cocoa `(0, 0, 570, 923)`.
+- A repeat snap of the same NordVPN window also completed from one card press. The regression checks separately establish that a usable width hint skips the refused half-width attempt; live timing alone is not used to prove which AX writes were skipped.
+- Blue was temporarily given a 900-point minimum and zoomed to a legal 1470 × 923 baseline. Snapping it first automatically produced a 900 × 923 window and the remaining-space picker. This exercises production first-window accommodation, not just the pure geometry helper.
+- Selecting NordVPN beside that constrained Blue window tested an impossible 900+900 pair on a 1470-point-wide work area. The app verified `rolledBack`, Blue remained 900 × 923, and Nord's card became unavailable for that zone with restoration feedback. The fixture's normal 160-point minimum was restored afterward, followed by a manual 735-point fixture size to invalidate its learned width.
+
+First-window accommodation on the right, physical drag/shortcut delivery, and other app-specific constraints retain automated or earlier-build coverage; they were not all retested live in this pass. The older two-click results below are historical.
+
 ## Wider-split recovery (build 4)
 
 A fresh live NordVPN failure reported AX resize success but an unchanged 900 × 702 frame against a requested 735 × 923 zone. This proves the requested placement did not occur; it does not prove a 900-point minimum or that a wider request will succeed.

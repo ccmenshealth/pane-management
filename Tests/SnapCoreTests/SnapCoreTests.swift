@@ -80,8 +80,132 @@ final class SnapCoreTests {
         suite.testWiderSplitRejectsStackedAndInvalidGeometry()
         await suite.testWiderSplitTransactionAcceptsConstrainedCandidate()
         await suite.testWiderSplitTransactionRestoresBothWhenNeighborRefuses()
-        print("51 scenarios completed; \(failures) failures")
+        await suite.testAutomaticFitRebalancesWithoutAnotherSelection()
+        await suite.testAutomaticFitAdjustsFirstWindowOnEitherSide()
+        await suite.testAutomaticFitUsesVerifiedWidthHint()
+        await suite.testAutomaticFitDropsUnusableHint()
+        await suite.testAutomaticFitRecoversFromStaleHint()
+        await suite.testAutomaticFitRestoresImpossiblePair()
+        await suite.testAutomaticFitCancelsWithoutRecoveryWrites()
+        await suite.testAutomaticFitStopsAfterFailedRollback()
+        await suite.testAutomaticFitDoesNotInventWidthForMoveFailure()
+        print("60 scenarios completed; \(failures) failures")
         if failures > 0 { exit(1) }
+    }
+
+    @MainActor private func simulatedFit(zone: Int = 0, neighborMinimum: CGFloat = 320,
+                                        candidateMinimum: CGFloat = 900, hint: CGFloat? = nil,
+                                        originalWidth: CGFloat = 900, single: Bool = false)
+        async -> (AdaptivePlacementResult, [Int: CGRect], [(Int, CGRect)]) {
+        let work = CGRect(x: 0, y: 33, width: 1470, height: 923)
+        var originals = [zone: CGRect(x: 285, y: 89, width: originalWidth, height: 702)]
+        if !single { originals[1-zone] = SnapLayout.halves.frames(in: work)[1-zone] }
+        var frames = originals
+        var requests: [(Int, CGRect)] = []
+        let result = await AdaptivePlacement.place(layout: .halves, zone: zone, work: work, originals: originals,
+            widthHint: hint, read: { frames[$0] }, place: { id, target in
+                requests.append((id, target))
+                return await WindowPlacement.staged(at: target, read: { frames[id] },
+                    resize: { frames[id]!.size = CGSize(width: max(id == zone ? candidateMinimum : neighborMinimum, $0.width), height: $0.height) },
+                    move: { frames[id]!.origin = $0 }, cancelled: { false }, pause: { _ in })
+            }, cancelled: { false })
+        return (result, frames, requests)
+    }
+
+    @MainActor func testAutomaticFitRebalancesWithoutAnotherSelection() async {
+        let (result, frames, requests) = await simulatedFit()
+        XCTAssertEqual(result.outcome, .placed)
+        XCTAssertEqual(frames[0]!.width, 900)
+        XCTAssertEqual(frames[1]!.width, 570)
+        XCTAssertEqual(frames[0]!.maxX, frames[1]!.minX)
+        XCTAssertTrue(requests.contains { $0.0 == 0 && $0.1.width == 735 })
+        XCTAssertTrue(requests.contains { $0.0 == 0 && $0.1.width == 900 && $0.1.height == 923 })
+        XCTAssertEqual(result.layout.name, "Adjusted split")
+    }
+
+    @MainActor func testAutomaticFitAdjustsFirstWindowOnEitherSide() async {
+        for zone in 0...1 {
+            let (result, frames, _) = await simulatedFit(zone: zone, single: true)
+            XCTAssertEqual(result.outcome, .placed)
+            XCTAssertEqual(frames.count, 1)
+            XCTAssertEqual(frames[zone]!.width, 900)
+            XCTAssertEqual(frames[zone]!.minX, zone == 0 ? 0 : 570)
+            let session = AssistSession(layout: result.layout, firstZone: zone, window: "first")
+            XCTAssertEqual(session.nextZone, 1-zone)
+        }
+    }
+
+    @MainActor func testAutomaticFitUsesVerifiedWidthHint() async {
+        let (result, frames, requests) = await simulatedFit(hint: 900)
+        XCTAssertEqual(result.outcome, .placed)
+        XCTAssertEqual(frames[0]!.width, 900)
+        XCTAssertFalse(requests.contains { $0.0 == 0 && $0.1.width == 735 })
+        XCTAssertEqual(requests.count, 2)
+    }
+
+    @MainActor func testAutomaticFitDropsUnusableHint() async {
+        let (result, _, requests) = await simulatedFit(candidateMinimum: 320, hint: 900, originalWidth: 650)
+        XCTAssertEqual(result.outcome, .placed)
+        XCTAssertEqual(result.layout, .halves)
+        XCTAssertFalse(requests.contains { $0.1.width == 900 })
+        XCTAssertNil(AdaptivePlacement.usableHint(.infinity, current: CGRect(x: 0, y: 0, width: 900, height: 700)))
+        XCTAssertNil(AdaptivePlacement.usableHint(900, current: .zero))
+    }
+
+    @MainActor func testAutomaticFitRecoversFromStaleHint() async {
+        // The candidate can now shrink; its old wider hint no longer fits with
+        // the neighbor. Revert the attempt and verify the original equal split.
+        let (result, frames, _) = await simulatedFit(neighborMinimum: 700, candidateMinimum: 600, hint: 900)
+        XCTAssertEqual(result.outcome, .placed)
+        XCTAssertEqual(result.layout, .halves)
+        XCTAssertEqual(frames[0]!.width, 735)
+        XCTAssertEqual(frames[1]!.width, 735)
+        // A changed constraint can require the third (and last) distinct attempt.
+        let (changed, changedFrames, requests) = await simulatedFit(candidateMinimum: 1100, hint: 900, originalWidth: 1100)
+        XCTAssertEqual(changed.outcome, .placed)
+        XCTAssertEqual(changedFrames[0]!.width, 1100)
+        XCTAssertEqual(changedFrames[1]!.width, 370)
+        XCTAssertTrue(requests.count <= 10)
+    }
+
+    @MainActor func testAutomaticFitRestoresImpossiblePair() async {
+        let (result, frames, requests) = await simulatedFit(neighborMinimum: 700)
+        XCTAssertEqual(result.outcome, .rolledBack)
+        XCTAssertEqual(frames[0], CGRect(x: 285, y: 89, width: 900, height: 702))
+        XCTAssertEqual(frames[1], CGRect(x: 735, y: 33, width: 735, height: 923))
+        XCTAssertTrue(requests.count <= 8)
+    }
+
+    @MainActor func testAutomaticFitCancelsWithoutRecoveryWrites() async {
+        let original = CGRect(x: 285, y: 89, width: 900, height: 702)
+        var cancelled = false, writes = 0
+        let result = await AdaptivePlacement.place(layout: .halves, zone: 0,
+            work: CGRect(x: 0, y: 33, width: 1470, height: 923), originals: [0: original], widthHint: nil,
+            read: { _ in original }, place: { _, _ in writes += 1; cancelled = true; return .cancelled },
+            cancelled: { cancelled })
+        XCTAssertEqual(result.outcome, .cancelled)
+        XCTAssertEqual(writes, 1)
+    }
+
+    @MainActor func testAutomaticFitStopsAfterFailedRollback() async {
+        let original = CGRect(x: 285, y: 89, width: 900, height: 702)
+        let stuck = CGRect(x: 400, y: 89, width: 900, height: 702)
+        var writes = 0
+        let result = await AdaptivePlacement.place(layout: .halves, zone: 0,
+            work: CGRect(x: 0, y: 33, width: 1470, height: 923), originals: [0: original], widthHint: nil,
+            read: { _ in stuck }, place: { _, _ in writes += 1; return .failed }, cancelled: { false })
+        XCTAssertEqual(result.outcome, .rollbackFailed)
+        XCTAssertEqual(writes, 2)
+    }
+
+    @MainActor func testAutomaticFitDoesNotInventWidthForMoveFailure() async {
+        let original = CGRect(x: 285, y: 89, width: 700, height: 702)
+        var writes = 0
+        let result = await AdaptivePlacement.place(layout: .halves, zone: 0,
+            work: CGRect(x: 0, y: 33, width: 1470, height: 923), originals: [0: original], widthHint: nil,
+            read: { _ in original }, place: { _, _ in writes += 1; return .failed }, cancelled: { false })
+        XCTAssertEqual(result.outcome, .rolledBack)
+        XCTAssertEqual(writes, 2)
     }
 
     func testWiderSplitPreservesLeftAndRightAssignments() {
