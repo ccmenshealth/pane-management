@@ -1,0 +1,40 @@
+name: Build and checks
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate source metadata
+        run: |
+          bash -n scripts/build-app.sh scripts/build-fixture.sh
+          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist
+          git diff --check
+      - name: Build application with supplied artwork
+        run: bash scripts/build-app.sh
+      - name: Run regression checks
+        run: .build/release/SnapCoreChecks
+      - name: Package disposable test helper
+        run: bash scripts/build-fixture.sh
+      - name: Verify application bundles
+        run: |
+          codesign --verify --deep --strict "dist/Pane Management.app"
+          codesign --verify --deep --strict "dist/Pane Management Test Windows.app"
+          plutil -lint "dist/Pane Management.app/Contents/Info.plist" "dist/Pane Management Test Windows.app/Contents/Info.plist"

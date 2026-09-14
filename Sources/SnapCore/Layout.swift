@@ -47,6 +47,14 @@ public struct SnapLayout: Equatable {
     ])
     public static let full = SnapLayout("full", "Maximize", [CGRect(x: 0, y: 0, width: 1, height: 1)])
     public static let all: [SnapLayout] = [.halves, .wideLeft, .thirds, .leftStack, .quarters, .centerWide]
+
+    /// Use logical work-area dimensions, not physical pixels. Never offer a
+    /// three-column layout whose narrowest column is smaller than a useful window.
+    public static func available(in work: CGRect) -> [SnapLayout] {
+        all.filter { layout in
+            layout.frames(in: work).allSatisfy { $0.width >= 320 && $0.height >= 240 }
+        }
+    }
 }
 
 public struct SnapTarget: Equatable {
@@ -58,9 +66,9 @@ public struct SnapTarget: Equatable {
 public enum SnapGeometry {
     /// Wider exit threshold avoids flickering when the pointer jitters at an edge.
     /// Call again at mouse-up so a stale preview can never commit an unrelated drop.
-    public static func dragTarget(at point: CGPoint, screen: CGRect, previous: SnapTarget?) -> SnapTarget? {
-        if let immediate = edgeTarget(at: point, screen: screen) { return immediate }
-        if let previous, edgeTarget(at: point, screen: screen, threshold: 30) == previous { return previous }
+    public static func dragTarget(at point: CGPoint, screen: CGRect, previous: SnapTarget?, threshold: CGFloat = 18) -> SnapTarget? {
+        if let immediate = edgeTarget(at: point, screen: screen, threshold: threshold) { return immediate }
+        if let previous, edgeTarget(at: point, screen: screen, threshold: threshold + 12) == previous { return previous }
         return nil
     }
 
@@ -101,6 +109,19 @@ public enum SnapGeometry {
                       y: min(workArea.maxY - height, max(workArea.minY, cursor.y - 15)),
                       width: width, height: height)
     }
+
+    public static func restoredDragFrame(original: CGRect, start: CGRect, grab: CGPoint, cursor: CGPoint, work: CGRect) -> CGRect {
+        let ratio = min(1, max(0, (grab.x - start.minX) / max(1, start.width)))
+        let width = min(original.width, work.width), height = min(original.height, work.height)
+        let titleOffset = min(28, max(4, grab.y - start.minY))
+        return CGRect(x: min(work.maxX - width, max(work.minX, cursor.x - width * ratio)),
+                      y: min(work.maxY - height, max(work.minY, cursor.y - titleOffset)), width: width, height: height)
+    }
+
+    public static func verticallyMaximized(_ frame: CGRect, in work: CGRect) -> CGRect {
+        CGRect(x: min(work.maxX - min(frame.width, work.width), max(work.minX, frame.minX)),
+               y: work.minY, width: min(frame.width, work.width), height: work.height)
+    }
 }
 
 /// State transitions used by both the desktop controller and the tests.
@@ -120,8 +141,8 @@ public struct AssistSession<ID: Hashable> {
     public mutating func skip() { if let zone = nextZone { skipped.insert(zone) } }
 }
 
-public enum BoundaryAxis { case vertical, horizontal }
-public struct SharedBoundary {
+public enum BoundaryAxis: Equatable { case vertical, horizontal }
+public struct SharedBoundary: Equatable {
     public let axis: BoundaryAxis
     public let position: CGFloat
     public let start: CGFloat
@@ -129,6 +150,23 @@ public struct SharedBoundary {
 }
 
 extension SnapLayout {
+    /// Recognize a native resize of exactly one internal edge. Moving the window,
+    /// resizing an outside edge, or changing two edges must not move its neighbors.
+    public func nativeResize(zone: Int, from old: CGRect, to new: CGRect, work: CGRect) -> (SharedBoundary, SnapLayout)? {
+        guard zones.indices.contains(zone), work.width > 0, work.height > 0 else { return nil }
+        let delta = [new.minX-old.minX, new.maxX-old.maxX, new.minY-old.minY, new.maxY-old.maxY]
+        let changed = delta.indices.filter { abs(delta[$0]) > 3 }
+        guard changed.count == 1, let edge = changed.first else { return nil }
+        let vertical = edge < 2, r = zones[zone]
+        let oldPosition = [r.minX, r.maxX, r.minY, r.maxY][edge]
+        let position = vertical ? ([new.minX, new.maxX][edge] - work.minX) / work.width
+                                : ([new.minY, new.maxY][edge-2] - work.minY) / work.height
+        guard let boundary = boundaries.first(where: {
+            $0.axis == (vertical ? .vertical : .horizontal) && abs($0.position-oldPosition) < 0.001
+        }), let layout = moving(boundary, to: position) else { return nil }
+        return (boundary, layout)
+    }
+
     public var boundaries: [SharedBoundary] {
         var result: [SharedBoundary] = []
         for i in zones.indices {

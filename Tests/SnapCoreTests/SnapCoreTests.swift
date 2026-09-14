@@ -45,8 +45,147 @@ final class SnapCoreTests {
         await suite.testPlacementCancellationNeverWritesAgain()
         await suite.testPlacementRejectsFixedSizeAndInvalidFrames()
         await suite.testPlacementAlreadyAtTargetNeedsNoWrite()
-        print("16 scenarios completed; \(failures) failures")
+        suite.testAdaptiveLayoutsUseLogicalWorkArea()
+        suite.testKeyboardSequencesPreserveQuarterRows()
+        suite.testKeyboardRecognizesActualGeometry()
+        suite.testKeyboardRestoresCustomLayoutBeforeMinimizing()
+        suite.testLiveRestoreUsesOriginalGrabPointAcrossDisplays()
+        suite.testHeightOnlyMaximizePreservesWidth()
+        suite.testNativeSharedEdgeResize()
+        suite.testNativeResizeRejectsMovementOutsideEdgesAndCorners()
+        suite.testNearEdgePreferenceAndHysteresis()
+        await suite.testGroupTransactionSettlesAllWindowsTogether()
+        await suite.testGroupTransactionRollsBackAfterSizeRefusal()
+        await suite.testGroupTransactionReportsFailedRollback()
+        await suite.testGroupTransactionCancellationDoesNotRollback()
+        await suite.testGroupTransactionRejectsIncompleteBaselines()
+        await suite.testStagedPlacementDoesNotCancelSizeWithMove()
+        await suite.testStagedPlacementShrinksBeforeCrossingDisplays()
+        await suite.testStagedPlacementCancellationStopsRemainingStages()
+        await suite.testStagedGroupDetectsLateDrift()
+        await suite.testPreviewCheckDoesNotRequestAccessAutomatically()
+        await suite.testExplicitPreviewCheckCanSucceedWithFalsePreflight()
+        await suite.testPreviewDenialCanBeRetried()
+        await suite.testPreviewCheckPreservesNonPermissionErrors()
+        await suite.testPreviewChecksCoalesceWhilePending()
+        await suite.testPreviewRevocationClearsVerifiedAccess()
+        await suite.testStagedPlacementRecoversFromGrowthOriginConstraint()
+        await suite.testStagedPlacementDoesNotAcceptPermanentlyConstrainedGrowth()
+        await suite.testStateConfirmationWaitsForStableChange()
+        await suite.testStateConfirmationRejectsUnknownAndRefusal()
+        await suite.testStateConfirmationCancelsWithoutAnotherRead()
+        print("45 scenarios completed; \(failures) failures")
         if failures > 0 { exit(1) }
+    }
+
+    @MainActor func testStateConfirmationWaitsForStableChange() async {
+        var samples = 0
+        let states: [Bool?] = [false, nil, true, false, true, true]
+        let result = await WindowPlacement.confirmState(true, read: { states[min(samples-1, states.count-1)] },
+            cancelled: { false }, pause: { _ in samples += 1 })
+        XCTAssertEqual(result, .placed)
+        XCTAssertEqual(samples, 6)
+    }
+
+    @MainActor func testStateConfirmationRejectsUnknownAndRefusal() async {
+        for state: Bool? in [nil, true] {
+            var samples = 0
+            let result = await WindowPlacement.confirmState(false, read: { state }, cancelled: { false }, pause: { _ in samples += 1 })
+            XCTAssertEqual(result, .failed)
+            XCTAssertEqual(samples, 32)
+        }
+    }
+
+    @MainActor func testStateConfirmationCancelsWithoutAnotherRead() async {
+        var cancelled = false, reads = 0
+        let result = await WindowPlacement.confirmState(true, read: { reads += 1; return true },
+            cancelled: { cancelled }, pause: { _ in cancelled = true })
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertEqual(reads, 0)
+    }
+
+    @MainActor func testPreviewCheckDoesNotRequestAccessAutomatically() async {
+        let permission = PreviewPermission()
+        var probes = 0
+        await permission.check(preflight: false, userInitiated: false) { probes += 1 }
+        XCTAssertEqual(probes, 0)
+        XCTAssertEqual(permission.state, .unchecked)
+    }
+
+    @MainActor func testExplicitPreviewCheckCanSucceedWithFalsePreflight() async {
+        let permission = PreviewPermission()
+        var states: [PreviewPermissionState] = []
+        permission.changed = { states.append($0) }
+        await permission.check(preflight: false, userInitiated: true) {}
+        XCTAssertEqual(states, [.checking, .available])
+        // A later false preflight hint must not erase successful API access.
+        await permission.check(preflight: false, userInitiated: false) { throw PreviewPermissionFailure.denied }
+        XCTAssertEqual(permission.state, .available)
+    }
+
+    @MainActor func testPreviewDenialCanBeRetried() async {
+        let permission = PreviewPermission()
+        await permission.check(preflight: true, userInitiated: true) { throw PreviewPermissionFailure.denied }
+        XCTAssertEqual(permission.state, .denied)
+        await permission.check(preflight: false, userInitiated: true) {}
+        XCTAssertEqual(permission.state, .available)
+    }
+
+    @MainActor func testPreviewCheckPreservesNonPermissionErrors() async {
+        let permission = PreviewPermission()
+        await permission.check(preflight: true, userInitiated: false) {
+            throw NSError(domain: "Fixture", code: 1, userInfo: [NSLocalizedDescriptionKey: "Capture service unavailable"])
+        }
+        XCTAssertEqual(permission.state, .failed("Capture service unavailable"))
+    }
+
+    @MainActor func testPreviewChecksCoalesceWhilePending() async {
+        let permission = PreviewPermission()
+        var probes = 0
+        await permission.check(preflight: true, userInitiated: true) {
+            probes += 1
+            await permission.check(preflight: true, userInitiated: true) { probes += 1 }
+        }
+        XCTAssertEqual(probes, 1)
+        XCTAssertEqual(permission.state, .available)
+    }
+
+    @MainActor func testPreviewRevocationClearsVerifiedAccess() async {
+        let permission = PreviewPermission()
+        await permission.check(preflight: true, userInitiated: false) {}
+        permission.captureWasDenied()
+        XCTAssertEqual(permission.state, .denied)
+    }
+
+    @MainActor func testStagedPlacementRecoversFromGrowthOriginConstraint() async {
+        let target = CGRect(x: 735, y: 33, width: 735, height: 923)
+        var frame = CGRect(x: 145, y: 76, width: 650, height: 452)
+        var firstGrowth = true, requiresAlignment = false
+        var resizedAfterAlignment = false
+        let result = await WindowPlacement.staged(at: target, read: { frame }, resize: { size in
+            if firstGrowth || requiresAlignment {
+                firstGrowth = false; requiresAlignment = true
+                frame = CGRect(x: 686, y: 37, width: size.width, height: 919)
+            } else { frame.size = size; resizedAfterAlignment = true }
+        }, move: { point in
+            frame.origin = point
+            if !firstGrowth { requiresAlignment = false }
+        }, cancelled: { false }, pause: { _ in })
+        XCTAssertEqual(result, .placed)
+        XCTAssertEqual(frame, target)
+        XCTAssertTrue(resizedAfterAlignment)
+    }
+
+    @MainActor func testStagedPlacementDoesNotAcceptPermanentlyConstrainedGrowth() async {
+        let target = CGRect(x: 735, y: 33, width: 735, height: 923)
+        var frame = CGRect(x: 145, y: 76, width: 650, height: 452)
+        var writes = 0
+        let result = await WindowPlacement.staged(at: target, read: { frame }, resize: { size in
+            writes += 1; frame.size = CGSize(width: size.width, height: 919)
+        }, move: { frame.origin = $0 }, cancelled: { false }, pause: { _ in })
+        XCTAssertEqual(result, .failed)
+        XCTAssertTrue(writes <= 6, "Growth correction must stay bounded")
+        XCTAssertFalse(SnapGeometry.nearlyEqual(frame, target))
     }
     func testAllLayoutsTileWithoutOverlapOrLostArea() {
         for layout in SnapLayout.all {
@@ -205,5 +344,183 @@ final class SnapCoreTests {
             cancelled: { false }, pause: { _ in })
         XCTAssertEqual(outcome, .placed)
         XCTAssertEqual(writes, 0)
+    }
+
+    func testAdaptiveLayoutsUseLogicalWorkArea() {
+        let small = SnapLayout.available(in: CGRect(x: 0, y: 25, width: 1000, height: 700))
+        XCTAssertEqual(small.map(\.id), ["halves", "wideLeft", "thirds", "leftStack", "quarters"])
+        XCTAssertEqual(SnapLayout.available(in: CGRect(x: -2000, y: -900, width: 1470, height: 923)), SnapLayout.all)
+        XCTAssertEqual(SnapLayout.available(in: CGRect(x: 0, y: 0, width: 700, height: 400)).map(\.id), ["halves"])
+        XCTAssertTrue(SnapLayout.available(in: CGRect(x: 0, y: 0, width: 500, height: 300)).isEmpty)
+    }
+    func testKeyboardSequencesPreserveQuarterRows() {
+        XCTAssertEqual(KeyboardPlacement.floating.pressing(.left).pressing(.up), .topLeft)
+        XCTAssertEqual(KeyboardPlacement.topLeft.pressing(.right), .topRight)
+        XCTAssertEqual(KeyboardPlacement.bottomRight.pressing(.left), .bottomLeft)
+        XCTAssertEqual(KeyboardPlacement.left.pressing(.right), .floating)
+        XCTAssertEqual(KeyboardPlacement.maximized.pressing(.down), .floating)
+        XCTAssertEqual(KeyboardPlacement.bottomLeft.pressing(.up), .topLeft)
+        XCTAssertEqual(KeyboardPlacement.topRight.pressing(.down), .bottomRight)
+    }
+    func testKeyboardRecognizesActualGeometry() {
+        let work = CGRect(x: -1470, y: -900, width: 1470, height: 900)
+        for state: KeyboardPlacement in [.left, .right, .topLeft, .topRight, .bottomLeft, .bottomRight, .maximized] {
+            let target = state.target!
+            XCTAssertEqual(KeyboardPlacement.matching(target.layout.frames(in: work)[target.zone], work: work), state)
+        }
+        XCTAssertEqual(KeyboardPlacement.matching(CGRect(x: -1000, y: -500, width: 500, height: 300), work: work), .floating)
+    }
+    func testKeyboardRestoresCustomLayoutBeforeMinimizing() {
+        var sequence = KeyboardSequence(placement: .floating, canRestore: true)
+        sequence.press(.down)
+        XCTAssertFalse(sequence.minimize, "A custom layout or height-only maximized window should restore first")
+        XCTAssertEqual(sequence.placement, .floating)
+        sequence.press(.down)
+        XCTAssertTrue(sequence.minimize)
+        sequence.press(.up)
+        XCTAssertFalse(sequence.minimize)
+        XCTAssertEqual(sequence.placement, .maximized)
+        sequence.press(.down)
+        XCTAssertFalse(sequence.minimize)
+        sequence.press(.down)
+        XCTAssertTrue(sequence.minimize)
+    }
+    func testLiveRestoreUsesOriginalGrabPointAcrossDisplays() {
+        let start = CGRect(x: 0, y: 33, width: 735, height: 923)
+        let original = CGRect(x: 100, y: 100, width: 600, height: 400)
+        let work = CGRect(x: -1470, y: -500, width: 1470, height: 900)
+        let restored = SnapGeometry.restoredDragFrame(original: original, start: start, grab: CGPoint(x: 367.5, y: 48),
+            cursor: CGPoint(x: -800, y: -300), work: work)
+        XCTAssertEqual(restored, CGRect(x: -1100, y: -315, width: 600, height: 400))
+        let bounded = SnapGeometry.restoredDragFrame(original: original, start: start, grab: CGPoint(x: 700, y: 48), cursor: work.origin, work: work)
+        XCTAssertTrue(work.contains(bounded))
+    }
+    func testHeightOnlyMaximizePreservesWidth() {
+        let work = CGRect(x: -1470, y: 33, width: 1470, height: 900)
+        let frame = CGRect(x: -1100, y: 150, width: 600, height: 300)
+        XCTAssertEqual(SnapGeometry.verticallyMaximized(frame, in: work), CGRect(x: -1100, y: 33, width: 600, height: 900))
+    }
+    func testNativeSharedEdgeResize() {
+        let work = CGRect(x: -1400, y: 30, width: 1400, height: 900)
+        let old = SnapLayout.halves.frames(in: work)[0]
+        let resized = CGRect(x: old.minX, y: old.minY, width: 850, height: old.height)
+        let result = SnapLayout.halves.nativeResize(zone: 0, from: old, to: resized, work: work)
+        XCTAssertTrue(result != nil)
+        let frames = result!.1.frames(in: work)
+        XCTAssertEqual(frames[0], resized)
+        XCTAssertEqual(frames[0].maxX, frames[1].minX)
+        XCTAssertEqual(frames[1].maxX, work.maxX)
+        let quarter = SnapLayout.quarters.frames(in: work)[0]
+        let taller = CGRect(x: quarter.minX, y: quarter.minY, width: quarter.width, height: 550)
+        XCTAssertEqual(SnapLayout.quarters.nativeResize(zone: 0, from: quarter, to: taller, work: work)?.0.axis, .horizontal)
+    }
+    func testNativeResizeRejectsMovementOutsideEdgesAndCorners() {
+        let work = CGRect(x: 0, y: 30, width: 1400, height: 900), layout = SnapLayout.halves
+        let old = layout.frames(in: work)[0]
+        XCTAssertNil(layout.nativeResize(zone: 0, from: old, to: old.offsetBy(dx: 80, dy: 0), work: work))
+        XCTAssertNil(layout.nativeResize(zone: 0, from: old, to: CGRect(x: -50, y: 30, width: 750, height: 900), work: work))
+        XCTAssertNil(layout.nativeResize(zone: 0, from: old, to: CGRect(x: 0, y: 30, width: 750, height: 850), work: work))
+        XCTAssertNil(layout.nativeResize(zone: 0, from: old, to: old, work: work))
+    }
+    func testNearEdgePreferenceAndHysteresis() {
+        let work = CGRect(x: 0, y: 0, width: 1400, height: 900), point = CGPoint(x: 12, y: 400)
+        XCTAssertNil(SnapGeometry.dragTarget(at: point, screen: work, previous: nil, threshold: 2))
+        XCTAssertEqual(SnapGeometry.dragTarget(at: point, screen: work, previous: nil, threshold: 18), SnapTarget(.halves, 0))
+        XCTAssertEqual(SnapGeometry.dragTarget(at: point, screen: work, previous: SnapTarget(.halves, 0), threshold: 2), SnapTarget(.halves, 0))
+    }
+    @MainActor func testGroupTransactionSettlesAllWindowsTogether() async {
+        let targets = [0: CGRect(x: 0, y: 30, width: 700, height: 900), 1: CGRect(x: 700, y: 30, width: 700, height: 900)]
+        let originals = targets.mapValues { $0.offsetBy(dx: 100, dy: 50) }
+        var actual = originals, writes = 0
+        let result = await WindowPlacement.stagedTransaction(targets: targets, originals: originals, read: { actual[$0] },
+            place: { id, frame in writes += 1; actual[id] = frame; return .placed }, cancelled: { false })
+        XCTAssertEqual(result, .placed)
+        XCTAssertEqual(actual, targets)
+        XCTAssertEqual(writes, 2)
+    }
+    @MainActor func testGroupTransactionRollsBackAfterSizeRefusal() async {
+        let originals = [0: CGRect(x: 0, y: 30, width: 700, height: 900), 1: CGRect(x: 700, y: 30, width: 700, height: 900)]
+        let targets = [0: CGRect(x: 0, y: 30, width: 1000, height: 900), 1: CGRect(x: 1000, y: 30, width: 400, height: 900)]
+        var actual = originals
+        let result = await WindowPlacement.stagedTransaction(targets: targets, originals: originals, read: { actual[$0] }, place: { id, frame in
+            guard frame.width >= 600 else { return .failed }
+            actual[id] = frame; return .placed
+        }, cancelled: { false })
+        XCTAssertEqual(result, .rolledBack)
+        XCTAssertEqual(actual, originals)
+    }
+    @MainActor func testGroupTransactionReportsFailedRollback() async {
+        let original = CGRect(x: 100, y: 100, width: 700, height: 500), target = CGRect(x: 0, y: 30, width: 700, height: 900)
+        let result = await WindowPlacement.stagedTransaction(targets: [0: target], originals: [0: original], read: { _ in nil },
+            place: { _, _ in .failed }, cancelled: { false })
+        XCTAssertEqual(result, .rollbackFailed)
+    }
+    @MainActor func testGroupTransactionCancellationDoesNotRollback() async {
+        let original = CGRect(x: 100, y: 100, width: 700, height: 500), target = CGRect(x: 0, y: 30, width: 700, height: 900)
+        var cancelled = false, writes = 0
+        let result = await WindowPlacement.stagedTransaction(targets: [0: target], originals: [0: original], read: { _ in original },
+            place: { _, _ in writes += 1; cancelled = true; return .cancelled }, cancelled: { cancelled })
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertEqual(writes, 1)
+    }
+    @MainActor func testGroupTransactionRejectsIncompleteBaselines() async {
+        let target = CGRect(x: 0, y: 30, width: 700, height: 900)
+        var writes = 0
+        let result = await WindowPlacement.stagedTransaction(targets: [0: target, 1: target], originals: [0: target], read: { _ in nil },
+            place: { _, _ in writes += 1; return .placed }, cancelled: { false })
+        XCTAssertEqual(result, .rollbackFailed)
+        XCTAssertEqual(writes, 0)
+    }
+    @MainActor func testStagedPlacementDoesNotCancelSizeWithMove() async {
+        var actual = CGRect(x: 210, y: 131, width: 650, height: 452)
+        let target = CGRect(x: 0, y: 33, width: 735, height: 923)
+        var pending: CGRect?, ticks = 0, interrupted = 0, writes = 0
+        func schedule(_ frame: CGRect) {
+            if pending != nil { interrupted += 1 }
+            pending = frame; ticks = 0; writes += 1
+        }
+        let result = await WindowPlacement.staged(at: target, read: { actual }, resize: { size in
+            // A resize changes the top-left while preserving its bottom edge.
+            schedule(CGRect(x: actual.minX, y: actual.maxY-size.height, width: size.width, height: size.height))
+        }, move: { schedule(CGRect(origin: $0, size: actual.size)) }, cancelled: { false }, pause: { _ in
+            ticks += 1
+            if ticks >= 3, let next = pending { actual = next; pending = nil }
+        })
+        XCTAssertEqual(result, .placed)
+        XCTAssertEqual(actual, target)
+        XCTAssertEqual(interrupted, 0, "A position write must never replace a pending resize")
+        XCTAssertEqual(writes, 3)
+    }
+    @MainActor func testStagedPlacementShrinksBeforeCrossingDisplays() async {
+        var actual = CGRect(x: 0, y: 30, width: 2400, height: 1400)
+        let target = CGRect(x: -1400, y: 30, width: 700, height: 900)
+        var order: [String] = []
+        let result = await WindowPlacement.staged(at: target, read: { actual }, resize: { actual.size = $0; order.append("resize") },
+            move: {
+                XCTAssertTrue(actual.width <= target.width && actual.height <= target.height)
+                actual.origin = $0; order.append("move")
+            }, cancelled: { false }, pause: { _ in })
+        XCTAssertEqual(result, .placed)
+        XCTAssertEqual(order, ["resize", "move"])
+    }
+    @MainActor func testStagedPlacementCancellationStopsRemainingStages() async {
+        let original = CGRect(x: 100, y: 100, width: 650, height: 452), target = CGRect(x: 0, y: 33, width: 735, height: 923)
+        var cancelled = false, writes = 0
+        let result = await WindowPlacement.staged(at: target, read: { original }, resize: { _ in writes += 1 }, move: { _ in writes += 1 },
+            cancelled: { cancelled }, pause: { _ in cancelled = true })
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertEqual(writes, 1)
+    }
+    @MainActor func testStagedGroupDetectsLateDrift() async {
+        let originals = [0: CGRect(x: 10, y: 40, width: 700, height: 500), 1: CGRect(x: 720, y: 40, width: 700, height: 500)]
+        let targets = originals.mapValues { $0.offsetBy(dx: 0, dy: 100) }
+        var actual = originals, count = 0
+        let result = await WindowPlacement.stagedTransaction(targets: targets, originals: originals, read: { actual[$0] }, place: { id, frame in
+            actual[id] = frame; count += 1
+            if count == 2 { actual[1-id] = originals[1-id] }
+            return .placed
+        }, cancelled: { false })
+        XCTAssertEqual(result, .rolledBack)
+        XCTAssertEqual(actual, originals)
     }
 }

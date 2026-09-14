@@ -80,7 +80,7 @@ final class WindowService {
     private(set) var known: [ManagedWindow] = []
     private(set) var lastPlacementResult = ""
     static var trusted: Bool { AXIsProcessTrusted() }
-    static var canCapture: Bool { CGPreflightScreenCaptureAccess() }
+    static var canCapture: Bool { PreviewAccess.shared.isAvailable }
 
     func fixtureDiagnostics(pids: Set<pid_t>) -> String {
         let rows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
@@ -143,6 +143,24 @@ final class WindowService {
         return nil
     }
 
+    /// Conservative hit test: only blank standard title-bar background, never a
+    /// title/proxy icon, tab, toolbar control, resize border, or traffic-light button.
+    func restorableTitleBar(at point: CGPoint) -> (ManagedWindow, CGRect)? {
+        guard known.contains(where: { $0.snappedFrame != nil && $0.originalFrame != nil }),
+              let window = at(point), window.snappedFrame != nil, window.originalFrame != nil,
+              let frame = window.frame, point.y >= frame.minY + 5, point.y <= frame.minY + 27,
+              point.x > frame.minX + 80, point.x < frame.maxX - 8 else { return nil }
+        let system = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(system, 0.05)
+        var element: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(system, Float(point.x), Float(point.y), &element) == .success,
+              let element, CFEqual(element, window.ax) else { return nil }
+        for name in [kAXCloseButtonAttribute, kAXMinimizeButtonAttribute, kAXZoomButtonAttribute, kAXFullScreenButtonAttribute, kAXTitleUIElementAttribute] {
+            if let button = AXRead.element(window.ax, name), let rect = AXRead.frame(button), rect.insetBy(dx: -4, dy: -4).contains(point) { return nil }
+        }
+        return (window, frame)
+    }
+
     func greenButton(at point: CGPoint) -> (ManagedWindow, CGRect)? {
         guard let win = at(point) else { return nil }
         for name in [kAXFullScreenButtonAttribute, kAXZoomButtonAttribute] {
@@ -189,22 +207,58 @@ final class WindowService {
 
     @discardableResult
     func apply(_ frame: CGRect, to window: ManagedWindow) -> Bool {
-        guard frame.width.isFinite, frame.height.isFinite, frame.width >= 50, frame.height >= 50,
-              frame.origin.x.isFinite, frame.origin.y.isFinite, window.isAvailable else { return false }
+        guard window.isAvailable else { return false }
+        return writeGeometry(frame, to: window)
+    }
+
+    /// Streaming writes are bounded by the controller; don't do three blocking AX
+    /// reads for every pointer sample. Final positions always use settled placement.
+    @discardableResult
+    func writeGeometry(_ frame: CGRect, to window: ManagedWindow, resize: Bool = true) -> Bool {
+        guard WindowPlacement.valid(frame) else { return false }
         var p = frame.origin, size = frame.size
         guard let position = AXValueCreate(.cgPoint, &p), let dimensions = AXValueCreate(.cgSize, &size) else { return false }
         // One resize/move pass. The settled-placement path retries after the app
         // has processed this pass (including constraints on a different display).
-        let firstSize = AXUIElementSetAttributeValue(window.ax, kAXSizeAttribute as CFString, dimensions)
+        let firstSize = resize ? AXUIElementSetAttributeValue(window.ax, kAXSizeAttribute as CFString, dimensions) : .success
         let move = AXUIElementSetAttributeValue(window.ax, kAXPositionAttribute as CFString, position)
         lastPlacementResult = "move \(move.rawValue), resize \(firstSize.rawValue)"
         return move == .success && firstSize == .success
     }
 
     @MainActor
+    func setMinimized(_ minimized: Bool, window: ManagedWindow, cancelled: () -> Bool) async -> PlacementOutcome {
+        guard !cancelled(), !Task.isCancelled else { return .cancelled }
+        // A timeout may still have dispatched the request. Verify the resulting
+        // state instead of interpreting the immediate AX return as completion.
+        AXUIElementSetAttributeValue(window.ax, kAXMinimizedAttribute as CFString, minimized ? kCFBooleanTrue : kCFBooleanFalse)
+        return await WindowPlacement.confirmState(minimized,
+            read: { AXRead.value(window.ax, kAXMinimizedAttribute) as? Bool }, cancelled: cancelled)
+    }
+
+    @MainActor
     func place(_ frame: CGRect, to window: ManagedWindow, cancelled: () -> Bool) async -> PlacementOutcome {
-        await WindowPlacement.settle(at: frame, read: { window.frame },
-                                     write: { _ = self.apply($0, to: window) }, cancelled: cancelled)
+        await WindowPlacement.staged(at: frame, read: { window.frame }, resize: { size in
+            var size = size
+            guard let value = AXValueCreate(.cgSize, &size) else { return }
+            let result = AXUIElementSetAttributeValue(window.ax, kAXSizeAttribute as CFString, value)
+            self.lastPlacementResult = "resize \(result.rawValue)"
+        }, move: { point in
+            var point = point
+            guard let value = AXValueCreate(.cgPoint, &point) else { return }
+            let result = AXUIElementSetAttributeValue(window.ax, kAXPositionAttribute as CFString, value)
+            self.lastPlacementResult = "move \(result.rawValue)"
+        }, cancelled: cancelled)
+    }
+
+    @MainActor
+    func placeGroup(_ members: [Int: ManagedWindow], targets: [Int: CGRect], originals: [Int: CGRect],
+                    cancelled: () -> Bool) async -> TransactionOutcome {
+        await WindowPlacement.stagedTransaction(targets: targets, originals: originals,
+            read: { members[$0]?.frame }, place: { id, frame in
+                guard let window = members[id] else { return .failed }
+                return await self.place(frame, to: window, cancelled: cancelled)
+            }, cancelled: cancelled)
     }
 
     func raise(_ window: ManagedWindow) {
@@ -216,7 +270,9 @@ final class WindowService {
     @MainActor
     func thumbnails(for windows: [ManagedWindow], refreshed: @escaping () -> Void) async {
         guard Self.canCapture else { return }
-        guard let content = try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true) else { return }
+        let content: SCShareableContent
+        do { content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true) }
+        catch { PreviewAccess.shared.captureFailed(error); return }
         for window in windows {
             guard !Task.isCancelled, let id = window.windowID,
                   let captureWindow = content.windows.first(where: { $0.windowID == id }) else { continue }
@@ -227,9 +283,14 @@ final class WindowService {
             config.height = max(1, Int(captureWindow.frame.height * ratio))
             config.showsCursor = false
             config.ignoreShadowsSingleWindow = true
-            if let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config), !Task.isCancelled {
+            do {
+                let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+                guard !Task.isCancelled else { return }
                 window.thumbnail = NSImage(cgImage: image, size: NSSize(width: config.width, height: config.height))
                 refreshed()
+            } catch {
+                PreviewAccess.shared.captureFailed(error)
+                if !Self.canCapture { return }
             }
         }
     }

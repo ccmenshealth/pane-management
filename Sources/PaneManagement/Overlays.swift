@@ -5,6 +5,28 @@ private let accent = NSColor(calibratedRed: 0.36, green: 0.64, blue: 1, alpha: 1
 private let surface = NSColor(calibratedWhite: 0.11, alpha: 0.98)
 private let secondary = NSColor(calibratedWhite: 0.68, alpha: 1)
 
+/// Real AppKit controls keep custom-drawn cards operable through standard
+/// Accessibility press actions, not only coordinate clicks on a painted view.
+private final class OverlayActionButton: NSButton {
+    var invoked: (() -> Void)?
+    init(frame: CGRect, label: String, action: @escaping () -> Void) {
+        super.init(frame: frame)
+        title = label; isTransparent = true; isBordered = false
+        setAccessibilityLabel(label)
+        target = self; self.action = #selector(activate)
+        invoked = action
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+    @objc private func activate() { invoked?() }
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .button }
+    override func accessibilityChildren() -> [Any]? { [] }
+    override func accessibilityPerformPress() -> Bool {
+        guard isEnabled, let invoked else { return false }
+        invoked(); return true
+    }
+}
+
 private final class AccessibleButton: NSAccessibilityElement {
     var action: (() -> Void)?
     override func accessibilityPerformPress() -> Bool { action?(); return action != nil }
@@ -72,6 +94,8 @@ final class LayoutPaletteView: NSView {
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
     var selection: SnapTarget? { didSet { needsDisplay = true } }
+    var layouts: [SnapLayout] = []
+    private var numberedLayout: Int?
     var choose: ((SnapTarget) -> Void)?
     var cancel: (() -> Void)?
     var hover: ((SnapTarget?) -> Void)?
@@ -80,8 +104,9 @@ final class LayoutPaletteView: NSView {
     override func accessibilityRole() -> NSAccessibility.Role? { .group }
     override func accessibilityLabel() -> String? { "Snap layouts" }
     override func accessibilityChildren() -> [Any]? {
+        if !subviews.isEmpty { return subviews }
         var children: [NSAccessibilityElement] = []
-        for (index, layout) in SnapLayout.all.enumerated() {
+        for (index, layout) in layouts.enumerated() {
             for (zone, rect) in layout.frames(in: layoutRect(index), gap: 4).enumerated() {
                 children.append(accessibleButton(in: self, rect: rect, title: "\(layout.name), position \(zone+1)") { [weak self] in
                     self?.choose?(SnapTarget(layout, zone))
@@ -90,13 +115,24 @@ final class LayoutPaletteView: NSView {
         }
         return children
     }
-    var cellSize: CGSize { CGSize(width: (bounds.width - 64) / 3, height: 64) }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil else { return }
+        subviews.forEach { $0.removeFromSuperview() }
+        for (index, layout) in layouts.enumerated() {
+            for (zone, rect) in layout.frames(in: layoutRect(index), gap: 4).enumerated() {
+                addSubview(OverlayActionButton(frame: rect, label: "\(layout.name), position \(zone+1)") { [weak self] in self?.choose?(SnapTarget(layout, zone)) })
+            }
+        }
+    }
+    var columns: Int { layouts.count > 4 ? 3 : 2 }
+    var cellSize: CGSize { CGSize(width: (bounds.width - CGFloat(columns + 1) * 16) / CGFloat(columns), height: 64) }
     func layoutRect(_ index: Int) -> CGRect {
-        CGRect(x: 16 + CGFloat(index % 3) * (cellSize.width + 16), y: 48 + CGFloat(index / 3) * 98,
+        CGRect(x: 16 + CGFloat(index % columns) * (cellSize.width + 16), y: 48 + CGFloat(index / columns) * 98,
                width: cellSize.width, height: cellSize.height)
     }
     func target(at point: CGPoint) -> SnapTarget? {
-        for (index, layout) in SnapLayout.all.enumerated() {
+        for (index, layout) in layouts.enumerated() {
             let rect = layoutRect(index)
             for (zone, frame) in layout.frames(in: rect, gap: 4).enumerated() where frame.contains(point) {
                 return SnapTarget(layout, zone)
@@ -120,31 +156,43 @@ final class LayoutPaletteView: NSView {
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 { cancel?(); return }
         if event.keyCode == 36, let selection { choose?(selection); return }
-        var index = selection.flatMap { selected in SnapLayout.all.firstIndex { $0.id == selected.layout.id } } ?? 0
+        guard !layouts.isEmpty else { return }
+        if let text = event.charactersIgnoringModifiers, let number = Int(text), number > 0 {
+            if let index = numberedLayout {
+                if layouts[index].zones.indices.contains(number-1) { choose?(SnapTarget(layouts[index], number-1)) }
+            } else if layouts.indices.contains(number-1) {
+                numberedLayout = number-1
+                selection = SnapTarget(layouts[number-1], 0); hover?(selection)
+            }
+            return
+        }
+        numberedLayout = nil
+        var index = selection.flatMap { selected in layouts.firstIndex { $0.id == selected.layout.id } } ?? 0
         var zone = selection?.zone ?? 0
         switch event.keyCode {
-        case 48: index = (index + (event.modifierFlags.contains(.shift) ? 5 : 1)) % 6; zone = 0
-        case 123: zone = (zone + SnapLayout.all[index].zones.count - 1) % SnapLayout.all[index].zones.count
-        case 124: zone = (zone + 1) % SnapLayout.all[index].zones.count
-        case 125: index = (index + 3) % 6; zone = 0
-        case 126: index = (index + 3) % 6; zone = 0
+        case 48: index = (index + (event.modifierFlags.contains(.shift) ? layouts.count-1 : 1)) % layouts.count; zone = 0
+        case 123: zone = (zone + layouts[index].zones.count - 1) % layouts[index].zones.count
+        case 124: zone = (zone + 1) % layouts[index].zones.count
+        case 125: index = (index + columns) % layouts.count; zone = 0
+        case 126: index = (index + layouts.count - columns) % layouts.count; zone = 0
         default: return
         }
-        selection = SnapTarget(SnapLayout.all[index], zone); hover?(selection)
+        selection = SnapTarget(layouts[index], zone); hover?(selection)
     }
     override func draw(_ dirtyRect: NSRect) {
         rounded(bounds.insetBy(dx: 1, dy: 1), color: surface, radius: 16, stroke: .white.withAlphaComponent(0.16))
-        label("Choose a layout", rect: CGRect(x: 18, y: 16, width: 200, height: 22), size: 14, weight: .semibold)
-        for (index, layout) in SnapLayout.all.enumerated() {
+        label(numberedLayout == nil ? "Choose a layout" : "Now choose a position number", rect: CGRect(x: 18, y: 16, width: bounds.width-36, height: 22), size: 14, weight: .semibold)
+        for (index, layout) in layouts.enumerated() {
             let rect = layoutRect(index)
             for (zone, frame) in layout.frames(in: rect, gap: 4).enumerated() {
                 let selected = selection == SnapTarget(layout, zone)
                 rounded(frame, color: selected ? accent : NSColor(calibratedWhite: 0.26, alpha: 1), radius: 5,
                         stroke: .white.withAlphaComponent(selected ? 0.6 : 0.12))
+                if numberedLayout == index { label("\(zone+1)", rect: CGRect(x: frame.midX-4, y: frame.midY-8, width: 16, height: 18), size: 12) }
             }
-            label(layout.name, rect: CGRect(x: rect.minX + 2, y: rect.maxY + 5, width: rect.width, height: 16), size: 11, color: secondary)
+            label("\(index+1)  \(layout.name)", rect: CGRect(x: rect.minX + 2, y: rect.maxY + 5, width: rect.width, height: 16), size: 11, color: secondary)
         }
-        label("Tab: layout    ← →: position    Return: snap    Esc: cancel",
+        label("Number: layout, then position · Tab / arrows · Return · Esc",
               rect: CGRect(x: 18, y: bounds.height - 27, width: bounds.width - 36, height: 18), size: 11, color: secondary)
     }
 }
@@ -157,14 +205,19 @@ final class LayoutOverlay {
     func show(on display: DisplaySpace, near anchor: CGRect? = nil, dragging: Bool,
               choose: @escaping (SnapTarget) -> Void, hover: @escaping (SnapTarget?) -> Void, cancel: @escaping () -> Void) {
         hide()
-        let width = min(510, display.work.width - 16), height: CGFloat = 266
+        let layouts = SnapLayout.available(in: display.work)
+        guard !layouts.isEmpty else { return }
+        let columns = layouts.count > 4 ? 3 : 2
+        let rows = Int(ceil(Double(layouts.count) / Double(columns)))
+        let width = min(510, display.work.width - 16), height: CGFloat = CGFloat(rows) * 98 + 70
         let x = min(display.work.maxX - width - 8, max(display.work.minX + 8, anchor?.minX ?? display.work.midX - width/2))
         let y = min(display.work.maxY - height - 8, max(display.work.minY + 8, anchor.map { $0.maxY + 8 } ?? display.work.minY + 12))
         let panel = OverlayPanel(frame: CGRect(x: x, y: y, width: width, height: height), interactive: !dragging)
         let view = LayoutPaletteView(frame: CGRect(x: 0, y: 0, width: width, height: height))
+        view.layouts = layouts
         view.choose = choose; view.hover = hover; view.cancel = cancel
         panel.contentView = view; panel.orderFrontRegardless()
-        if !dragging { view.selection = SnapTarget(.halves, 0); panel.makeKey(); panel.makeFirstResponder(view) }
+        if !dragging { view.selection = SnapTarget(layouts[0], 0); panel.makeKey(); panel.makeFirstResponder(view) }
         self.panel = panel; self.view = view
     }
     func target(at quartzPoint: CGPoint) -> SnapTarget? {
@@ -184,11 +237,12 @@ final class AssistView: NSView {
     var skip: (() -> Void)?
     var subtitle = ""
     var selected = 0
-    var page = 0
+    var page = 0 { didSet { installActions() } }
     override func isAccessibilityElement() -> Bool { true }
     override func accessibilityRole() -> NSAccessibility.Role? { .group }
     override func accessibilityLabel() -> String? { "Snap Assist. What goes here?" }
     override func accessibilityChildren() -> [Any]? {
+        if !subviews.isEmpty { return subviews }
         var children: [NSAccessibilityElement] = []
         for index in 0..<perPage where windows.indices.contains(page * perPage + index) {
             let window = windows[page * perPage + index]
@@ -202,6 +256,23 @@ final class AssistView: NSView {
             })
         }
         return children
+    }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); installActions() }
+    private func installActions() {
+        guard window != nil else { return }
+        subviews.forEach { $0.removeFromSuperview() }
+        for index in 0..<perPage where windows.indices.contains(page*perPage+index) {
+            let candidate = windows[page*perPage+index]
+            addSubview(OverlayActionButton(frame: cardRect(index), label: "\(candidate.appName): \(candidate.title)") { [weak self] in self?.choose?(candidate) })
+        }
+        addSubview(OverlayActionButton(frame: CGRect(x: 15, y: bounds.height-43, width: 80, height: 35), label: "Skip zone") { [weak self] in self?.skip?() })
+        addSubview(OverlayActionButton(frame: CGRect(x: bounds.width-50, y: 10, width: 40, height: 35), label: "Dismiss Snap Assist") { [weak self] in self?.cancel?() })
+        if pageCount > 1 {
+            addSubview(OverlayActionButton(frame: CGRect(x: bounds.width-75, y: bounds.height-43, width: 70, height: 35), label: "Next page") { [weak self] in
+                guard let self else { return }
+                self.page = (self.page+1) % self.pageCount; self.selected = self.page*self.perPage; self.needsDisplay = true
+            })
+        }
     }
     var columns: Int { bounds.width > 650 ? 3 : (bounds.width > 370 ? 2 : 1) }
     var rows: Int { max(1, min(3, Int((bounds.height - 150) / 160))) }
@@ -219,7 +290,7 @@ final class AssistView: NSView {
         if point.y < 45 && point.x > bounds.width - 55 { cancel?(); return }
         if point.y > bounds.height - 43 {
             if point.x < 90 { skip?() }
-            else if point.x > bounds.width - 75 { page = (page + 1) % pageCount; needsDisplay = true }
+            else if point.x > bounds.width - 75 { page = (page + 1) % pageCount; selected = page*perPage; needsDisplay = true }
             return
         }
         for index in 0..<perPage where page * perPage + index < windows.count && cardRect(index).contains(point) {
@@ -228,7 +299,7 @@ final class AssistView: NSView {
     }
     override func scrollWheel(with event: NSEvent) {
         guard abs(event.scrollingDeltaY) > 2 else { return }
-        page = min(pageCount - 1, max(0, page + (event.scrollingDeltaY < 0 ? 1 : -1))); needsDisplay = true
+        page = min(pageCount - 1, max(0, page + (event.scrollingDeltaY < 0 ? 1 : -1))); selected = page*perPage; needsDisplay = true
     }
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
@@ -305,6 +376,94 @@ final class DividerView: NSView {
     override func mouseDown(with event: NSEvent) { began?() }
     override func mouseDragged(with event: NSEvent) { moved?(DisplaySpace.cursor) }
     override func mouseUp(with event: NSEvent) { ended?() }
+}
+
+final class GroupPickerView: NSView {
+    override var isFlipped: Bool { true }
+    override var acceptsFirstResponder: Bool { true }
+    var groups: [SnapGroup] = []
+    var selected = 0 { didSet { installActions() } }
+    var choose: ((SnapGroup) -> Void)?
+    var cancel: (() -> Void)?
+    private var rows: Int { max(1, Int((bounds.height-90)/70)) }
+    private var first: Int { selected / rows * rows }
+    private func rect(_ row: Int) -> CGRect { CGRect(x: 12, y: 52+CGFloat(row)*70, width: bounds.width-24, height: 62) }
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .group }
+    override func accessibilityLabel() -> String? { "Snap groups" }
+    override func accessibilityChildren() -> [Any]? {
+        if !subviews.isEmpty { return subviews }
+        return (0..<rows).compactMap { row in
+            guard groups.indices.contains(first+row) else { return nil }
+            let group = groups[first+row]
+            return accessibleButton(in: self, rect: rect(row), title: "Restore \(group.name)") { [weak self] in self?.choose?(group) }
+        }
+    }
+    override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); installActions() }
+    private func installActions() {
+        guard window != nil else { return }
+        subviews.forEach { $0.removeFromSuperview() }
+        for row in 0..<rows where groups.indices.contains(first+row) {
+            let group = groups[first+row]
+            addSubview(OverlayActionButton(frame: rect(row), label: "Restore \(group.name)") { [weak self] in self?.choose?(group) })
+        }
+        addSubview(OverlayActionButton(frame: CGRect(x: bounds.width-50, y: 0, width: 50, height: 44), label: "Close snap groups") { [weak self] in self?.cancel?() })
+    }
+    override func keyDown(with event: NSEvent) {
+        guard !groups.isEmpty else { return }
+        switch event.keyCode {
+        case 53: cancel?()
+        case 36: choose?(groups[selected])
+        case 125, 124: selected = (selected+1) % groups.count
+        case 126, 123: selected = (selected+groups.count-1) % groups.count
+        case 48: selected = (selected+groups.count+(event.modifierFlags.contains(.shift) ? -1 : 1)) % groups.count
+        default:
+            if let text = event.charactersIgnoringModifiers, let number = Int(text), groups.indices.contains(number-1) { choose?(groups[number-1]) }
+        }
+        needsDisplay = true
+    }
+    override func mouseUp(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if point.y < 42, point.x > bounds.width-50 { cancel?(); return }
+        for row in 0..<rows where groups.indices.contains(first+row) && rect(row).contains(point) { choose?(groups[first+row]); return }
+    }
+    override func scrollWheel(with event: NSEvent) {
+        guard !groups.isEmpty, abs(event.scrollingDeltaY) > 2 else { return }
+        selected = min(groups.count-1, max(0, selected + (event.scrollingDeltaY < 0 ? 1 : -1))); needsDisplay = true
+    }
+    override func draw(_ dirtyRect: NSRect) {
+        rounded(bounds.insetBy(dx: 1, dy: 1), color: surface, radius: 16, stroke: .white.withAlphaComponent(0.18))
+        label("Snap groups", rect: CGRect(x: 20, y: 16, width: 240, height: 26), size: 20, weight: .semibold)
+        label("×", rect: CGRect(x: bounds.width-40, y: 10, width: 30, height: 32), size: 26, color: secondary)
+        for row in 0..<rows where groups.indices.contains(first+row) {
+            let index = first+row, group = groups[index], frame = rect(row)
+            rounded(frame, color: NSColor(calibratedWhite: 0.19, alpha: 1), radius: 8, stroke: selected == index ? accent : nil)
+            let miniature = CGRect(x: frame.minX+10, y: frame.minY+10, width: 70, height: 42)
+            for (zone, box) in group.layout.frames(in: miniature, gap: 2).enumerated() {
+                rounded(box, color: group.windows[zone] == nil ? .darkGray : accent.withAlphaComponent(0.75), radius: 3)
+            }
+            label("\(index+1)  \(group.name)", rect: CGRect(x: frame.minX+94, y: frame.minY+10, width: frame.width-108, height: 20), size: 13, weight: .medium)
+            label(group.windows.sorted { $0.key < $1.key }.map { $0.value.title }.joined(separator: " · "),
+                  rect: CGRect(x: frame.minX+94, y: frame.minY+34, width: frame.width-108, height: 18), size: 11, color: secondary)
+        }
+        label("↑ ↓ / Tab: choose · Return or number: restore · Esc: close",
+              rect: CGRect(x: 20, y: bounds.height-28, width: bounds.width-40, height: 18), size: 11, color: secondary)
+    }
+}
+
+final class GroupOverlay {
+    private var panel: OverlayPanel?
+    var isVisible: Bool { panel?.isVisible == true }
+    func show(groups: [SnapGroup], on display: DisplaySpace, choose: @escaping (SnapGroup) -> Void, cancel: @escaping () -> Void) {
+        hide()
+        let width = min(560, display.work.width-24), height = min(CGFloat(groups.count)*70+90, display.work.height-24)
+        let panel = OverlayPanel(frame: CGRect(x: display.work.midX-width/2, y: display.work.midY-height/2, width: width, height: height))
+        let view = GroupPickerView(frame: CGRect(x: 0, y: 0, width: width, height: height))
+        view.groups = groups; view.choose = choose; view.cancel = cancel
+        panel.contentView = view; panel.orderFrontRegardless(); panel.makeKey(); panel.makeFirstResponder(view)
+        self.panel = panel
+    }
+    func hide() { panel?.orderOut(nil); panel = nil }
 }
 
 final class ToastOverlay {

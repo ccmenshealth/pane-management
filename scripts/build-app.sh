@@ -11,6 +11,8 @@ fi
 mkdir -p "$task_app/Contents/MacOS" "$task_app/Contents/Resources"
 cp "$task_bin_dir/PaneManagement" "$task_app/Contents/MacOS/PaneManagement"
 cp Resources/Info.plist "$task_app/Contents/Info.plist"
+iconutil --convert icns --output "$task_app/Contents/Resources/AppIcon.icns" Icons/AppIcon.iconset
+cp Icons/Assets.xcassets/MenuBarIconTemplate.imageset/MenuBarIconTemplate.pdf "$task_app/Contents/Resources/MenuBarIconTemplate.pdf"
 codesign --force --sign - --identifier local.snapbridge.app "$task_app"
 codesign --verify --strict "$task_app"
 printf 'Built %s\n' "$task_app"

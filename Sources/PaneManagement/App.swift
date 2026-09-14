@@ -31,13 +31,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsItem.target = self; appMenu.addItem(settingsItem)
         appMenu.addItem(withTitle: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         NSApp.mainMenu = mainMenu
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "rectangle.split.2x1", accessibilityDescription: "Pane Management")
+        if let icon = AppArtwork.applicationIcon { NSApp.applicationIconImage = icon }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.button?.image = AppArtwork.menuBarIcon
+        item.button?.imagePosition = .imageOnly
         item.button?.toolTip = "Pane Management — window snapping"
         statusItem = item
         let menu = NSMenu(); menu.delegate = self; item.menu = menu
         rebuildMenu(menu)
         controller.start()
+        PreviewAccess.shared.check(userInitiated: false)
         if !preferences.accessibility || CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
@@ -52,6 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let layouts = NSMenuItem(title: "Choose layout   ⌃⌥Z", action: #selector(showLayouts), keyEquivalent: "")
         layouts.target = self; menu.addItem(layouts)
         if !controller.groups.isEmpty {
+            let chooser = NSMenuItem(title: "Browse snap groups…   ⌃⌥⇧G", action: #selector(showGroups), keyEquivalent: "")
+            chooser.target = self; menu.addItem(chooser)
             let parent = NSMenuItem(title: "Snap groups", action: nil, keyEquivalent: "")
             let groups = NSMenu()
             for group in controller.groups {
@@ -68,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     @objc private func toggle() { preferences.enabled.toggle() }
     @objc private func showLayouts() { DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self.controller.openLayouts() } }
+    @objc private func showGroups() { DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self.controller.openGroups() } }
     @objc private func restoreGroup(_ sender: NSMenuItem) {
         if let group = sender.representedObject as? SnapGroup { controller.restoreGroup(group) }
     }
@@ -79,20 +85,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, testAssist: { [weak self] in
                 self?.settingsWindow?.orderOut(nil)
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.2) { self?.controller.testAssistWithFixture() }
-            }))
+            }, testIntegration: { [weak self] in self?.controller.testFixtureIntegration() }))
             window.center(); settingsWindow = window
         }
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // Reopening an already-running menu-bar app must not cover an active
+        // chooser with Settings or steal its keyboard focus.
+        if controller.assistant.isVisible || controller.palette.isVisible || controller.groupPicker.isVisible { return false }
         showSettings(); return true
     }
+    func applicationWillTerminate(_ notification: Notification) { controller.stop() }
 }
 
 struct SettingsView: View {
     @ObservedObject var preferences: Preferences
+    @ObservedObject private var previewAccess = PreviewAccess.shared
     var testAssist: () -> Void
+    var testIntegration: () -> Void
     private func openPrivacy(_ pane: String) {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") { NSWorkspace.shared.open(url) }
     }
@@ -100,7 +112,10 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 HStack(spacing: 14) {
-                    Image(systemName: "rectangle.split.2x1.fill").font(.system(size: 35)).foregroundStyle(.blue)
+                    if let icon = AppArtwork.applicationIcon {
+                        Image(nsImage: icon).resizable().interpolation(.high).frame(width: 54, height: 54)
+                            .accessibilityHidden(true)
+                    }
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Snap. Pick. Keep going.").font(.system(size: 25, weight: .semibold))
                         Text("Windows-style snapping, with the other half included.").foregroundStyle(.secondary)
@@ -108,7 +123,13 @@ struct SettingsView: View {
                 }
                 Text(preferences.status).font(.callout).foregroundStyle(preferences.accessibility ? Color.green : Color.orange)
                 if NSRunningApplication.runningApplications(withBundleIdentifier: "local.snapbridge.testwindows").isEmpty == false {
-                    Button("Test Snap Assist with disposable windows", action: testAssist)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button("Test Snap Assist with disposable windows", action: testAssist)
+                        Button("Run live fixture checks", action: testIntegration)
+                        Text(preferences.fixtureCheckStatus).font(.caption).textSelection(.enabled)
+                        Text("Moves only the disposable test windows, then restores their starting frames. Clears their test groups. Stop using the mouse until the checks finish; a new gesture cancels them.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }.disabled(preferences.fixtureChecksRunning)
                 }
                 GroupBox {
                     VStack(alignment: .leading, spacing: 14) {
@@ -118,9 +139,26 @@ struct SettingsView: View {
                             openPrivacy("Privacy_Accessibility")
                         }
                         Divider()
-                        permissionRow("Preview your open windows", detail: "Optional. Without it, the picker uses app icons and window titles.", granted: preferences.capture, button: "Enable Previews") {
-                            _ = CGRequestScreenCaptureAccess()
-                            openPrivacy("Privacy_ScreenCapture")
+                        VStack(alignment: .leading, spacing: 10) {
+                            permissionRow("Preview your open windows", detail: previewAccess.message,
+                                          granted: previewAccess.isAvailable,
+                                          button: previewAccess.isChecking ? "Checking…" : (previewAccess.needsRecovery ? "Check Again" : "Enable Previews")) {
+                                previewAccess.check(userInitiated: true)
+                            }.disabled(previewAccess.isChecking)
+                            if previewAccess.needsRecovery {
+                                Text("Current app: \(Bundle.main.bundlePath)")
+                                    .font(.caption).textSelection(.enabled)
+                                HStack {
+                                    Button("Open Screen Recording Settings") { openPrivacy("Privacy_ScreenCapture") }
+                                    Button("Show App in Finder") { NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL]) }
+                                }
+                                Button("Quit Pane Management") {
+                                    NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+                                    NSApp.terminate(nil)
+                                }
+                                Text("Quitting clears session-only snap groups. Reopen the selected app in Finder afterward.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     }.padding(8)
                 }
@@ -137,20 +175,24 @@ struct SettingsView: View {
                         Toggle("Enable snapping", isOn: $preferences.enabled)
                         Toggle("After snapping, ask what fills the remaining space", isOn: $preferences.assist)
                         Toggle("Show layouts when hovering over the green button", isOn: $preferences.hover)
-                        Toggle("Restore the original size after dragging a window away", isOn: $preferences.restore)
+                        Toggle("Show the layout bar when dragging to the top", isOn: $preferences.topBar)
+                        Toggle("Snap near an edge without touching it", isOn: $preferences.nearEdge)
+                        Toggle("Restore original size when dragging a window away", isOn: $preferences.restore)
                         Toggle("Offer windows from this monitor only", isOn: $preferences.sameDisplay)
-                        Toggle("Show a shared resize handle for snap groups", isOn: $preferences.linkedResize)
+                        Toggle("Resize adjoining group windows together", isOn: $preferences.linkedResize)
                     }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Use it").font(.headline)
-                    Text("Drag to either side or a corner, then pick another window. Drag toward the top center for layouts. In a group, hover over a shared edge and drag the blue handle.")
+                    Text("Drag to either side or a corner, then pick another window. Hold Control–Option while choosing positions with arrows; release to place. Resize a group using a shared window edge or the blue handle. Original size returns during recognized blank-title-bar drags, with an after-release fallback for other title bars.")
                         .font(.callout).fixedSize(horizontal: false, vertical: true)
                     Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
                         shortcut("⌃⌥ + arrows", "Snap, maximize, restore, or minimize")
                         shortcut("⌃⌥Z", "Choose a layout")
                         shortcut("⌃⌥⇧ + ← / →", "Move to another monitor")
                         shortcut("⌃⌥G", "Bring back the latest snap group")
+                        shortcut("⌃⌥⇧G", "Browse and recall snap groups")
+                        shortcut("⌃⌥⇧↑", "Fill height, keeping the window’s width")
                         shortcut("Esc", "Dismiss the picker or cancel a snap preview")
                     }.font(.callout)
                 }
