@@ -1,0 +1,179 @@
+import AppKit
+import SwiftUI
+import ApplicationServices
+
+@main
+enum PaneManagementApp {
+    static func main() {
+        let app = NSApplication.shared
+        let delegate = AppDelegate()
+        app.delegate = delegate
+        app.setActivationPolicy(.accessory)
+        withExtendedLifetime(delegate) { app.run() }
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    let preferences = Preferences()
+    lazy var controller = SnapController(preferences: preferences)
+    private var statusItem: NSStatusItem?
+    private var settingsWindow: NSWindow?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let identifier = Bundle.main.bundleIdentifier ?? "local.snapbridge.app"
+        if NSRunningApplication.runningApplications(withBundleIdentifier: identifier).contains(where: { $0.processIdentifier != getpid() }) {
+            NSApp.terminate(nil); return
+        }
+        let mainMenu = NSMenu()
+        let appItem = NSMenuItem(); mainMenu.addItem(appItem)
+        let appMenu = NSMenu(); appItem.submenu = appMenu
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        settingsItem.target = self; appMenu.addItem(settingsItem)
+        appMenu.addItem(withTitle: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        NSApp.mainMenu = mainMenu
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.button?.image = NSImage(systemSymbolName: "rectangle.split.2x1", accessibilityDescription: "Pane Management")
+        item.button?.toolTip = "Pane Management — window snapping"
+        statusItem = item
+        let menu = NSMenu(); menu.delegate = self; item.menu = menu
+        rebuildMenu(menu)
+        controller.start()
+        if !preferences.accessibility || CommandLine.arguments.contains("--settings") { showSettings() }
+    }
+
+    func menuWillOpen(_ menu: NSMenu) { rebuildMenu(menu) }
+    private func rebuildMenu(_ menu: NSMenu) {
+        menu.removeAllItems()
+        let title = NSMenuItem(title: "Pane Management", action: nil, keyEquivalent: ""); title.isEnabled = false
+        menu.addItem(title)
+        let enabled = NSMenuItem(title: preferences.enabled ? "Pause snapping" : "Resume snapping", action: #selector(toggle), keyEquivalent: "")
+        enabled.target = self; menu.addItem(enabled)
+        menu.addItem(.separator())
+        let layouts = NSMenuItem(title: "Choose layout   ⌃⌥Z", action: #selector(showLayouts), keyEquivalent: "")
+        layouts.target = self; menu.addItem(layouts)
+        if !controller.groups.isEmpty {
+            let parent = NSMenuItem(title: "Snap groups", action: nil, keyEquivalent: "")
+            let groups = NSMenu()
+            for group in controller.groups {
+                let item = NSMenuItem(title: group.name, action: #selector(restoreGroup(_:)), keyEquivalent: "")
+                item.representedObject = group; item.target = self; groups.addItem(item)
+            }
+            parent.submenu = groups; menu.addItem(parent)
+        }
+        menu.addItem(.separator())
+        let settings = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        settings.target = self; menu.addItem(settings)
+        let quit = NSMenuItem(title: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(quit)
+    }
+    @objc private func toggle() { preferences.enabled.toggle() }
+    @objc private func showLayouts() { DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self.controller.openLayouts() } }
+    @objc private func restoreGroup(_ sender: NSMenuItem) {
+        if let group = sender.representedObject as? SnapGroup { controller.restoreGroup(group) }
+    }
+    @objc func showSettings() {
+        if settingsWindow == nil {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 700),
+                                  styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+            window.title = "Pane Management"; window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, testAssist: { [weak self] in
+                self?.settingsWindow?.orderOut(nil)
+                DispatchQueue.main.asyncAfter(deadline: .now()+0.2) { self?.controller.testAssistWithFixture() }
+            }))
+            window.center(); settingsWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindow?.makeKeyAndOrderFront(nil)
+    }
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSettings(); return true
+    }
+}
+
+struct SettingsView: View {
+    @ObservedObject var preferences: Preferences
+    var testAssist: () -> Void
+    private func openPrivacy(_ pane: String) {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") { NSWorkspace.shared.open(url) }
+    }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                HStack(spacing: 14) {
+                    Image(systemName: "rectangle.split.2x1.fill").font(.system(size: 35)).foregroundStyle(.blue)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Snap. Pick. Keep going.").font(.system(size: 25, weight: .semibold))
+                        Text("Windows-style snapping, with the other half included.").foregroundStyle(.secondary)
+                    }
+                }
+                Text(preferences.status).font(.callout).foregroundStyle(preferences.accessibility ? Color.green : Color.orange)
+                if NSRunningApplication.runningApplications(withBundleIdentifier: "local.snapbridge.testwindows").isEmpty == false {
+                    Button("Test Snap Assist with disposable windows", action: testAssist)
+                }
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 14) {
+                        permissionRow("Move and resize windows", detail: "Accessibility access is required.", granted: preferences.accessibility, button: "Enable Accessibility") {
+                            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+                            _ = AXIsProcessTrustedWithOptions(options)
+                            openPrivacy("Privacy_Accessibility")
+                        }
+                        Divider()
+                        permissionRow("Preview your open windows", detail: "Optional. Without it, the picker uses app icons and window titles.", granted: preferences.capture, button: "Enable Previews") {
+                            _ = CGRequestScreenCaptureAccess()
+                            openPrivacy("Privacy_ScreenCapture")
+                        }
+                    }.padding(8)
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Make Pane Management your window snapper").font(.headline)
+                    Text("In macOS Desktop & Dock → Windows, turn off “Drag windows to screen edges to tile”, “Drag windows to menu bar to fill screen”, and “Drag windows to top of screen to enter Mission Control” if shown. This prevents competing drag actions.")
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Button("Open Desktop & Dock settings") {
+                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Desktop-Settings.extension")!)
+                    }
+                }
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle("Enable snapping", isOn: $preferences.enabled)
+                        Toggle("After snapping, ask what fills the remaining space", isOn: $preferences.assist)
+                        Toggle("Show layouts when hovering over the green button", isOn: $preferences.hover)
+                        Toggle("Restore the original size after dragging a window away", isOn: $preferences.restore)
+                        Toggle("Offer windows from this monitor only", isOn: $preferences.sameDisplay)
+                        Toggle("Show a shared resize handle for snap groups", isOn: $preferences.linkedResize)
+                    }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Use it").font(.headline)
+                    Text("Drag to either side or a corner, then pick another window. Drag toward the top center for layouts. In a group, hover over a shared edge and drag the blue handle.")
+                        .font(.callout).fixedSize(horizontal: false, vertical: true)
+                    Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
+                        shortcut("⌃⌥ + arrows", "Snap, maximize, restore, or minimize")
+                        shortcut("⌃⌥Z", "Choose a layout")
+                        shortcut("⌃⌥⇧ + ← / →", "Move to another monitor")
+                        shortcut("⌃⌥G", "Bring back the latest snap group")
+                        shortcut("Esc", "Dismiss the picker or cancel a snap preview")
+                    }.font(.callout)
+                }
+                Text("Local prototype · macOS 14+ · No network connections\nWindow previews stay in memory and are cleared when the picker closes. Snap groups last until Pane Management quits. Full-screen Spaces and some app-specific window limits aren’t supported.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }.padding(26)
+        }.frame(width: 580, height: 700)
+    }
+    private func permissionRow(_ title: String, detail: String, granted: Bool, button: String, action: @escaping () -> Void) -> some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(detail).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            if granted { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title2) }
+            else { Button(button, action: action) }
+        }
+    }
+    private func shortcut(_ keys: String, _ description: String) -> some View {
+        GridRow {
+            Text(keys).font(.system(.callout, design: .monospaced)).foregroundStyle(.blue)
+            Text(description).foregroundStyle(.secondary)
+        }
+    }
+}

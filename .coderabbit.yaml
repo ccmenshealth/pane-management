@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Automatic CodeRabbit activity is intentionally disabled for this repository.
+# Manual @coderabbitai commands remain possible if its GitHub App has access.
+reviews:
+  high_level_summary: false
+  poem: false
+  review_status: false
+  auto_review:
+    enabled: false
+    auto_incremental_review: false
+    drafts: false
+    labels: []
+    description_keyword: ""
+chat:
+  auto_reply: false
+issue_enrichment:
+  auto_enrich:
+    enabled: false
+  planning:
+    enabled: false
+    auto_planning:
+      enabled: false
+      labels: []
+  labeling:
+    auto_apply_labels: false
