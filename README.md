@@ -25,7 +25,8 @@ If upgrading from SnapBridge, quit the old app before opening Pane Management. T
 1. Open Pane Management and use **Enable Accessibility**. In System Settings, grant the app access to move and resize windows.
 2. Optionally use **Enable Previews** to check ScreenCaptureKit access and, if needed, allow Screen Recording. Without it, Snap Assist still works with app icons and window titles. The button reports the actual API result instead of always opening Settings. If macOS denies the running build, **Check Again**, the current bundle path, Settings/Finder links, and a quit action appear. If the permission switch is already on, quit and reopen the selected app; after a rebuild, a stale entry may need removal and re-adding. Quitting clears session-only groups.
 3. In **Desktop & Dock → Windows**, turn off native drag-to-edge tiling, drag-to-menu-bar filling, Option-drag tiling, and drag-to-top Mission Control when those switches are present. Pause other window managers while testing. Pane Management does not change those settings automatically.
-4. Close Settings. The two-pane icon in the menu bar offers settings, pause/resume, snap groups, and quit.
+4. To start automatically after signing in, add the built app under **System Settings → General → Login Items & Extensions → Open at Login**. Keep the bundle at a consistent path and avoid starting another snapper alongside it. This is a per-Mac setting, not enabled automatically for other users.
+5. Close Settings. The two-pane icon in the menu bar offers settings, pause/resume, snap groups, and quit.
 
 ## Controls
 
@@ -66,7 +67,7 @@ Keyboard placement previews are cancellable with Escape before release. Opposite
 | Snap groups | In-memory menu/hotkey recall and an app-owned visual chooser; verified placement, including unminimizing members; no native Dock/Mission Control/Command–Tab integration |
 | Multiple monitors | Per-monitor work area, picker placement, transfer shortcuts; advanced hot-plug restoration is not implemented |
 | Full-screen Spaces | Excluded; exit native full screen to use normal desktop snapping |
-| Apps with minimum sizes / denied AX actions | Verify placement and revert a failed snap; does not override app constraints |
+| Apps with minimum sizes / denied AX actions | Verify and revert failed placement; show the observed/requested sizes and offer one explicit wider two-column retry when space permits; does not override app constraints |
 | Restore groups after app restart / reopening documents | Not implemented |
 
 The group chooser is Pane Management’s own overlay, not an extension of the native Dock or app switcher. Groups remain session-only. Full Windows shell parity is not claimed.
@@ -74,6 +75,8 @@ The group chooser is Pane Management’s own overlay, not an extension of the na
 Drag ownership is deliberately conservative: a recent blank-title-bar hit test, an already focused snapped window, an unmodified single click, and actual cursor movement are required. No AX calls happen inside the event-tap callback. Buttons, document icons, tabs, double clicks, and unrecognized title bars stay native. If the event tap is unavailable, ordinary snapping and after-release restoration still work. Disable restore-on-drag in Settings to use only native drags.
 
 Native group resizing links a single internal edge only. Outer-edge and corner resizing are left native. A window’s minimum size cannot be overridden: a refused group change rolls back the group, with an explicit warning if restoration also fails. Starting a new gesture cancels outstanding writes instead of moving windows back underneath the new gesture.
+
+If a Snap Assist candidate refuses a narrow zone, its card shows the size mismatch. For a two-column layout, **Try wider split** can use its observed width while leaving at least 320 points for the neighboring window. This is a proposed retry, not a claim that the observed width is the app's minimum. The neighboring window is resized only when that card is selected again; both frames must verify, or both are restored. A failed wider retry disables that candidate for the current zone to avoid repeating the same error. Starting a new snap resets these session-only hints. Stacked layouts and windows taller than the display do not get a wider retry.
 
 ## Architecture
 

@@ -85,6 +85,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, testAssist: { [weak self] in
                 self?.settingsWindow?.orderOut(nil)
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.2) { self?.controller.testAssistWithFixture() }
+            }, testOtherApps: { [weak self] in
+                self?.settingsWindow?.orderOut(nil)
+                DispatchQueue.main.asyncAfter(deadline: .now()+0.2) { self?.controller.testAssistWithFixture(includeOtherApps: true) }
             }, testIntegration: { [weak self] in self?.controller.testFixtureIntegration() }))
             window.center(); settingsWindow = window
         }
@@ -104,6 +107,7 @@ struct SettingsView: View {
     @ObservedObject var preferences: Preferences
     @ObservedObject private var previewAccess = PreviewAccess.shared
     var testAssist: () -> Void
+    var testOtherApps: () -> Void
     var testIntegration: () -> Void
     private func openPrivacy(_ pane: String) {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") { NSWorkspace.shared.open(url) }
@@ -125,6 +129,9 @@ struct SettingsView: View {
                 if NSRunningApplication.runningApplications(withBundleIdentifier: "local.snapbridge.testwindows").isEmpty == false {
                     VStack(alignment: .leading, spacing: 8) {
                         Button("Test Snap Assist with disposable windows", action: testAssist)
+                        Button("Test Snap Assist with other open apps", action: testOtherApps)
+                        Text("The other-app test snaps one disposable window on the primary display; it moves another app only when you select its card.")
+                            .font(.caption).foregroundStyle(.secondary)
                         Button("Run live fixture checks", action: testIntegration)
                         Text(preferences.fixtureCheckStatus).font(.caption).textSelection(.enabled)
                         Text("Moves only the disposable test windows, then restores their starting frames. Clears their test groups. Stop using the mouse until the checks finish; a new gesture cancels them.")

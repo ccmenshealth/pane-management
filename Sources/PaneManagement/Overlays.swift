@@ -228,6 +228,11 @@ final class LayoutOverlay {
     func hide() { panel?.orderOut(nil); panel = nil; view = nil }
 }
 
+struct AssistCardFeedback {
+    let detail: String
+    let actionLabel: String?
+}
+
 final class AssistView: NSView {
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
@@ -236,6 +241,7 @@ final class AssistView: NSView {
     var cancel: (() -> Void)?
     var skip: (() -> Void)?
     var subtitle = ""
+    var feedback: [UUID: AssistCardFeedback] = [:] { didSet { installActions(); needsDisplay = true } }
     var selected = 0
     var page = 0 { didSet { installActions() } }
     override func isAccessibilityElement() -> Bool { true }
@@ -246,7 +252,9 @@ final class AssistView: NSView {
         var children: [NSAccessibilityElement] = []
         for index in 0..<perPage where windows.indices.contains(page * perPage + index) {
             let window = windows[page * perPage + index]
-            children.append(accessibleButton(in: self, rect: cardRect(index), title: "\(window.appName): \(window.title)") { [weak self] in self?.choose?(window) })
+            let button = accessibleButton(in: self, rect: cardRect(index), title: cardLabel(window)) { [weak self] in self?.activate(window) }
+            button.setAccessibilityEnabled(canChoose(window))
+            children.append(button)
         }
         children.append(accessibleButton(in: self, rect: CGRect(x: 15, y: bounds.height-43, width: 80, height: 35), title: "Skip zone") { [weak self] in self?.skip?() })
         children.append(accessibleButton(in: self, rect: CGRect(x: bounds.width-50, y: 10, width: 40, height: 35), title: "Dismiss Snap Assist") { [weak self] in self?.cancel?() })
@@ -263,7 +271,9 @@ final class AssistView: NSView {
         subviews.forEach { $0.removeFromSuperview() }
         for index in 0..<perPage where windows.indices.contains(page*perPage+index) {
             let candidate = windows[page*perPage+index]
-            addSubview(OverlayActionButton(frame: cardRect(index), label: "\(candidate.appName): \(candidate.title)") { [weak self] in self?.choose?(candidate) })
+            let button = OverlayActionButton(frame: cardRect(index), label: cardLabel(candidate)) { [weak self] in self?.activate(candidate) }
+            button.isEnabled = canChoose(candidate)
+            addSubview(button)
         }
         addSubview(OverlayActionButton(frame: CGRect(x: 15, y: bounds.height-43, width: 80, height: 35), label: "Skip zone") { [weak self] in self?.skip?() })
         addSubview(OverlayActionButton(frame: CGRect(x: bounds.width-50, y: 10, width: 40, height: 35), label: "Dismiss Snap Assist") { [weak self] in self?.cancel?() })
@@ -273,6 +283,17 @@ final class AssistView: NSView {
                 self.page = (self.page+1) % self.pageCount; self.selected = self.page*self.perPage; self.needsDisplay = true
             })
         }
+    }
+    private func canChoose(_ candidate: ManagedWindow) -> Bool {
+        feedback[candidate.id].map { $0.actionLabel != nil } ?? true
+    }
+    private func activate(_ candidate: ManagedWindow) {
+        if canChoose(candidate) { choose?(candidate) }
+    }
+    private func cardLabel(_ candidate: ManagedWindow) -> String {
+        let base = "\(candidate.appName): \(candidate.title)"
+        guard let issue = feedback[candidate.id] else { return base }
+        return "\(base). \(issue.detail). \(issue.actionLabel ?? "Unavailable for this zone; choose another window")"
     }
     var columns: Int { bounds.width > 650 ? 3 : (bounds.width > 370 ? 2 : 1) }
     var rows: Int { max(1, min(3, Int((bounds.height - 150) / 160))) }
@@ -294,7 +315,7 @@ final class AssistView: NSView {
             return
         }
         for index in 0..<perPage where page * perPage + index < windows.count && cardRect(index).contains(point) {
-            choose?(windows[page * perPage + index]); return
+            activate(windows[page * perPage + index]); return
         }
     }
     override func scrollWheel(with event: NSEvent) {
@@ -304,7 +325,7 @@ final class AssistView: NSView {
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 53: cancel?()
-        case 36: if windows.indices.contains(selected) { choose?(windows[selected]) }
+        case 36: if windows.indices.contains(selected) { activate(windows[selected]) }
         case 48: selected += event.modifierFlags.contains(.shift) ? -1 : 1
         case 123: selected -= 1
         case 124: selected += 1
@@ -327,7 +348,8 @@ final class AssistView: NSView {
             let window = windows[absolute], rect = cardRect(index)
             rounded(rect, color: NSColor(calibratedWhite: 0.19, alpha: 1), radius: 10,
                     stroke: absolute == selected ? accent : .white.withAlphaComponent(0.09))
-            let preview = CGRect(x: rect.minX + 8, y: rect.minY + 8, width: rect.width - 16, height: max(10, rect.height - 53))
+            let issue = feedback[window.id]
+            let preview = CGRect(x: rect.minX + 8, y: rect.minY + 8, width: rect.width - 16, height: max(10, rect.height - (issue == nil ? 53 : 75)))
             if let image = window.thumbnail {
                 let scale = min(preview.width / max(1, image.size.width), preview.height / max(1, image.size.height))
                 let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
@@ -338,8 +360,14 @@ final class AssistView: NSView {
                 icon.draw(in: CGRect(x: preview.midX - side/2, y: preview.midY - side/2, width: side, height: side),
                           from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
             }
-            label(window.title, rect: CGRect(x: rect.minX + 10, y: rect.maxY - 38, width: rect.width - 20, height: 17), size: 12, weight: .medium)
-            label(window.appName, rect: CGRect(x: rect.minX + 10, y: rect.maxY - 20, width: rect.width - 20, height: 16), size: 10, color: secondary)
+            if let issue {
+                label(window.appName, rect: CGRect(x: rect.minX+10, y: rect.maxY-60, width: rect.width-20, height: 17), size: 12, weight: .medium)
+                label(issue.detail, rect: CGRect(x: rect.minX+10, y: rect.maxY-42, width: rect.width-20, height: 16), size: 10, color: .systemOrange)
+                label(issue.actionLabel ?? "Choose another window", rect: CGRect(x: rect.minX+10, y: rect.maxY-23, width: rect.width-20, height: 17), size: 11, color: issue.actionLabel == nil ? secondary : accent)
+            } else {
+                label(window.title, rect: CGRect(x: rect.minX + 10, y: rect.maxY - 38, width: rect.width - 20, height: 17), size: 12, weight: .medium)
+                label(window.appName, rect: CGRect(x: rect.minX + 10, y: rect.maxY - 20, width: rect.width - 20, height: 16), size: 10, color: secondary)
+            }
         }
         label("Skip zone", rect: CGRect(x: 20, y: bounds.height - 31, width: 80, height: 18), size: 12, color: accent)
         label("Esc to dismiss", rect: CGRect(x: 112, y: bounds.height - 31, width: bounds.width - 190, height: 18), size: 11, color: secondary)

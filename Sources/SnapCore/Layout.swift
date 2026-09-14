@@ -150,6 +150,33 @@ public struct SharedBoundary: Equatable {
 }
 
 extension SnapLayout {
+    /// An observed size is not a proven minimum. Offer one explicit wider retry
+    /// for a two-column layout, then verify both windows transactionally.
+    /// Never squeeze the neighbor below a useful width or widen a stacked grid.
+    public func widerSplit(for zone: Int, observed: CGSize, in work: CGRect,
+                           minimumNeighborWidth: CGFloat = 320) -> SnapLayout? {
+        guard zones.count == 2, zones.indices.contains(zone),
+              WindowPlacement.valid(work), observed.width.isFinite, observed.height.isFinite,
+              observed.width >= 50, observed.height >= 50, observed.height <= work.height + 3,
+              minimumNeighborWidth.isFinite, minimumNeighborWidth >= 50 else { return nil }
+        let ordered = zones.sorted { $0.minX < $1.minX }
+        guard ordered.allSatisfy({ abs($0.minY) < 0.001 && abs($0.height - 1) < 0.001 }),
+              abs(ordered[0].minX) < 0.001, abs(ordered[1].maxX - 1) < 0.001,
+              abs(ordered[0].maxX - ordered[1].minX) < 0.001 else { return nil }
+        let frames = frames(in: work)
+        let width = observed.width.rounded(.up)
+        guard width > frames[zone].width + 3,
+              width <= work.width - minimumNeighborWidth else { return nil }
+        var result = self
+        let onLeft = abs(zones[zone].minX) < 0.001
+        let fraction = width / work.width
+        result.zones[zone] = CGRect(x: onLeft ? 0 : 1-fraction, y: 0, width: fraction, height: 1)
+        result.zones[1-zone] = CGRect(x: onLeft ? fraction : 0, y: 0, width: 1-fraction, height: 1)
+        let proposed = result.frames(in: work)
+        guard proposed[zone].width >= width, proposed[1-zone].width >= minimumNeighborWidth else { return nil }
+        return SnapLayout("\(id).wider", "Adjusted split", result.zones)
+    }
+
     /// Recognize a native resize of exactly one internal edge. Moving the window,
     /// resizing an outside edge, or changing two edges must not move its neighbors.
     public func nativeResize(zone: Int, from old: CGRect, to new: CGRect, work: CGRect) -> (SharedBoundary, SnapLayout)? {

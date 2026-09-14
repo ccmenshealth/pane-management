@@ -2,6 +2,20 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## Wider-split recovery (build 4)
+
+A fresh live NordVPN failure reported AX resize success but an unchanged 900 × 702 frame against a requested 735 × 923 zone. This proves the requested placement did not occur; it does not prove a 900-point minimum or that a wider request will succeed.
+
+The recovery update builds and passes **51 automated scenarios, zero failures**. Six new scenarios cover left/right and reversed zone assignments, negative-origin/rounded geometry, insufficient neighbor space or height, unsupported/invalid layouts, successful placement with a simulated width constraint, and verified restoration when the neighbor refuses. Existing cancellation/rollback scenarios still pass. Packaging and strict ad-hoc signature verification succeed. No changes were made to VPN settings, network behavior, credentials, or permissions for other apps.
+
+The picker now shows per-card failure details and one explicit wider two-column retry, where feasible. Repeated unsuccessful cards become unavailable for that zone; hints reset with the session. A developer-only entry point, visible while the disposable fixture is running, can start Assist with a disposable first window and permit selecting another open app for cross-app validation.
+
+After the user approved Touch ID, only Pane Management's stale Accessibility and Screen Recording entries were replaced. The running build reports **Running in the menu bar** and **ScreenCaptureKit access verified**. Removing those registrations did not delete the app or source files, and both permissions were restored for the same bundle path.
+
+**The new recovery action passed a live NordVPN test.** The other-app test first snapped the disposable Blue window on the primary display. Pressing the actual NordVPN card reproduced the refused 735 × 923 placement; the card visibly changed to “Stayed 900×702; zone 735×923” and “Try wider split (900 pt).” Pressing that action completed the verified transaction, dismissed Assist, and reported “Snap group ready · Adjusted split · 900 pt for NordVPN.” Independent fixture UI inspection confirmed Blue at Cocoa `(0, 0, 570, 923)`, and NordVPN's window was visually confirmed in its taller, wider zone. Its connection was not changed. This establishes a working 900-point retry for this NordVPN window, not a universal minimum-size measurement or compatibility guarantee for every app. The successful test pair was left visible.
+
+All 51 automated checks were rerun successfully. Wider-retry refusal and rollback are covered by simulated tests; an actual second app refusing the narrower neighbor slot has not been tested in this live pass. The previous 11-check live fixture suite below belongs to build 3, not this new executable. Open at Login was verified to list the current Pane Management bundle after packaging; no reboot was performed.
+
 ## Additional acceptance and repository preparation
 
 The 45 automated scenarios were rerun with zero failures. Both packaged app signatures still pass strict verification. Only the disposable fixture was rebuilt in this follow-up; the running Pane Management executable and its approved permissions were not replaced.

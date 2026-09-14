@@ -74,8 +74,102 @@ final class SnapCoreTests {
         await suite.testStateConfirmationWaitsForStableChange()
         await suite.testStateConfirmationRejectsUnknownAndRefusal()
         await suite.testStateConfirmationCancelsWithoutAnotherRead()
-        print("45 scenarios completed; \(failures) failures")
+        suite.testWiderSplitPreservesLeftAndRightAssignments()
+        suite.testWiderSplitCoversNegativeOriginDisplay()
+        suite.testWiderSplitRejectsInsufficientRoomAndHeight()
+        suite.testWiderSplitRejectsStackedAndInvalidGeometry()
+        await suite.testWiderSplitTransactionAcceptsConstrainedCandidate()
+        await suite.testWiderSplitTransactionRestoresBothWhenNeighborRefuses()
+        print("51 scenarios completed; \(failures) failures")
         if failures > 0 { exit(1) }
+    }
+
+    func testWiderSplitPreservesLeftAndRightAssignments() {
+        let work = CGRect(x: 0, y: 33, width: 1470, height: 923)
+        for zone in 0...1 {
+            let layout = SnapLayout.halves.widerSplit(for: zone, observed: CGSize(width: 900, height: 702), in: work)!
+            let frames = layout.frames(in: work)
+            XCTAssertEqual(frames[zone].width, 900)
+            XCTAssertEqual(frames[1-zone].width, 570)
+            XCTAssertEqual(frames[0].maxX, frames[1].minX)
+            XCTAssertEqual(frames[0].minX, work.minX)
+            XCTAssertEqual(frames[1].maxX, work.maxX)
+            XCTAssertEqual(frames[zone].height, work.height)
+        }
+        // Refusing height/position without a wider observed frame is not evidence
+        // for a wider retry, nor is an ordinary current width a proven minimum.
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: CGSize(width: 735, height: 702), in: work))
+    }
+
+    func testWiderSplitCoversNegativeOriginDisplay() {
+        let work = CGRect(x: -1919, y: -307, width: 1919, height: 1047)
+        let layout = SnapLayout.halves.widerSplit(for: 1, observed: CGSize(width: 1100.2, height: 702), in: work)!
+        let frames = layout.frames(in: work)
+        XCTAssertEqual(frames[1].width, 1101)
+        XCTAssertEqual(frames[0].width, 818)
+        XCTAssertEqual(frames[0].maxX, frames[1].minX)
+        XCTAssertEqual(frames[1].maxX, work.maxX)
+        XCTAssertEqual(frames[1].minY, work.minY)
+        let reversed = SnapLayout("reversed", "Reversed", SnapLayout.halves.zones.reversed())
+        let retry = reversed.widerSplit(for: 0, observed: CGSize(width: 1101, height: 702), in: work)!
+        XCTAssertEqual(retry.frames(in: work)[0], frames[1])
+    }
+
+    func testWiderSplitRejectsInsufficientRoomAndHeight() {
+        let work = CGRect(x: 0, y: 33, width: 1470, height: 923)
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: CGSize(width: 1200, height: 702), in: work))
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: CGSize(width: 900, height: 1000), in: work))
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: CGSize(width: 900, height: 702), in: CGRect(x: 0, y: 0, width: 1200, height: 900)))
+    }
+
+    func testWiderSplitRejectsStackedAndInvalidGeometry() {
+        let work = CGRect(x: 0, y: 33, width: 1470, height: 923)
+        let size = CGSize(width: 900, height: 702)
+        for layout in [SnapLayout.thirds, .leftStack, .quarters, .full,
+                       SnapLayout("rows", "Rows", [CGRect(x: 0, y: 0, width: 1, height: 0.5), CGRect(x: 0, y: 0.5, width: 1, height: 0.5)])] {
+            XCTAssertNil(layout.widerSplit(for: 0, observed: size, in: work))
+        }
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: -1, observed: size, in: work))
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 2, observed: size, in: work))
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: CGSize(width: CGFloat.nan, height: 702), in: work))
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: CGSize(width: 900, height: CGFloat.infinity), in: work))
+        XCTAssertNil(SnapLayout.halves.widerSplit(for: 0, observed: size, in: .zero))
+    }
+
+    @MainActor func testWiderSplitTransactionAcceptsConstrainedCandidate() async {
+        let work = CGRect(x: 0, y: 33, width: 1470, height: 923)
+        let original = [0: CGRect(x: 285, y: 89, width: 900, height: 702), 1: SnapLayout.halves.frames(in: work)[1]]
+        var frames = original
+        let normal = await WindowPlacement.staged(at: SnapLayout.halves.frames(in: work)[0], read: { frames[0] },
+            resize: { frames[0]!.size = CGSize(width: max(900, $0.width), height: $0.height) }, move: { frames[0]!.origin = $0 },
+            cancelled: { false }, pause: { _ in })
+        XCTAssertEqual(normal, .failed)
+        let recovery = SnapLayout.halves.widerSplit(for: 0, observed: frames[0]!.size, in: work)!
+        let targets = Dictionary(uniqueKeysWithValues: recovery.frames(in: work).enumerated().map { ($0.offset, $0.element) })
+        let result = await WindowPlacement.stagedTransaction(targets: targets, originals: original, read: { frames[$0] },
+            place: { id, frame in
+                await WindowPlacement.staged(at: frame, read: { frames[id] },
+                    resize: { frames[id]!.size = CGSize(width: max(id == 0 ? 900 : 320, $0.width), height: $0.height) },
+                    move: { frames[id]!.origin = $0 }, cancelled: { false }, pause: { _ in })
+            }, cancelled: { false })
+        XCTAssertEqual(result, .placed)
+        XCTAssertEqual(frames, targets)
+    }
+
+    @MainActor func testWiderSplitTransactionRestoresBothWhenNeighborRefuses() async {
+        let work = CGRect(x: 0, y: 33, width: 1470, height: 923)
+        let original = [0: CGRect(x: 285, y: 89, width: 900, height: 702), 1: SnapLayout.halves.frames(in: work)[1]]
+        var frames = original
+        let recovery = SnapLayout.halves.widerSplit(for: 0, observed: original[0]!.size, in: work)!
+        let targets = Dictionary(uniqueKeysWithValues: recovery.frames(in: work).enumerated().map { ($0.offset, $0.element) })
+        let result = await WindowPlacement.stagedTransaction(targets: targets, originals: original, read: { frames[$0] },
+            place: { id, frame in
+                await WindowPlacement.staged(at: frame, read: { frames[id] },
+                    resize: { frames[id]!.size = CGSize(width: max(id == 0 ? 900 : 700, $0.width), height: $0.height) },
+                    move: { frames[id]!.origin = $0 }, cancelled: { false }, pause: { _ in })
+            }, cancelled: { false })
+        XCTAssertEqual(result, .rolledBack)
+        XCTAssertEqual(frames, original)
     }
 
     @MainActor func testStateConfirmationWaitsForStableChange() async {
