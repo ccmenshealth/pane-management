@@ -112,7 +112,9 @@ Desktop acceptance checks (require granting Accessibility, plus Screen Recording
 
 Automatic CodeRabbit reviews, incremental reviews, unprompted chat replies, and issue enrichment/planning are disabled in the root `.coderabbit.yaml`. Do not enable them or request CodeRabbit reviews for this project without the maintainer's approval.
 
-The YAML setting does not revoke GitHub App access or prevent explicit manual review commands. For complete exclusion, remove this repository from CodeRabbit's **selected repositories** in GitHub's installed-app settings. Do not uninstall CodeRabbit or change its access to unrelated repositories.
+The maintained `ccmenshealth/pane-management` repository is also excluded from CodeRabbit's installed-app **selected repositories**. The YAML stays in place as a fallback if installation settings change. Being public, the source can still be read by anyone; this exclusion prevents the installed app from being enabled for this repo, not public access to the code.
+
+For forks or other installations, YAML alone does not revoke GitHub App access or prevent explicit manual review commands. Exclude that repository from the app's selected repositories as well. Do not uninstall CodeRabbit or change its access to unrelated repositories.
 
 See [CodeRabbit's automatic-review controls](https://docs.coderabbit.ai/configuration/auto-review) for the distinction between automatic and manual reviews.
 
