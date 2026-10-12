@@ -1059,3 +1059,24 @@ Lead approved about 900–1,000 lines for the cohesive probe, negative fixtures,
 packager and inert failure checks; separating these would leave an incomplete
 acceptance workflow. External examples contradict themselves on local root-daemon
 acceptance; only the future real harmless drill can establish support.
+
+### Probe final review ledger — 2026-10-12
+
+PR14 reviewed/runtime pin `9458b946982589b0b25a5f8e9e26d755018ceff3`, base `37dad17`,
+cleared fresh independent read-only code/manual-security and lead code/security
+reviews; no actionable findings and worktree clean before/after. CI38305835875
+passed. P-R1 pending-Quit recovery and P-R2 explicit untrusted identity discovery
+are resolved; P-R2 actual pre-fix failure evidence retained. Current model
+inherited, exact metadata unavailable. CodeRabbit prohibited; literal security
+review unavailable, independent manual fallback used. Sibling audit and all
+local/red evidence are in VERIFICATION.md; final closure is Markdown only.
+
+Lead CUA verified unsigned missing-signature Check status content fits without
+scrolling and Quit exits; no service action was invoked. Preview process absent,
+installed build5 PID96007 remains. No certificate/signing/registration/installation
+or power action occurred. Next is user creation of the dedicated Pane Management
+Local Signing credential in Keychain Access Certificate Assistant, then separately
+approved signed staging and harmless service acceptance/removal drill. No trust
+change or paid membership is required by this planned experiment; whether macOS
+accepts its local signature is still unproven. No production local package or
+arming until that result is established.

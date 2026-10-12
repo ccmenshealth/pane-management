@@ -1,18 +1,29 @@
 # Pane Management — Current State
 
-## Bookmark — harmless local signing probe build (2026-10-12)
+## Bookmark — harmless local signing probe reviewed (2026-10-12)
 
-- Builder owns `codex/local-signing-probe`, isolated from reviewed auth pin
-  `d6742fa7b42c30ef40b9ea9dbbd8365b0024f943`. P1–P8 locked before code.
-- Inherited current model/effort metadata unavailable. No signing, certificate,
-  service registration, native launch, installation or power operation allowed.
-- Candidate: Swift114/0 debug/release, daemon149/0, client181/0, setup141/0;
-  staging11/0, shell/Python/plist/diff lint pass. Inert red67/114 Swift and14 Python
-  assertions; actual pre-P-R2 trust tests red. Evidence in VERIFICATION.md.
-- Next: fresh independent code/manual-security + lead review and CI; only then
-  separately authorized dedicated-certificate/native service acceptance drill.
-  Native positive acceptance remains unproven. P-R1 always-available probe Quit
-  and P-R2 unfiltered identity listing are resolved; production safeguards intact.
+- Draft [PR #14](https://github.com/ccmenshealth/pane-management/pull/14) runtime
+  and reviewed pin: `9458b946982589b0b25a5f8e9e26d755018ceff3`, based on auth docs closure
+  `37dad17`. This closure commit changes Markdown only; keep its head separate
+  from the runtime/review pin. All feature PRs remain unmerged and uninstalled.
+- Fresh independent read-only code/manual-security and lead code/security reviews
+  clear, no actionable findings; worktree clean before/after. CI `38305835875`
+  passed. Current model inherited; exact metadata unavailable. CodeRabbit
+  prohibited; literal security-review unavailable, independent manual fallback.
+- Swift114/0 debug/release, daemon149/0, client181/0, setup141/0; staging11/0
+  including28 failure positions; shell/Python/plist/diff checks passed. Inert red
+  67/114 Swift and14 Python assertions; actual pre-P-R2 trust cases failed.
+  Clean-source read-only preflight passed at the reviewed pin, signed:false.
+- Lead CUA launched only unsigned missing-identity preview, clicked Check status,
+  observed readable no-scroll content and actionable missing-certificate copy,
+  then Quit. Process absence confirmed; only installed build5 PID96007 remained.
+  No Register/Ping/Remove/Login Items, certificate, signing, helper, power or
+  installed-bundle operation occurred. Exact preview hash is in VERIFICATION.md.
+- Native local signing/SMAppService acceptance remains unproven. Next user handoff:
+  create dedicated **Pane Management Local Signing** credential in Keychain
+  Access Certificate Assistant. No paid account, unrelated certificate or trust
+  change. Then separately approved staging and harmless administrator-approved
+  registration/positive-negative/removal drill; production arming remains gated.
 
 ## Bookmark — local certificate authentication slice (2026-10-12)
 

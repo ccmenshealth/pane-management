@@ -29,12 +29,28 @@
   pin; success-before/after each is mandatory. Failure alone is inconclusive.
   External examples conflict on local SMAppService acceptance; actual native
   success remains unproven. Paid packager and original build5 remain untouched.
-- Unsigned missing-identity UI candidate only: `dist/SigningProbeUnsignedPreview.app`,
-  no embedded helper, not launched by builder. Native UI evidence pending lead.
-  Independent code/manual-security, lead final review and CI pending. Inherited
-  current model/effort metadata unavailable; CodeRabbit prohibited. No merge,
-  installation or arming. Next: review then separately approved dedicated
-  certificate and harmless registration/approval/positive-negative/removal drill.
+- Fresh independent read-only code/manual-security and lead code/security reviews
+  cleared runtime pin `9458b946982589b0b25a5f8e9e26d755018ceff3` against auth closure
+  `37dad17`; no actionable findings, worktree clean before/after. CI38305835875
+  passed at that pin. Actual read-only clean-source preflight also passed there,
+  signed:false, no identity lookup or native signing. This closure is Markdown
+  only; no builder builds were repeated for bookkeeping.
+- Lead CUA launched `dist/SigningProbeUnsignedPreview.app` (no embedded helper),
+  clicked only Check status, and observed the missing/invalid dedicated-certificate
+  explanation, readable buttons/content without scrolling, and available Quit.
+  Quit closed the app; CLI process absence confirmed, only build5 PID96007 remained.
+  No Register, Ping, Remove or Login Items was invoked. Preview executable SHA256:
+  `8d6f7d3265767933c0efa5bf9f62582a005de81474cd2188f7ae6ec3663e21e6`.
+- Native pending-operation Quit was not exercised: invoking the OS lifecycle was
+  outside this drill. Source policy leaves native termination unblocked and Quit
+  outside the disabled action groups; injected pending-state tests retain the
+  serialized mutation lane until completion. Do not infer OS cleanup from Quit.
+- Inherited current model/effort metadata unavailable; CodeRabbit prohibited.
+  Literal security-review unavailable; independent manual fallback used. No merge,
+  install or arming. User handoff is creation of dedicated **Pane Management Local
+  Signing** credential via Keychain Access Certificate Assistant; no paid account,
+  unrelated credential or trust changes. Signed staging/native administrator
+  acceptance and positive-before/after negative fixtures remain pending.
 
 ## Local certificate authentication — 2026-10-12
 
