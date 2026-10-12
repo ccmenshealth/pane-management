@@ -772,3 +772,67 @@ on uncertainty. Replace the unavailable adapter wholesale in the backend slice.
 No automatic resume is permitted. Do not add display-on assertions, brightness
 writes, or keyboard/trackpad interception. Closed-lid darkness and actual hardware
 behavior require the separately authorized physical drill.
+
+
+### B3b2 integration decisions U1–U8 (locked 2026-10-12)
+
+- U1: Replace the placeholder backend wholesale with a thin AlwaysOnSetup adapter
+  into AlwaysOnCore presentation types. App composes native client, setup ports,
+  coordinator and adapter. Core never imports Setup/Client/native code; GUI never
+  links AlwaysOnNative/Daemon. Preview remains entirely inert. Retain increasing
+  revision, state, remedy, lifecyclePending and quitSafe through the adapter.
+- U2: Controller consumes pushed observations and method completions through one
+  revision fence. Reserve local operation identity before awaits; an older return
+  cannot clear newer stop/quit or progress. Trust coordinator/client ownership:
+  ordinary refresh of this client's owned active session preserves it; startup
+  orphan recovery belongs to client, not unconditional UI deactivation. Never
+  auto-activate after wake/reconnect/restart/repair. Deactivate/quit during pending
+  activation records stop intent and queues stop; late active stays stopping until
+  settled. Do not cancel a call that can apply later.
+- U3: Only current fresh quitSafe and no unresolved foreground/lifecycle operation
+  permits termination. Wake/focus revalidation revokes stale safe snapshots before
+  suspension. A pending quit receives one actual settled decision; unresolved OS
+  register/unregister cannot be presumed complete. Pending activation with remedy
+  Deactivate remains actionable; do not blanket-disable lifecyclePending. Preserve
+  recovery warning until safe observation, and never dismiss it with close/Escape.
+- U4: All surfaces share the same presentation/action mapping. Off: Activate;
+  active/activation: Deactivate; fresh unavailable/setUp: Set Up; missing signing:
+  Check Again; approval: Check Again plus explicit Open Login Items in Settings;
+  notFound: Check Again plus repair explanation. Unknown: Retry deactivation plus
+  Repair setup in Settings; failed removal: retry deactivation plus Retry helper
+  removal in Settings. removalRequired is quiet/quit-safe when settled, offers
+  Finish helper removal in Settings, never Activate. Wait is disabled progress.
+  Warning primary invokes its displayed action, not a hardcoded deactivate.
+- U5: Settings is the sole actual helper-removal surface. Menu/Dock/warning repair
+  or finish-removal actions only open Pane Settings. Only explicit approval action
+  opens OS Login Items. Refresh/setup checks never automatically open either UI.
+  Keep existing snap controls, Dock/menu refresh callbacks and chooser exclusions.
+- U6: Wire one startup and coalescing app-focus/workspace-wake refresh driver,
+  maximum one in-flight plus one dirty follow-up. Reconcile nonactivating warning
+  separately. Preserve active 520x390 geometry, red triangle/white exclamation,
+  red border, centered panels per display, all-Spaces/fullscreen behavior and
+  no recurring focus steal. Render new setup/approval/removal states in the native
+  inert fixture; primary and secondary buttons must remain legible and usable.
+- U7: Fail-first checks cover old late-activation/stop/quit behavior; owned active
+  startup/wake/focus; backend orphan recovery; stale/equal revision and older
+  completions; usable pending stop; fresh quit decisions; refresh coalescing;
+  zero implicit registration/navigation; label/action correspondence; explicit
+  approval; Settings-only removal. Preserve prior suites; debug/release builds,
+  all regression executables, bash/plist/diff lint and CI. Native fixture evidence
+  is required; screenshots do not claim physical sleep/signed IPC or unobserved
+  cross-Space/VoiceOver/installed Dock acceptance. No stable-path packaging.
+- U8: One isolated builder followed by fresh read-only code/manual-security and
+  lead review. Current inherited model per user instruction. Aim ~800 lines;
+  report material overage. No merge/install/sign/register/unregister/actual power
+  mutation/root journal construction/arming. B3c signed staging follows after
+  code gates; missing identity and native acceptance remain external blockers.
+
+B3b1 review ledger: PR #9 head83598e7e8d8ce43ec1ce88d86037bcc755839dd1
+cleared by independent read-only delta and lead source/manual-security review;
+S-R3 fresh-proof quit safety and S-R4 removal continuity resolved. Reviewer clean
+before/after, no edits or execution. CI38296296320 green. Local suites
+60/34/176/114/355/118/166/122; retained pre-fix and inert evidence in VERIFICATION.
+Initial unchanged UI fixture CI failure was not reproduced locally; bounded
+observable-condition waits now pass local and final CI, without claiming its
+original cause was proven. Current model inherited; exact metadata unavailable.
+CodeRabbit prohibited; literal security tool unavailable, manual fallback used.

@@ -1,5 +1,17 @@
 # Pane Management — Current State
 
+## Bookmark — B3b2 integration planning (2026-10-12)
+
+- Isolated codex/always-on-integration fast-forwarded to reviewed setup PR #9
+  head83598e7. Independent delta plus lead code/manual-security clear; final
+  CI38296296320 green, reviewed worktree clean. S-R3/S-R4 resolved.
+- U1–U8 lock app/controller/menu/Dock/warning/Settings integration and inert
+  native preview. Next builder starts here; B3c signed staging follows.
+- Original build5 remains unchanged/running. No actual service/power/journal or
+  installed bundle changes. Missing Apple Developer account blocks positive
+  signed install; native acceptance and first arming remain separate gates.
+- No merge yet. Current inherited model; CodeRabbit prohibited.
+
 ## Bookmark — B3b1 setup candidate (2026-10-12)
 
 - `codex/always-on-setup` adds read-only native policy extraction and headless
