@@ -836,3 +836,24 @@ Initial unchanged UI fixture CI failure was not reproduced locally; bounded
 observable-condition waits now pass local and final CI, without claiming its
 original cause was proven. Current model inherited; exact metadata unavailable.
 CodeRabbit prohibited; literal security tool unavailable, manual fallback used.
+
+
+#### U9 — background heartbeat scheduling
+
+Apple documents App Nap timer/I/O throttling and user-initiated activities as an
+opt-out. The ten-second client heartbeat cannot rely on a thirty-second lease
+margin while hidden. Add an injected balanced activity owner to AlwaysOnClient,
+using only ProcessInfo.userInitiatedAllowingIdleSystemSleep in production.
+Exclude idleSystemSleepDisabled, idleDisplaySleepDisabled and latencyCritical;
+no global App Nap preferences or extra power assertions. Acquire for executing
+client work before suspension/native RPC; retain through owned token/heartbeat,
+stop/recovery/removal settlement. Transient unknown/loss must not end an activity
+while recovery is executing. Release at settled no-token state, including failed
+unknown, off and removalRequired; queued stale completions cannot release active
+work. Serialized lane ownership plus token retention is preferable to UI state
+heuristics. Balance on disposal/process death; OS scheduling remains best effort.
+Test fake begin/end lifecycle across activation/refresh/loss/late stop/removal/
+failed recovery and check production option flags. This scheduling correction is
+part of B3b2 integration, with separate red evidence; report its size if over target.
+Local SDK NSProcessInfo.h defines allowing-idle option by removing system-sleep
+flag, independently of display-sleep flag. No native activity need be held in tests.
