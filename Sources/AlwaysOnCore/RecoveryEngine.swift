@@ -73,7 +73,7 @@ public struct RecoveryGuards: Sendable {
 /// Cached telemetry only; unknown/failure must not be normalized to safe values.
 @MainActor public protocol RecoveryGuardSource: AnyObject { var snapshot: RecoveryGuards { get } }
 public enum RecoveryStatus: Equatable, Sendable {
-    case off, activating, active(RecoveryLease), stopping, recoveryRequired(String), conflict(String)
+    case checking, off, activating, active(RecoveryLease), stopping, recoveryRequired(String), conflict(String)
 }
 
 /// Pure service logic. The authenticated native boundary supplies ConsoleSession;
@@ -87,7 +87,7 @@ public enum RecoveryStatus: Equatable, Sendable {
     public init(journal: RecoveryJournal, power: RecoveryPower, clock: RecoveryClock, guards: RecoveryGuardSource) {
         self.journal = journal; self.power = power; self.clock = clock; self.guards = guards
     }
-    private var state: RecoveryStatus = .off
+    private var state: RecoveryStatus = .checking
     private var initialized = false
     private var corruptRecord = false
     private var owned: RecoveryRecord?
@@ -135,6 +135,9 @@ public enum RecoveryStatus: Equatable, Sendable {
     /// Returns true only for a clean unowned start, never after recovery work.
     private func initialize() async -> Bool {
         if initialized { return owned == nil && state == .off }
+        // Concurrent observers cannot reuse an old off result while ownership
+        // is unresolved, including unowned rechecks after an earlier off read.
+        state = .checking
         do {
             corruptRecord = false
             switch try journal.load() {

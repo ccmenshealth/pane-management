@@ -11,8 +11,8 @@ installed-app or live power change is included. Build 5 remains the installed
 baseline. Current inherited model used; exact model/effort metadata unavailable.
 
 Fail-first: the final `AlwaysOnEngineChecks` suite compiled with the inert engine
-and produced **144 assertions, 74 failures, exit 1**. The implemented engine
-passes **144 assertions, zero failures**. Negative refusal assertions that already
+and produced **176 assertions, 102 failures, exit 1**. The implemented engine
+passes **176 assertions, zero failures**. Negative refusal assertions that already
 pass on an inert engine are paired with activation/recovery success assertions.
 The ignored `.build/evidence/RecoveryEngine.inert.swift` and `engine-red.txt`
 retain the scaffold and full red run; `engine-green.txt` retains the green run.
@@ -24,14 +24,20 @@ The off-record ownership and slow-intent guard tests produced nine failures on
 the earlier implementation (`off-ownership-red.txt`) before their fixes. A busy
 heartbeat regression produced one failure before its fix
 (`heartbeat-busy-red.txt`): an expired lease must not reply active while a power
-read is suspended. Valid heartbeat metadata renews synchronously; invalid
-heartbeat metadata latches a stop while power/journal work remains serialized.
+read is suspended. Independent-review R1 then reproduced **16 assertion failures**
+on the pre-fix engine across cold status/activate/monitor/retry/prepare paths and
+an unowned recheck (`R1-startup-red.txt`). Only the additive enum case was supplied
+to let these checks compile; initial state/read behavior remained unchanged.
+The fix starts in `checking` and enters it before every unresolved ownership
+read. All 176 assertions now pass; delta review remains pending.
+
+Valid heartbeat metadata renews synchronously; invalid heartbeat metadata latches a stop while power/journal work remains serialized.
 
 The fake writer can suspend, apply and then throw; no fake writes after its call
 has completed. Read failures are injected at all activation reads and the restore
 confirmation. Journal load failures and before/after-persistence failures at
-intent, active, restoring, off and clear are injected. Tests cover every restart phase, invalid
-token/console/root, heartbeat deadline/renewal, critical/final/unknown/stale/future
+intent, active, restoring, off and clear are injected. Tests cover every restart
+phase, invalid token/console/root, heartbeat deadline/renewal, critical/final/unknown/stale/future
 telemetry, clock regression, disconnect during inspection and failed restoration,
 cancellation during each activation read/write stage, external clear/conflict,
 failed cleanup retry and removal proof. These are adapter-contract simulations.
@@ -40,6 +46,7 @@ Recoverability and await/failure matrix:
 
 | State or boundary | Exit / tested result |
 | --- | --- |
+| Checking ownership | Concurrent status stays checking until read completes; resulting off/conflict/recovery is evidence-based |
 | Missing journal, initial read failure | Recovery; Retry deactivation reloads ownership, never writes without intent |
 | Unowned true/disagreeing setting | Conflict; resolve external owner, retry; never silently take over |
 | Corrupt validated payload, strict dual off | Retry durably clears invalid record without a power write |
@@ -61,15 +68,16 @@ only the initial root-domain property may be absent. No preference-absence
 normalization is implemented. Unknown/malformed read values must throw.
 
 Local gates: `SnapCoreChecks` **60/0**, `AlwaysOnChecks` **34/0**, and new
-`AlwaysOnEngineChecks` **144/0**, each via its separate `swift run --disable-sandbox
+`AlwaysOnEngineChecks` **176/0**, each via its separate `swift run --disable-sandbox
 --cache-path .build/cache` command. Separate debug and release build/typecheck,
 script syntax, all three source plists and whitespace checks passed. CI includes
 the new engine suite and clean-runner packaging.
 Main-app packaging was intentionally not run locally because the running-app
 guard preserves build 5. This slice has no UI change or live hardware proof.
 
-Independent and lead pinned-head review plus applicable ownership/storage/token
-security review remain required before acceptance. CodeRabbit is unavailable
+Independent review of `4a99728` reported only R1, startup false-off. Lead review
+agreed; the correction and full final-head delta review remain acceptance gates.
+Applicable ownership/storage/token security review remains required. CodeRabbit is unavailable
 under the repository exclusion. No live activation or merge is authorized by
 these checks. B2/B3 native timing, auth, protected-file handling and lifecycle
 proof remain separate gates; UI/native acceptance gaps below remain open.

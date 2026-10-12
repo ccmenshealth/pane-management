@@ -189,6 +189,15 @@ review and tests belong to B2/B3.
 
 ### Review ledger
 
+- Engine PR #4, `4a99728180f364d6ee384a2b8ec6120ef7994b95`: independent
+  review found only R1 (P2), false off during the first ownership read
+  (`RecoveryEngine.swift:90`, `:145`, `:153`, `:190` at that head). Lead agreed.
+  Fix: explicit checking initial state and checking before unresolved ownership
+  reads. Cold status/activate/monitor/retry/prepare and unowned recheck siblings
+  are covered; 16 focused assertions failed before the fix, then all 176 passed.
+  Original-head CI run `38281301606` passed. Corrected-head CI and independent
+  delta/lead/security acceptance remain pending. No live IO or installation.
+
 - UI PR #3, `1923274f40256ea0be5060c48b922b6c680b11e9`: independent fresh
   read-only review and lead source review found no blocking code issue. Exact-head
   CI run `38278803917` passed. Worktree clean before/after review. Current inherited

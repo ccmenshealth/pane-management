@@ -90,6 +90,43 @@ private let stranger = ConsoleSession(uid: 502, auditSession: 8)
         func active(_ state: RecoveryStatus) -> RecoveryLease? { if case .active(let lease) = state { return lease }; return nil }
         func waitForPause(_ power: Power) async { for _ in 0..<1000 { if power.suspended != nil { return }; await Task.yield() } }
 
+        for entry in ["status", "activate", "monitor", "retry", "prepare"] {
+            for baseline in ["off", "external", "corrupt"] {
+                let r = Rig()
+                if baseline != "off" { r.power.receipt = .init(preference: true, rootDomain: true) }
+                if baseline == "corrupt" { r.journal.stored = .corrupt }
+                r.power.pauseRead = 1
+                let startup = Task { () -> (RecoveryStatus, Bool?) in
+                    switch entry {
+                    case "activate": return (await r.engine.activate(owner), nil)
+                    case "monitor": return (await r.engine.monitor(), nil)
+                    case "retry": return (await r.engine.retryRestore(owner), nil)
+                    case "prepare":
+                        let prepared = await r.engine.prepareForUpdateOrRemoval(owner)
+                        return (await r.engine.status(), prepared)
+                    default: return (await r.engine.status(), nil)
+                    }
+                }
+                await waitForPause(r.power)
+                check(await r.engine.status() == .checking, "cold \(entry)/\(baseline) cannot report off before ownership read")
+                r.power.release()
+                let (result, prepared) = await startup.value
+                if baseline == "off" {
+                    check(entry == "activate" ? active(result) != nil : result == .off,
+                          "cold \(entry) completes only after confirmed baseline")
+                } else {
+                    check(conflict(result) && prepared != true && r.power.writes.isEmpty,
+                          "cold \(entry)/\(baseline) resolves conflict without writes")
+                }
+            }
+        }
+        let recheck = Rig(); _ = await recheck.engine.status()
+        recheck.power.receipt = .init(preference: true, rootDomain: true); recheck.power.pauseRead = 2
+        let reinspection = Task { await recheck.engine.monitor() }
+        await waitForPause(recheck.power)
+        check(await recheck.engine.status() == .checking, "unowned recheck cannot reuse old off during ownership read")
+        recheck.power.release()
+        check(conflict(await reinspection.value), "unowned recheck reports newly external override")
         let basic = Rig()
         check(await basic.engine.status() == .off, "clean startup")
         var intentBeforeEnable = false
