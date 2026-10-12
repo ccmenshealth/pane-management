@@ -7,7 +7,9 @@
   builder starts before acceptance. Locked N1–N8 are in `always-on-build.md`.
 - Next: native authentication/telemetry/daemon boundary, then B3 app client/setup/
   removal integration. No live helper registration, power mutation or arming.
-  Apple-issued signing remains necessary for positive signed acceptance/install.
+  User confirmed no Apple Developer account. Apple-issued signing remains a
+  concrete blocker for positive signed acceptance/install in the chosen design;
+  finish feasible implementation/tests first. No enrollment/purchase authorized.
 - Lead repeated isolated UI hide check: CUA kept returning the controls window,
   so hide/other-app stacking remain unverified. Preview was deactivated/quit;
   process check confirms only original build5 PID96007. No installed change.
