@@ -1,5 +1,32 @@
 # Pane Management — Current State
 
+## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
+
+- Draft PRs #2–#11 contain the Dock, warning, power recovery, authenticated
+  helper/client, setup integration and signed staging implementation. All remain
+  unmerged and uninstalled. No feature was armed.
+- Final PR #11 reviewed pin: `048e6c174e27ebdf5383459baf334ee7f4846112`;
+  product pin: `3ced0980ceb21773b95d87a29508da03f9b61f3b`. Fresh independent
+  read-only code/manual-security and lead reviews clear, no actionable findings;
+  reviewed worktree clean before/after. CI `38300113172` passed. Current model
+  inherited; exact model/effort metadata unavailable. CodeRabbit prohibited.
+- All feasible build, automated verification and inert native preview work is
+  complete. Final changes after the reviewed pin are handoff Markdown only.
+  Positive native signing, installation, Dock/global warning behavior and
+  physical lid/recovery acceptance remain unverified; synthetic tests do not
+  establish those results or guarantee critical battery/thermal protection.
+- User has no Apple Developer account. Chosen helper design needs a Developer ID
+  Application certificate and an existing notarization profile before a signed
+  candidate can be produced. No enrollment, purchase, unrelated certificate or
+  alternate privileged fallback is authorized. Next: resolve that prerequisite,
+  then separately authorize signed staging, installation/approval and native
+  acceptance/recovery drills; first activation remains a separate gated slice.
+- Final read-only preservation check: primary `main` clean at `3ce28b8`, original
+  build 5 still PID `96007`, executable SHA256
+  `3367ecbfc6d95a54bde086348d4c67988c8be8089042ba30a4c853f6634e978a`.
+  No preview/helper process or root helper journal exists. Installed bundle,
+  privacy grants and power configuration were not changed by these build slices.
+
 ## Bookmark — B3c signed staging candidate (2026-10-12)
 
 - Code pin 3ced098 adds isolated Developer ID staging with explicit identity/team/

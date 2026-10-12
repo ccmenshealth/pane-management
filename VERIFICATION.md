@@ -3,8 +3,14 @@
 Code pin `3ced0980ceb21773b95d87a29508da03f9b61f3b` adds only the signed staging
 workflow, synthetic checks, CI syntax/check steps and documentation. Existing
 stable-path packaging is unchanged. Current inherited model used; exact model
-and effort metadata are unavailable. Independent code/manual-security, lead
-review and final remote CI remain required; CodeRabbit is prohibited.
+and effort metadata are unavailable. Fresh independent read-only code/manual-
+security and lead reviews cleared final candidate `048e6c174e27ebdf5383459baf334ee7f4846112`
+with no actionable findings and a clean worktree before/after review. CI
+[38300113172](https://github.com/ccmenshealth/pane-management/actions/runs/38300113172)
+passed on that pin. The literal security-review tool was unavailable; the fresh
+read-only manual review was the fallback. CodeRabbit is prohibited. Subsequent
+handoff changes are Markdown only, checked with `git diff --check` and remote
+workflow inspection under the repository's bookkeeping exception.
 
 - `python3 scripts/test_signed_staging.py`: 17 tests pass. These use fully
   injected command results and disposable directories; a subprocess guard
@@ -22,7 +28,8 @@ review and final remote CI remain required; CodeRabbit is prohibited.
   Separate Swift debug/release builds pass. All eight debug suites pass:
   SnapCore 60, AlwaysOn 76, Engine 176, Native 114, Service 355, Daemon 118,
   Client 181 and Setup 141; no failures. Individual gate logs are retained there.
-- Actual read-only `--preflight` passed on clean code pin 3ced098. It validated
+- Actual read-only `--preflight` passed on clean code pin 3ced098 and final
+  reviewed candidate 048e6c1. It validated
   fixed app/helper metadata, source and tool availability without identity lookup,
   artifact creation, signing or Apple submission (`native-preflight.log`).
 

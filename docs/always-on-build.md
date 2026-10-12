@@ -959,3 +959,26 @@ PID96007 remains. Screenshots are window-only, so global stacking/occlusion,
 Dock, Spaces/fullscreen, multidisplay/VoiceOver and physical signed acceptance
 remain open. First fixture SIGTERM was testcleanup only. No installation or power
 operation occurred. B3c may start; merges remain blocked on required native gates.
+
+### Final B3c review and handoff ledger — 2026-10-12
+
+PR #11 at `048e6c174e27ebdf5383459baf334ee7f4846112` (product `3ced098`)
+cleared fresh independent read-only code/manual-security and lead source review;
+no actionable findings, worktree clean before/after. Reviewer inherited the
+current model; exact model/effort metadata unavailable. Literal security-review
+tool unavailable; independent manual security review used. CodeRabbit prohibited.
+CI `38300113172` passed; clean-source read-only preflight passed at the final pin.
+Lead's earlier tool-path, argument-abbreviation, notary-shape and diagnostic
+findings are resolved with retained pre-fix evidence. Sibling audit covers both
+signed binaries and pre/post-stapling checks, all cleanup/publication paths and
+malformed argument/receipt branches. Later handoff edits are Markdown only.
+
+All feasible implementation work is complete. PRs #2–#11 remain draft/unmerged;
+missing Developer ID and outstanding native acceptance prevent installation and
+arming. No positive native signing/notarization or real helper/power operation
+was attempted. Original installed build 5 and clean primary checkout preserved;
+no helper journal or preview/helper process at final read-only check. The next
+prerequisite is a Developer ID Application certificate and existing notarization
+profile; then signed staging, installation/approval and real native/recovery
+acceptance need their separate authorization. Enrollment/purchase and alternate
+privileged fallbacks are not authorized. No additional feature slice is pending.
