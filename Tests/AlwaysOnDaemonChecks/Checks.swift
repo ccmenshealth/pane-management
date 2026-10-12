@@ -14,11 +14,18 @@ import AlwaysOnDaemon
         for field in 0..<10 {
             check(!BoundaryPolicy.auditValid(session: field == 0 ? .init(uid: 0, auditSession: 7) : (field == 1 ? .init(uid: 501, auditSession: 0) : owner), before: field == 2 ? nil : 501, after: field == 3 ? 502 : 501, returned: field == 4 ? 8 : 7, auid: field == 5 ? 502 : 501, flags: field == 6 ? goodFlags | 0x1000 : field == 7 ? goodFlags & ~0x10 : field == 8 ? goodFlags & ~0x2000 : field == 9 ? goodFlags & ~0x4000 : goodFlags), "audit rejects defect \(field)")
         }
-        let expected = "anchor apple generic and identifier \"local.snapbridge.app\" and certificate leaf[subject.OU] = \"ABCDE12345\""
-        check((try? BoundaryPolicy.requirement(role: .app, team: "ABCDE12345")) == expected, "exact peer requirement")
-        check((try? BoundaryPolicy.requirement(role: .daemon)) == "anchor apple generic and identifier \"local.snapbridge.alwayson.service\"", "self anchor before team")
-        for team in ["", "lower12345", "ABCD", String(repeating: "A", count: 100), "ABC\"E12345", "ABCDE1234\n"] {
-            check(rejects { _ = try BoundaryPolicy.requirement(role: .app, team: team) }, "reject unsafe team")
+        let pin = String(repeating: "0123456789ABCDEF", count: 2) + "01234567"
+        let appRequirement = "identifier \"local.snapbridge.app\""
+        let daemonRequirement = "identifier \"local.snapbridge.alwayson.service\""
+        let expected = appRequirement + " and certificate leaf = H\"\(pin)\""
+        check((try? BoundaryPolicy.requirement(role: .app, leafFingerprint: pin)) == expected, "exact certificate peer requirement")
+        check((try? BoundaryPolicy.requirement(role: .daemon)) == daemonRequirement, "fixed self identifier before certificate extraction")
+        check((try? BoundaryPolicy.requirement(role: .app, leafFingerprint: pin.lowercased())) == expected, "canonical lowercase certificate pin")
+        for invalid in ["", "ABCDE12345", String(repeating: "A", count: 39), String(repeating: "A", count: 41), String(repeating: "G", count: 40), String(repeating: "A", count: 39) + "\n", "\" or true or \"", String(repeating: "é", count: 20)] {
+            check(rejects { _ = try BoundaryPolicy.requirement(role: .app, leafFingerprint: invalid) }, "reject unsafe certificate fingerprint")
+            let signing = FakeSigning(); signing.fingerprint = invalid
+            check(rejects { _ = try TrustedIdentity.peerRequirement(own: .app, authority: signing) }, "bad extracted fingerprint fails closed")
+            check(signing.events == ["validate:" + appRequirement, "certificate"], "bad fingerprint never revalidates or produces peer")
         }
         for op in ServiceOperation.allCases {
             let token = (op == .heartbeat || op == .deactivate) ? UUID().uuidString : nil
@@ -37,12 +44,21 @@ import AlwaysOnDaemon
         constructed = false
         check(rejects { try BoundaryPolicy.preflight(uid: 0, signature: { throw BoundaryError.signing }, construct: { _ in constructed = true }) }, "bad signature rejected")
         check(!constructed, "no storage after signing failure")
-        let signing = FakeSigning()
-        check((try? TrustedIdentity.peerRequirement(own: .daemon, authority: signing)) == expected, "trusted self produces app peer")
-        check(signing.events == ["validate", "team", "validate"], "team extraction follows anchor validation")
-        signing.events = []; signing.failValidation = true
-        check(rejects { _ = try TrustedIdentity.peerRequirement(own: .app, authority: signing) }, "self anchor failure")
-        check(signing.events == ["validate"], "untrusted team never read")
+        for role: PeerRole in [.app, .daemon] {
+            let own = role == .app ? appRequirement : daemonRequirement
+            let peer = role == .app ? daemonRequirement : appRequirement
+            let signing = FakeSigning()
+            check((try? TrustedIdentity.peerRequirement(own: role, authority: signing)) == peer + " and certificate leaf = H\"\(pin)\"", "local certificate without Team ID produces exact reciprocal peer")
+            check(signing.events == ["validate:" + own, "certificate", "validate:" + own + " and certificate leaf = H\"\(pin)\""], "validated self precedes extraction and pinned self revalidation")
+            for failure in [1, 2] {
+                let failed = FakeSigning(); failed.failValidationNumber = failure
+                check(rejects { _ = try TrustedIdentity.peerRequirement(own: role, authority: failed) }, "self validation failure rejects peer")
+                check(failed.events == (failure == 1 ? ["validate:" + own] : ["validate:" + own, "certificate", "validate:" + own + " and certificate leaf = H\"\(pin)\""]), "self failure has no subsequent metadata or peer")
+            }
+            let missing = FakeSigning(); missing.failCertificate = true
+            check(rejects { _ = try TrustedIdentity.peerRequirement(own: role, authority: missing) }, "missing or ad-hoc leaf certificate rejected")
+            check(missing.events == ["validate:" + own, "certificate"], "missing certificate never revalidates or produces peer")
+        }
         check(rejects { _ = try TrustedIdentity.peerRequirement(own: .daemon) }, "actual unsigned/adhoc check executable rejected")
         let internalBattery: [[String: Any]] = [["Type": "InternalBattery", "Is Present": true]]
         check(TelemetryPolicy.battery(descriptions: internalBattery, warning: 1) == .normal, "OS none normal")
@@ -203,9 +219,18 @@ import AlwaysOnDaemon
 private extension JSONEncoder { static var canonical: JSONEncoder { let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]; return encoder } }
 
 private final class FakeSigning: SigningAuthority {
-    var events: [String] = [], failValidation = false
-    func validate(_ requirement: String) throws { events.append("validate"); if failValidation { throw BoundaryError.signing } }
-    func team() throws -> String { events.append("team"); return "ABCDE12345" }
+    var events: [String] = [], failValidationNumber: Int?, failCertificate = false
+    var fingerprint = String(repeating: "0123456789ABCDEF", count: 2) + "01234567"
+    private var validations = 0
+    func validate(_ requirement: String) throws {
+        events.append("validate:" + requirement); validations += 1
+        if failValidationNumber == validations { throw BoundaryError.signing }
+    }
+    func leafCertificateFingerprint() throws -> String {
+        events.append("certificate")
+        if failCertificate { throw BoundaryError.signing }
+        return fingerprint
+    }
 }
 private final class TestTime { var now = 100.0 }
 @MainActor private final class Clock: RecoveryClock { var now = 100.0 }

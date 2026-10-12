@@ -1,3 +1,36 @@
+## Local certificate authentication — 2026-10-12
+
+The runtime identity policy now validates fixed self identity before reading its
+own leaf certificate, derives Apple's exact certificate fingerprint requirement,
+revalidates self with that pin and requires the reciprocal fixed peer identifier.
+No Team ID, Apple anchor, certificate-name trust or ad-hoc fallback is used.
+
+- Actual pre-fix `bed5681` archive with final daemon tests and API-only shims:
+  149 assertions, **32 failures**. Shims add the new argument label delegating to
+  the original Team ID function and the old fake `team()` method; original trust
+  behavior is preserved. Logs and full overlay are retained in ignored
+  `.build/local-auth-evidence/pre-fix*`.
+- Debug build passed; daemon 149/0, client 181/0, setup 141/0 and controller 76/0.
+  Separate release build, shell syntax and `git diff --check` passed.
+- Cases cover both fixed roles, certificate-only success without Team metadata,
+  normalized lowercase pins, malformed/empty/overlong/injection/non-ASCII pins,
+  missing/ad-hoc metadata, self validation before metadata, and failed pinned
+  self revalidation. The existing actual unsigned/ad-hoc executable refusal passes.
+- Sibling audit: app transport, daemon preflight/listener and setup identity
+  validation share this policy; root-before-native-port construction and both
+  signing-requirement-before-XPC-activation paths are unchanged. The separately
+  owned preview's obsolete Apple-issued copy was reported to the lead.
+- Authentication failures keep existing Check again/explicit repair/removal exits;
+  no new durable state or automatic certificate enrollment. Rotation needs a
+  coordinated normal-sleep restore, removal and reinstall with one certificate.
+- Independent code/manual-security, lead review and remote CI pending. CodeRabbit
+  unavailable under repository restriction; current model inherited, exact
+  model/effort metadata unavailable. No merge, install or arming.
+- No native certificate creation, keychain change, signing, helper execution or
+  lifecycle call, root journal or power write. Synthetic checks establish policy
+  ordering, not native local certificate/service acceptance. Existing build 5 and
+  paid staging script are untouched; local packaging/probe is a separate slice.
+
 ## B3c isolated signed staging candidate — 2026-10-12
 
 Code pin `3ced0980ceb21773b95d87a29508da03f9b61f3b` adds only the signed staging

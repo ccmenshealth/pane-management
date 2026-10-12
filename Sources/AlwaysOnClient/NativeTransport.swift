@@ -2,7 +2,7 @@ import Foundation
 import AlwaysOnIPC
 
 /// No registration or launch policy: connecting requires the calling binary's
-/// Apple-issued fixed app identity before any NSXPC connection is constructed.
+/// validated fixed app identity and certificate before any NSXPC connection is constructed.
 @MainActor public final class NativeClientTransport: ClientTransport {
     public init() {}
     public func connect(lost: @escaping @MainActor () -> Void) throws -> ClientChannel {

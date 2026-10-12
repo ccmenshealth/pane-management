@@ -9,8 +9,11 @@
   model/effort metadata unavailable. Builder owns only this worktree; warning UI
   changes are separate. No merge, install, native certificate/keychain operation,
   helper execution, power change or arming. Existing build 5 is preserved.
-- Next: fail-first boundary checks, implementation, named local gates, draft PR,
-  independent code/manual-security review and lead review plus CI.
+- Candidate implementation passes separate debug/release builds, daemon149/0,
+  client181/0, setup141/0 and controller76/0; shell/diff lint passed. Actual pre-fix
+  source with API-only compatibility shims fails32/149 boundary assertions.
+- Next: draft PR, independent code/manual-security and lead review plus CI. Local
+  certificate creation/staging/native service acceptance are subsequent slices.
 
 ## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
 

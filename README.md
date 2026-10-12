@@ -168,9 +168,16 @@ the lid open. App-managed critical-warning recovery is best effort; macOS
 emergency sleep protection is not guaranteed.
 
 This development stack is **not installed or armed**. The existing build 5 remains
-the running app. Positive installation requires matching Apple-issued app/helper
-signatures and notarization; no suitable identity is available on this Mac.
-There is no ad-hoc privileged fallback. Signed IPC, approval, closed-lid behavior,
+the running app. The selected local route requires app and helper signatures from
+one dedicated certificate: each validates itself, pins its exact leaf certificate
+and requires the peer's fixed identifier with that same certificate. This runtime
+policy does not require Apple membership, a Team ID or trust in a certificate name.
+There is no ad-hoc privileged fallback. Certificate rotation requires coordinated
+normal-sleep restoration, helper removal and reinstallation; it never auto-enrolls.
+Local certificate creation, packaging and a harmless native service probe are still
+pending. The Developer ID staging script below remains a separate paid distribution
+route. Synthetic boundary checks do not prove local service acceptance.
+Signed IPC, approval, closed-lid behavior,
 critical-event recovery and native acceptance remain separate gates.
 
 Settings provides explicit setup, approval navigation, repair and verified helper

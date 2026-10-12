@@ -65,7 +65,7 @@ import AlwaysOnClient
                     try service.validateIdentity()
                     publish(.unavailable("Always-on helper is not set up."), .setUp)
                 } catch {
-                    publish(.unavailable("Install the app with matching Apple-issued signatures, then check again."), .checkAgain)
+                    publish(.unavailable("Install the app and helper signed with the same certificate, then check again."), .checkAgain)
                 }
             }
         } catch {

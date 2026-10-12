@@ -5,11 +5,12 @@ public enum PeerRole { case app, daemon }
 public enum BoundaryPolicy {
     public static let appID = "local.snapbridge.app"
     public static let daemonID = "local.snapbridge.alwayson.service"
-    public static func requirement(role: PeerRole, team: String? = nil) throws -> String {
-        var result = "anchor apple generic and identifier \"\(role == .app ? appID : daemonID)\""
-        if let team {
-            guard team.utf8.count == 10, team.utf8.allSatisfy({ (65...90).contains($0) || (48...57).contains($0) }) else { throw BoundaryError.signing }
-            result += " and certificate leaf[subject.OU] = \"\(team)\""
+    public static func requirement(role: PeerRole, leafFingerprint: String? = nil) throws -> String {
+        var result = "identifier \"\(role == .app ? appID : daemonID)\""
+        if let leafFingerprint {
+            guard leafFingerprint.utf8.count == 40,
+                  leafFingerprint.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else { throw BoundaryError.signing }
+            result += " and certificate leaf = H\"\(leafFingerprint.uppercased())\""
         }
         return result
     }
