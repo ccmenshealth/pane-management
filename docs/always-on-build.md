@@ -198,9 +198,9 @@ review and tests belong to B2/B3.
   `4a99728` found R1: concurrent status could report off before initial readback.
   Fix `28eeffe` adds checking state before every unresolved ownership read;
   16 targeted pre-fix failures and final inert 176/102 versus implemented 176/0.
-  Lead delta review clears the source fix; independent delta and final-head CI
-  are pending while the B2a brief is prepared. No native IO builder starts until
-  the independent delta clears. Other lead findings and targeted red evidence
+  Independent and lead delta reviews clear the source fix; final-head CI
+  `38281961153` passed. Review worktree remained clean. Native IO build may start.
+  Other lead findings and targeted red evidence
   are recorded in VERIFICATION.md. No live operation, install or merge occurred.
 
 ### B2a locked native IO contract

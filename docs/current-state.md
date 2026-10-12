@@ -3,9 +3,8 @@
 ## Bookmark — Native IO planning (2026-10-12)
 
 - `codex/always-on-native-io` starts from engine PR #4 fix `28eeffe` in its own
-  worktree. B2a locked contracts are in `always-on-build.md`; product work waits
-  for independent R1 delta clearance. Lead source review cleared R1; final-head
-  CI and independent delta are currently pending.
+  worktree. B2a locked contracts are in `always-on-build.md`; independent and lead
+  delta review cleared R1, and final-head CI `38281961153` passed. B2a may start.
 - Next sequence is native IO adapters, authenticated daemon, then app integration
   and signed packaging. No helper is installed, no power setting has changed,
   and build 5 still runs at its original path. Apple-issued signing remains a
