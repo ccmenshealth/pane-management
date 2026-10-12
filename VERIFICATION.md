@@ -1,3 +1,41 @@
+## Harmless local signing probe candidate — 2026-10-12
+
+- Isolated probe uses fixed new IDs, nonce-only protocol and reciprocal shared
+  own-leaf signatures. No power/journal/production runtime dependency. GUI service
+  actions are explicit; pending mutations retain the lane until actual completion.
+  Probe Quit always works and warns OS work may continue; reopen/status/removal is
+  the exit. No production quit/auth mode changed.
+- Separate debug/release Swift builds passed. SigningProbeChecks114/0 in both;
+  daemon149/0, client181/0, setup141/0 passed. Python staging11/0, Python compilation,
+  bash syntax, both probe plists and diff whitespace passed. Synthetic staging
+  exercises every command failure with cleanup/retry, publication failure/race,
+  explicit untrusted/missing/nonmatching identities, output links, malformed
+  arguments, metadata drift and entitlements; no native subprocess fallthrough.
+- Final tests over a compiling inert overlay fail67/114 Swift assertions and14
+  Python assertions (11 tests). Actual pre-P-R2 packager fails the untrusted
+  identity case and unfiltered lookup check (1 assertion, 1 exception). Retained
+  ignored evidence: `.build/probe-evidence/{make-red.py,red-source,swift-red.log,
+  staging-red.log,trust-red.log,probe-staging-before-trust-fix.py,*green.log,
+  debug-build.log,release-build.log}`. No native certificate, signing, helper,
+  registration, removal, power or installed-bundle action occurred.
+- Lead P-R1 pending-quit trap resolved by native normal termination with an enabled
+  Quit button; same running process still serializes service mutations. P-R2 uses
+  unfiltered identity discovery, allows diagnostic suffix on an exact selected
+  fingerprint, and retains strict signature checks; no system trust is changed.
+  Shared fixed-role requirement builder now delegates to the validated ID helper.
+  Sibling audit covers app/helper/negative signatures, malformed requests/replies,
+  all ping callback orders and each register/remove/ping settlement/retry exit.
+- Negative fixtures separate wrong-ID same-cert, ad-hoc and wrong expected helper
+  pin; success-before/after each is mandatory. Failure alone is inconclusive.
+  External examples conflict on local SMAppService acceptance; actual native
+  success remains unproven. Paid packager and original build5 remain untouched.
+- Unsigned missing-identity UI candidate only: `dist/SigningProbeUnsignedPreview.app`,
+  no embedded helper, not launched by builder. Native UI evidence pending lead.
+  Independent code/manual-security, lead final review and CI pending. Inherited
+  current model/effort metadata unavailable; CodeRabbit prohibited. No merge,
+  installation or arming. Next: review then separately approved dedicated
+  certificate and harmless registration/approval/positive-negative/removal drill.
+
 ## Local certificate authentication — 2026-10-12
 
 The runtime identity policy now validates fixed self identity before reading its

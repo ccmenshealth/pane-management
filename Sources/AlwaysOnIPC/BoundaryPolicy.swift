@@ -6,13 +6,8 @@ public enum BoundaryPolicy {
     public static let appID = "local.snapbridge.app"
     public static let daemonID = "local.snapbridge.alwayson.service"
     public static func requirement(role: PeerRole, leafFingerprint: String? = nil) throws -> String {
-        var result = "identifier \"\(role == .app ? appID : daemonID)\""
-        if let leafFingerprint {
-            guard leafFingerprint.utf8.count == 40,
-                  leafFingerprint.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else { throw BoundaryError.signing }
-            result += " and certificate leaf = H\"\(leafFingerprint.uppercased())\""
-        }
-        return result
+        try CertificateIdentity.requirement(identifier: role == .app ? appID : daemonID,
+                                            leafFingerprint: leafFingerprint)
     }
     /// Canonical, bounded JSON also rejects duplicate fields and ambiguous encodings.
     /// B3 uses this encoder, not a caller-selected serialization format.

@@ -274,3 +274,67 @@ and require no signing credentials. In **zsh**:
 python3 scripts/test_signed_staging.py
 python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py
 ```
+
+### Harmless local-signing acceptance probe (not installed)
+
+`SigningProbeApp` and `SigningProbeDaemon` are a separate nonce-echo experiment.
+They use `local.snapbridge.signingprobe` and
+`local.snapbridge.signingprobe.service`, with no always-on power, journal or
+service dependency. Local certificate authentication is implemented, but native
+`SMAppService` acceptance remains unproven; external examples disagree.
+
+The probe GUI has explicit Register, Open Login Items, Ping, Remove, Check status
+and Quit actions. Launching performs no service action. Register/Remove stay
+pending until the OS actually completes; competing actions remain disabled.
+Quit stays available, including when the OS is stuck: quitting is not cleanup,
+and the operation may continue. Reopen, then Check status/Remove to recover.
+Only a successful nonce echo is labeled SUCCESS. Rejection, error and timeout
+are all reported as no success, not evidence that authentication enforcement
+worked. Missing signing offers an actionable Check status result without crashing.
+
+The next native drill requires a **dedicated local code-signing certificate** and
+explicit administrator approval. This build does not create/import a certificate,
+change system trust, use an unrelated key, install, launch, register or arm anything.
+Untrusted self-signed identities may appear with `CSSMERR_TP_NOT_TRUSTED`; the
+packager lists all identities, selects only the explicit fingerprint, and relies
+on actual strict signing/requirement verification. It never changes certificate
+trust or assumes that a listed identity will pass macOS installation.
+
+Safe read-only preparation (zsh):
+
+```zsh
+bash scripts/build-signing-probe.sh --preflight
+```
+
+After dedicated-certificate approval, the separate staging command is
+`bash scripts/build-signing-probe.sh --identity FORTY_HEX_CERTIFICATE_FINGERPRINT`.
+It requires committed clean source, creates a unique `dist/signing-probe` output,
+signs hardened-runtime helper then app with no timestamp/entitlements, verifies
+both exact leaf pins and identifiers, and writes public fingerprint/source/binary
+hashes. No notarization, network, Gatekeeper/trust change or installation occurs.
+Failed staging cleans its own temporary output; a forced process death may leave
+an unpublished `.partial-*` directory. Existing/racing candidates are preserved.
+The existing Developer ID packager remains separate and unchanged.
+
+After review, stage the dedicated probe and separately authorize copying that
+candidate to a stable local app location and Register/administrator approval.
+Check status, then obtain a successful GUI Ping. Run each bundled negative
+fixture below, with a fresh successful GUI Ping before **and** after each one.
+Use the manifest fingerprint for `ACTUAL_PIN`, and a different forty-hex pin for
+`WRONG_PIN` (the CLI rejects an equal pin). Commands are zsh, in `artifacts`:
+
+```zsh
+./wrong-id wrong-id ACTUAL_PIN
+./ad-hoc ad-hoc ACTUAL_PIN
+./wrong-pin wrong-pin WRONG_PIN
+```
+
+The first fixture is same-certificate/wrong client ID, the second ad-hoc, and the
+third valid same-certificate client ID/wrong expected helper pin. They are separate
+probe-only executables; they expose no production auth option. Any unexpected
+successful echo fails the drill. A negative without successful surrounding pings
+is inconclusive. Finally use Remove, await completion, Check status for not
+registered and verify daemon exit before deleting the candidate. If anything
+fails, retain the bundle and use Check status/Remove; do not kill a root process
+or replace this with a legacy privileged installer. A successful harmless drill
+still does not prove production sleep behavior or authorize first activation.

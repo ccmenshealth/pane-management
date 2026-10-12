@@ -1050,5 +1050,12 @@ on local-signing-auth with evidence and exact remaining administrator steps.
 Recovery: idle/missing signature offers Check status/Quit; failed registration
 offers Check status/Register or Remove; approval offers Login Items/Check status;
 failed ping offers Ping/Check status/Remove; failed removal offers Remove/Check
-status. Pending registration/removal holds its slot until real completion; Quit
-is disabled while pending. No durable app state; relaunch offers Check status.
+status. Pending registration/removal holds its slot until real completion. P-R1 updates
+the probe-only exit: Quit always works and explains that OS work may continue;
+relaunch offers Check status/Remove. Quit is not cleanup or operation completion.
+No durable app state. Production quit safeguards remain unchanged.
+
+Lead approved about 900–1,000 lines for the cohesive probe, negative fixtures,
+packager and inert failure checks; separating these would leave an incomplete
+acceptance workflow. External examples contradict themselves on local root-daemon
+acceptance; only the future real harmless drill can establish support.

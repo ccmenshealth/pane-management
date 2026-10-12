@@ -6,8 +6,13 @@
   `d6742fa7b42c30ef40b9ea9dbbd8365b0024f943`. P1–P8 locked before code.
 - Inherited current model/effort metadata unavailable. No signing, certificate,
   service registration, native launch, installation or power operation allowed.
-- Next: build inert checks and isolated probe candidate; fresh reviews and CI
-  precede any separately authorized dedicated-certificate/admin drill.
+- Candidate: Swift114/0 debug/release, daemon149/0, client181/0, setup141/0;
+  staging11/0, shell/Python/plist/diff lint pass. Inert red67/114 Swift and14 Python
+  assertions; actual pre-P-R2 trust tests red. Evidence in VERIFICATION.md.
+- Next: fresh independent code/manual-security + lead review and CI; only then
+  separately authorized dedicated-certificate/native service acceptance drill.
+  Native positive acceptance remains unproven. P-R1 always-available probe Quit
+  and P-R2 unfiltered identity listing are resolved; production safeguards intact.
 
 ## Bookmark — local certificate authentication slice (2026-10-12)
 

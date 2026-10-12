@@ -8,12 +8,34 @@ public protocol SigningAuthority {
 }
 public enum TrustedIdentity {
     public static func peerRequirement(own: PeerRole, authority: SigningAuthority = SystemSigningAuthority()) throws -> String {
-        try authority.validate(BoundaryPolicy.requirement(role: own))
-        // Never derive peer authority from a peer, a certificate name or config.
-        // Validate self first, extract its leaf, then bind self and peer to it.
+        try CertificateIdentity.peerRequirement(
+            ownIdentifier: own == .app ? BoundaryPolicy.appID : BoundaryPolicy.daemonID,
+            peerIdentifier: own == .app ? BoundaryPolicy.daemonID : BoundaryPolicy.appID,
+            authority: authority)
+    }
+}
+/// Callers supply fixed code identifiers, never text in Apple's requirement language.
+public enum CertificateIdentity {
+    public static func requirement(identifier: String, leafFingerprint: String? = nil) throws -> String {
+        let bytes = identifier.utf8
+        guard (3...128).contains(bytes.count), identifier.contains("."),
+              bytes.allSatisfy({ (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 46 || $0 == 45 }),
+              identifier.split(separator: ".", omittingEmptySubsequences: false).allSatisfy({ !$0.isEmpty }) else { throw BoundaryError.identity }
+        var text = "identifier \"\(identifier)\""
+        if let pin = leafFingerprint {
+            guard pin.utf8.count == 40, pin.utf8.allSatisfy({ (48...57).contains($0) || (65...70).contains($0) || (97...102).contains($0) }) else { throw BoundaryError.signing }
+            text += " and certificate leaf = H\"\(pin.uppercased())\""
+        }
+        return text
+    }
+    public static func peerRequirement(ownIdentifier: String, peerIdentifier: String,
+                                       authority: SigningAuthority = SystemSigningAuthority()) throws -> String {
+        let own = try requirement(identifier: ownIdentifier)
+        _ = try requirement(identifier: peerIdentifier)
+        try authority.validate(own)
         let pin = try authority.leafCertificateFingerprint()
-        try authority.validate(BoundaryPolicy.requirement(role: own, leafFingerprint: pin))
-        return try BoundaryPolicy.requirement(role: own == .app ? .daemon : .app, leafFingerprint: pin)
+        try authority.validate(requirement(identifier: ownIdentifier, leafFingerprint: pin))
+        return try requirement(identifier: peerIdentifier, leafFingerprint: pin)
     }
 }
 public struct SystemSigningAuthority: SigningAuthority {

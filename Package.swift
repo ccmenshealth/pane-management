@@ -6,6 +6,11 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.executable(name: "PaneManagement", targets: ["PaneManagement"])],
     targets: [
+        .target(name: "SigningProbe", dependencies: ["AlwaysOnIPC"]),
+        .executableTarget(name: "SigningProbeApp", dependencies: ["SigningProbe"]),
+        .executableTarget(name: "SigningProbeDaemon", dependencies: ["SigningProbe"]),
+        .executableTarget(name: "SigningProbeNegative", dependencies: ["SigningProbe"]),
+        .executableTarget(name: "SigningProbeChecks", dependencies: ["SigningProbe", "AlwaysOnIPC"], path: "Tests/SigningProbeChecks"),
         .target(name: "SnapCore"),
         .target(name: "AlwaysOnCore"),
         .target(name: "AlwaysOnIPC"),
