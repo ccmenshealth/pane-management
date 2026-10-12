@@ -22,9 +22,11 @@ delegate callback still refreshes immediately before returning its menu. A sourc
 audit found no remaining `menuWillOpen`/`menuDidClose` mutation callbacks anywhere
 in the app. No timer workaround was added. The 60 regressions, separate debug
 and release builds, shell/plist lint, and whitespace check all passed again after
-this fix. Independent delta review is pending. Original-head CI passed in
-[run 38272215694](https://github.com/ccmenshealth/pane-management/actions/runs/38272215694);
-that result does not claim CI coverage of the R1 delta.
+this fix. Independent delta and lead review cleared R1 at
+`df335612a036637624eace16e4cdbcf64b7de013`; the reviewed worktree was verified
+clean. [Final code-head CI](https://github.com/ccmenshealth/pane-management/actions/runs/38272646660)
+passed, including packaging and signature checks. Exact model/effort metadata is
+unavailable in the builder session; the user authorized the current model.
 
 Local checks in the isolated candidate worktree:
 
@@ -38,24 +40,62 @@ Local checks in the isolated candidate worktree:
   `git diff --check`: passed.
 - `bash scripts/build-fixture.sh`, helper `codesign --verify --deep --strict`,
   and packaged-helper plist lint: passed. The helper was not launched.
-- `bash scripts/build-app.sh`: release build passed, then packaging exited 1
-  with “Quit Pane Management before packaging; the running app has not been
-  changed.” PID 797 remains the primary installed build 5. Candidate app bundle
-  signature verification is pending because no candidate app bundle was created.
+- `bash scripts/build-app.sh`: initially stopped at the running-app guard;
+  after the authorized scoped quit, packaging, strict deep signature verification,
+  and packaged plist lint passed. The guard was not bypassed.
 
 No automated tests were added: this slice changes AppKit activation/menu wiring,
 which the pure SnapCore executable does not exercise. Existing regression checks
 are required; no fail-first claim is made. Native acceptance is a distinct gate.
 
-Native checks pending after reviewed-candidate installation: visibly confirm the
-Dock icon and menu-bar icon; open the actual Dock context menu; pause from Dock
-and resume from menu bar (then reverse), checking Settings reflects each state;
-close Settings and confirm the process/icons remain; Dock-click to reopen;
-verify Quit exits and reopening restores access. Preserve the chooser guard and
-check it with disposable fixtures if the installed permissions permit that test.
-No private window screenshots may be published. The primary build 5 remains
-running and has not been replaced. Packaging scripts will not be changed to
-bypass their running-process guard.
+Reviewed build 6 was installed at the unchanged primary
+`dist/Pane Management.app` path and retained `local.snapbridge.app`. The packaged
+and installed executable SHA-256 both equal
+`ac23c484f5d574da35fb8fc73b0dd0a9676d04a3c6ccf30cc7b2db3bccd4c793`;
+installed strict deep signature verification passed. A signed build 5 rollback
+copy is retained locally in the ignored builder path
+`.build/dock-acceptance-rollback/Pane Management build5.app`.
+
+Native acceptance used CUA only. An app-only Settings screenshot and AX tree
+confirmed the render. The Settings snapping preference changed 1 → 0 → 1;
+the original enabled value was restored. The application-menu Settings route
+preserved its current state. A close-button action left the same process running,
+but subsequent CUA inspection showed Settings again, so this does not establish
+visible closure or a Dock-click reopen. Reacquiring the installed app reused the
+same PID. Quit removed the process; relaunch succeeded with enabled=1.
+
+Acceptance remains **incomplete**. CUA Dock targets by name, bundle identifier,
+and exact system app path timed out. The actual Dock icon/context menu, status
+icon/menu, cross-menu pause/resume synchronization, and Dock-click reopen are
+unverified. The exposed `Pane Management` menu was the application menu
+(Settings/Quit), not the status-item menu. No private desktop screenshot was
+saved or published.
+
+The new ad-hoc build is not recognized by the prior Accessibility/preview grants.
+Its actual UI reports “Accessibility access is needed to snap windows” and shows
+Enable Accessibility and Enable Previews. No permission button was pressed and
+no system privacy setting was changed. Live chooser/reopen preservation is
+blocked by Accessibility; unchanged guard logic is source-reviewed only. The
+lead owns the scoped permission-renewal handoff and remaining native acceptance.
+
+Because native Dock acceptance was blocked, the lead directed a rollback. CUA
+Quit removed build 6, the signed build 5 backup was restored to the same stable
+path, and strict signature verification passed. The restored executable matches
+its original SHA-256:
+`3367ecbfc6d95a54bde086348d4c67988c8be8089042ba30a4c853f6634e978a`.
+CUA relaunch/reopen confirmed “Running in the menu bar,” the Accessibility
+checkmark, “ScreenCaptureKit access verified,” and enabled=1. Build 5 was left
+running as PID 96007. No permission change was needed for this restoration.
+
+The verified build 6 candidate remains at
+`/Users/ccmh/Developer/PaneManagement-worktrees/dock-presence/dist/Pane Management.app`.
+Next acceptance is a lead-coordinated installation at the stable primary path,
+with renewal of only the app's existing grants if required, followed by an actual
+user/native check of both icons, Dock right-click Settings/pause/resume, shared
+menu-bar/Settings state in both directions, repeated menu opens, Settings closure
+with residency, Dock-click reopening, chooser preservation, and Quit/relaunch.
+Retain the build 5 rollback until those checks pass. No merge/release-ready claim
+is made while those native gates remain open.
 
 CodeRabbit is unavailable by explicit repository restriction and was not
 requested. Security review is not applicable: no new data access, persistence,

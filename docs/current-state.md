@@ -1,6 +1,6 @@
 # Pane Management — Current State
 
-## Bookmark — Dock presence slice under review (2026-10-12)
+## Bookmark — Build 6 retained; build 5 restored (2026-10-12)
 
 - Slice 1 of [the locked plan](closed-lid-plan.md) is implemented on
   `codex/dock-presence` in the isolated `PaneManagement-worktrees/dock-presence`
@@ -8,21 +8,38 @@
 - [Draft PR #2](https://github.com/ccmenshealth/pane-management/pull/2) received
   independent and lead review on `ca9a781989c0051b14b223122ae71b6ab5595fc7`.
   Must-fix R1 was menu mutation in an AppKit open callback. The builder moved
-  both menu refresh paths to `menuNeedsUpdate`; independent delta review is
-  pending. The finding and SDK evidence are in the plan's findings ledger.
-- Candidate build 6 uses regular activation, appears in the Dock while running,
-  and supplies Settings and pause/resume in its Dock menu. The existing menu-bar
+  both menu refresh paths to `menuNeedsUpdate`; independent delta and lead review
+  cleared `df335612a036637624eace16e4cdbcf64b7de013`. Its
+  [code-head CI](https://github.com/ccmenshealth/pane-management/actions/runs/38272646660)
+  passed. The finding and SDK evidence are in the plan's findings ledger.
+- Candidate build 6 implements regular activation and a Dock menu with Settings
+  and pause/resume. Actual Dock rendering/context-menu behavior is **unverified**.
+  The existing menu-bar
   icon and chooser reopen exclusions are retained. Both menus and Settings use
   the same snapping preference. No closed-lid control or power backend is added.
-- Native subagent builder is running the user-authorized current model; exact
-  model/effort metadata is unavailable in the builder session. Lead and a separate
-  read-only reviewer must review the pinned candidate before installation.
-- Local checks and remaining acceptance are recorded in `VERIFICATION.md`.
-  Packaging the app and native UI acceptance await a lead-coordinated quit of
-  build 5. The installed bundle at the primary checkout is unchanged.
-- Next actions: review the R1 fix delta independently and with the lead, then
-  package and run the native Dock/menu/recovery checks at the
-  stable installed path. Do not call this slice gate-green before those checks.
+- Native subagent builder used the user-authorized current model; exact
+  model/effort metadata is unavailable in the builder session.
+- Build 6 from reviewed code `df335612a036637624eace16e4cdbcf64b7de013` was
+  installed at the same primary `dist/Pane Management.app` path, bundle ID
+  unchanged. Packaging, installed signature, and binary-hash equality passed.
+  The signed build 5 rollback bundle is retained in the builder's ignored
+  `.build/dock-acceptance-rollback/Pane Management build5.app`.
+- Native Settings render, preference round-trip/restoration, application-menu
+  Settings, and Quit/relaunch passed. Build 6 truthfully reported missing
+  Accessibility and unverified previews after the ad-hoc update. CUA Dock
+  targeting timed out; actual Dock/status menus and cross-menu actions remain
+  unverified, and the live chooser check was blocked by Accessibility.
+- Lead-directed rollback restored build 5 to the primary installed path, with
+  its original binary hash and valid signature. CUA confirmed running state,
+  Accessibility, verified ScreenCaptureKit access, and enabled=true. Build 5 is
+  running (PID 96007 at handoff). No privacy setting was changed.
+- Retained build 6 candidate:
+  `/Users/ccmh/Developer/PaneManagement-worktrees/dock-presence/dist/Pane Management.app`.
+  Next: lead coordinates a manual/native acceptance session at the stable
+  installed path, renewing only existing grants if needed, then verifies actual
+  Dock/status controls, shared pause/resume, closing/reopening and chooser
+  preservation. Exact evidence and rollback are in `VERIFICATION.md`.
+  Do not call this slice gate-green or merge before acceptance is resolved.
 - CodeRabbit is unavailable under the repository exclusion. Security review is
   not applicable to the Dock/menu-only runtime change; no access or data flow is
   added. Closed-lid feasibility review is complete; that separate slice is blocked
@@ -74,7 +91,7 @@
   Distribution additionally requires Developer ID signing/notarization. Do not
   treat this configuration/documentation merge as a tested public app release.
 
-## Running application
+## Build 5 baseline — restored October 12
 
 - Build 5, source `9f4a0879fd9ebe0f825242a67ec695155a2dd185`, implements automatic
   two-column fitting without a second recovery click. The installed bundle was
