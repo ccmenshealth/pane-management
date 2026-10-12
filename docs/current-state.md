@@ -1,5 +1,14 @@
 # Pane Management — Current State
 
+## Bookmark — harmless local signing probe build (2026-10-12)
+
+- Builder owns `codex/local-signing-probe`, isolated from reviewed auth pin
+  `d6742fa7b42c30ef40b9ea9dbbd8365b0024f943`. P1–P8 locked before code.
+- Inherited current model/effort metadata unavailable. No signing, certificate,
+  service registration, native launch, installation or power operation allowed.
+- Next: build inert checks and isolated probe candidate; fresh reviews and CI
+  precede any separately authorized dedicated-certificate/admin drill.
+
 ## Bookmark — local certificate authentication slice (2026-10-12)
 
 - User selected local signing. L1–L6 in `docs/always-on-build.md` supersede the

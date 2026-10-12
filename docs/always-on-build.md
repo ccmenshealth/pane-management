@@ -1019,3 +1019,36 @@ separate slices. Sources: Apple's Code Signing Requirement Language and TN2206.
 Recovery: authentication failure remains a setup/check-again state; explicit
 Settings repair/removal flow is unchanged. Missing/changed certificates cannot
 auto-enroll or authorize a peer. This slice introduces no durable state.
+
+### Harmless local signing probe — locked P1–P8 (2026-10-12)
+
+P1. Fixed probe IDs `local.snapbridge.signingprobe` and
+`local.snapbridge.signingprobe.service`; nonce echo only. No power, journal or
+production runtime dependency. Root/self validation before daemon listener;
+reciprocal exact-own-leaf requirements before connections activate. Shared
+identifier helper strictly validates identifiers; production wrapper stays fixed.
+P2. Explicit Register, Open Login Items, Ping, Remove, Check status and Quit. No
+automatic service action. Serialize lifecycle work until actual completion; ping
+is five seconds, exactly once, with connection invalidation. Failures offer retry,
+status or removal. Signature absence is a visible setup result.
+P3. Separate clean-source staging with explicit forty-hex identity. No selection
+or certificate creation. Unique output; hardened runtime, timestamp none, no
+weakening entitlements; helper then app; exact pins/IDs verified. Preflight has no
+keychain/artifact side effect. No network, notary, trust changes, install or launch.
+P4. Probe-only negative clients: wrong-ID same certificate, ad-hoc client, wrong
+expected helper pin. Positive pings before/after each negative are required.
+Actual dedicated certificate and administrator drill wait for review.
+P5. Fail-first pure protocol, lifecycle, timeout and synthetic staging tests; no
+real-command fallthrough. Separate debug/release builds; probe/daemon/client/setup
+checks; shell/Python/plist/diff lint. No stable app packaging locally.
+P6. Lead coordinates any native launch; preview is missing-identity only. Fakes
+do not prove SMAppService acceptance. P7. Fresh independent code/manual-security,
+lead review and CI; CodeRabbit prohibited. No merge, install, arming, real key
+use, credentials, root helper execution or settings writes. P8. Clean draft PR
+on local-signing-auth with evidence and exact remaining administrator steps.
+
+Recovery: idle/missing signature offers Check status/Quit; failed registration
+offers Check status/Register or Remove; approval offers Login Items/Check status;
+failed ping offers Ping/Check status/Remove; failed removal offers Remove/Check
+status. Pending registration/removal holds its slot until real completion; Quit
+is disabled while pending. No durable app state; relaunch offers Check status.
