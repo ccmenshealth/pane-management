@@ -49,7 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         rebuildDockMenu()
         return dockMenu
     }
-    func menuWillOpen(_ menu: NSMenu) {
+    func menuNeedsUpdate(_ menu: NSMenu) {
         if menu === dockMenu { rebuildDockMenu() }
         else { rebuildMenu(menu) }
     }

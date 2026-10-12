@@ -5,6 +5,11 @@
 - Slice 1 of [the locked plan](closed-lid-plan.md) is implemented on
   `codex/dock-presence` in the isolated `PaneManagement-worktrees/dock-presence`
   checkout, based on `3ce28b8ce72d392c7885640d22b1b7e2e7a03b37`.
+- [Draft PR #2](https://github.com/ccmenshealth/pane-management/pull/2) received
+  independent and lead review on `ca9a781989c0051b14b223122ae71b6ab5595fc7`.
+  Must-fix R1 was menu mutation in an AppKit open callback. The builder moved
+  both menu refresh paths to `menuNeedsUpdate`; independent delta review is
+  pending. The finding and SDK evidence are in the plan's findings ledger.
 - Candidate build 6 uses regular activation, appears in the Dock while running,
   and supplies Settings and pause/resume in its Dock menu. The existing menu-bar
   icon and chooser reopen exclusions are retained. Both menus and Settings use
@@ -15,7 +20,7 @@
 - Local checks and remaining acceptance are recorded in `VERIFICATION.md`.
   Packaging the app and native UI acceptance await a lead-coordinated quit of
   build 5. The installed bundle at the primary checkout is unchanged.
-- Next actions: push a draft PR, perform independent and lead review, then
+- Next actions: review the R1 fix delta independently and with the lead, then
   package and run the native Dock/menu/recovery checks at the
   stable installed path. Do not call this slice gate-green before those checks.
 - CodeRabbit is unavailable under the repository exclusion. Security review is

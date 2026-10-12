@@ -14,6 +14,18 @@ used by the Settings toggle; the controller's existing cancellation and hotkey
 registration paths are unchanged. Each menu owns separate item instances and the
 delegate retains the Dock menu for its lifetime.
 
+Independent review caught a menu lifecycle contract violation at the first
+candidate head: structure was rebuilt from `menuWillOpen`. The local SDK's
+`NSMenu.h:279–281` explicitly prohibits menu/item mutation in that callback.
+R1 moves both the Dock and menu-bar rebuild paths to `menuNeedsUpdate`; the Dock
+delegate callback still refreshes immediately before returning its menu. A source
+audit found no remaining `menuWillOpen`/`menuDidClose` mutation callbacks anywhere
+in the app. No timer workaround was added. The 60 regressions, separate debug
+and release builds, shell/plist lint, and whitespace check all passed again after
+this fix. Independent delta review is pending. Original-head CI passed in
+[run 38272215694](https://github.com/ccmenshealth/pane-management/actions/runs/38272215694);
+that result does not claim CI coverage of the R1 delta.
+
 Local checks in the isolated candidate worktree:
 
 - `swift run --disable-sandbox --cache-path .build/cache SnapCoreChecks`:

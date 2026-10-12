@@ -23,6 +23,7 @@ Each builder names regression, Swift typecheck/build, metadata/shell/whitespace 
 
 ## Findings ledger
 
+- **R1 — must-fix, owner: Dock builder; fix implemented, delta verdict pending.** Independent review of `ca9a781989c0051b14b223122ae71b6ab5595fc7` found structural menu mutation in `App.swift:52–54` during `menuWillOpen`. Local AppKit `NSMenu.h:279–281` explicitly prohibits changing menu structure/items in open/close callbacks. Both the existing menu-bar path and the new Dock path now refresh in `menuNeedsUpdate`; `applicationDockMenu` still returns freshly built controls. No delayed mutation or timing workaround is used. Delta review and native menu checks remain required.
 - Architecture review completed read-only: public assertions do not block lid sleep; internal assertion modifiers require an Apple entitlement; the raw selector changes a shared power-management bit without caller-owned cleanup. The broad `pmset SleepDisabled` setting short-circuits native emergency sleep branches ([Apple source](https://github.com/apple-oss-distributions/xnu/blob/xnu-12377.121.6/iokit/Kernel/IOPMrootDomain.cpp#L7803-L7868)). Slice 2 is blocked pending the user's scope decision. No runtime sleep settings or privileged installation were changed; Dock slice 1 proceeds independently.
 - Native reviewer initially stopped on the older model self-check; user authorized current model and review resumed. No files were changed in that stopped attempt.
 
