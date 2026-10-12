@@ -6,13 +6,17 @@ import AlwaysOnIPC
 @MainActor public final class AlwaysOnClient {
     public private(set) var observation = ClientObservation(revision: 0, state: .unknown("Check helper status."), removalPending: false)
     public var onObservation: ((ClientObservation) -> Void)?
+    private let activities: ClientActivities
+    private var sessionActivity: ActivityHold?
     private let transport: ClientTransport, scheduler: ClientScheduler
     private var channel: ClientChannel?, generation: UInt64 = 0, token: UUID?
     private var busy = false, waiters: [CheckedContinuation<Void, Never>] = []
     private var stopRevision: UInt64 = 0
     private var renewal: ClientTimer?, stopRequested = false, recovering = false, removing = false
     private var pending: ((Result<Data, Error>) -> Void)?
-    public init(transport: ClientTransport, scheduler: ClientScheduler) { self.transport = transport; self.scheduler = scheduler }
+    public init(transport: ClientTransport, scheduler: ClientScheduler, activity: ClientActivity = SystemClientActivity()) {
+        self.transport = transport; self.scheduler = scheduler; activities = ClientActivities(activity)
+    }
 
     private func publish(_ state: ClientState) -> ClientObservation {
         observation = .init(revision: observation.revision &+ 1, state: state, removalPending: removing)
@@ -21,11 +25,13 @@ import AlwaysOnIPC
     private func enter() async { if busy { await withCheckedContinuation { waiters.append($0) } }; busy = true }
     private func leave() { if waiters.isEmpty { busy = false } else { waiters.removeFirst().resume() } }
     private func discard() {
-        renewal?.cancel(); renewal = nil; token = nil
+        renewal?.cancel(); renewal = nil; token = nil; sessionActivity = nil
         generation &+= 1; let old = channel; channel = nil; old?.close()
     }
     private func lost(_ id: UInt64) {
         guard generation == id else { return }
+        let hold = activities.hold()
+        defer { hold.finish() }
         let completion = pending
         discard()
         // During unregister the native completion, not its expected disconnect,
@@ -34,7 +40,8 @@ import AlwaysOnIPC
         _ = publish(.unknown("Helper connection was lost. Retry deactivation."))
         completion?(.failure(ClientFailure.connectionLost))
         if !busy && !recovering {
-            Task { await self.enter(); defer { self.leave() }; _ = await self.recover() }
+            let recoveryHold = activities.hold()
+            Task { defer { recoveryHold.finish() }; await self.enter(); defer { self.leave() }; _ = await self.recover() }
         }
     }
     private func connect() throws {
@@ -101,16 +108,18 @@ import AlwaysOnIPC
         }
     }
     public func status() async -> ClientObservation {
+        let hold = activities.hold(); defer { hold.finish() }
         await enter(); defer { leave() }
         do {
             let reply = try await ready()
-            if verifiedOff(reply) { token = nil; renewal?.cancel(); return publishOff(reply) }
+            if verifiedOff(reply) { token = nil; sessionActivity = nil; renewal?.cancel(); return publishOff(reply) }
             if reply.state == .active, reply.outcome == .observed, !reply.requiresRemoval, token != nil { return publish(.active) }
             return await recover() // Never adopt another connection's global active state.
         } catch { return await recover() }
     }
     public func activate() async -> ClientObservation {
         let requestedAt = stopRevision
+        let hold = activities.hold(); defer { hold.finish() }
         await enter(); defer { leave() }
         guard requestedAt == stopRevision else { return await stop() }
         stopRequested = false
@@ -120,13 +129,14 @@ import AlwaysOnIPC
             guard usableOff(before), !stopRequested else { return await recover() }
             let result = try await rpc(.activate)
             guard result.state == .active, result.outcome == .activated, let fresh = result.activationToken else { return await recover() }
-            token = fresh
+            token = fresh; sessionActivity = activities.hold()
             if stopRequested { return await stop() }
             armRenewal(); return publish(.active)
         } catch { return await recover() }
     }
     public func deactivate() async -> ClientObservation {
         stopRequested = true; stopRevision &+= 1
+        let hold = activities.hold(); defer { hold.finish() }
         await enter(); defer { leave() }
         return await stop()
     }
@@ -135,7 +145,7 @@ import AlwaysOnIPC
         guard let token, channel?.isOpen == true else { return await recover() }
         do {
             let result = try await rpc(.deactivate, token: token)
-            self.token = nil
+            self.token = nil; sessionActivity = nil
             guard verifiedOff(result) else { return await recover() }
             return publishOff(result)
         } catch { return await recover() }
@@ -144,7 +154,8 @@ import AlwaysOnIPC
         renewal?.cancel(); let id = generation
         renewal = scheduler.schedule(after: 10) { [weak self] in
             guard let self else { return }
-            Task { await self.enter(); defer { self.leave() }
+            let hold = self.activities.hold()
+            Task { defer { hold.finish() }; await self.enter(); defer { self.leave() }
                 guard self.generation == id, let token = self.token, !self.stopRequested else { return }
                 do {
                     let reply = try await self.rpc(.heartbeat, token: token)
@@ -158,8 +169,9 @@ import AlwaysOnIPC
     /// B3b supplies SMAppService's completion-based unregister, never sync reap.
     public func remove(unregister: (@escaping @MainActor (Result<Void, Error>) -> Void) -> Void) async -> Bool {
         stopRequested = true; stopRevision &+= 1
+        let hold = activities.hold(); defer { hold.finish() }
         await enter(); defer { leave() }
-        renewal?.cancel(); renewal = nil; token = nil
+        renewal?.cancel(); renewal = nil; token = nil; sessionActivity = nil
         _ = publish(.unknown("Preparing helper removal. Retry removal if this fails."))
         do {
             _ = try await ready()

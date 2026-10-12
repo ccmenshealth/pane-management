@@ -158,53 +158,59 @@ See [CodeRabbit's automatic-review controls](https://docs.coderabbit.ai/configur
 - [ScreenCaptureKit window capture](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-in-macos)
 - [Screenshot capture API](https://developer.apple.com/documentation/screencapturekit/scscreenshotmanager)
 
-## Always-on mode (UI development slice)
+## Always-on mode
 
-The menu bar, Dock menu and Settings share an always-on controller. This build
-reports **setup unavailable** because the privileged backend has not been added;
-it does not change sleep settings or activate a simulated mode in the main app.
-The eventual mode is a broad manual override, including with the lid open.
-App-managed critical-warning recovery is best effort, not equivalent to leaving
-macOS emergency sleep protections untouched.
+The menu bar, Dock menu, Settings and centered warning share the authenticated
+client and setup coordinator. Activation is always manual. The warning has a red
+triangle, a white exclamation mark and a Deactivate button; it remains visible
+while normal sleep is uncertain. This is a broad manual override, including with
+the lid open. App-managed critical-warning recovery is best effort; macOS
+emergency sleep protection is not guaranteed.
 
-The independent preview renders the same warning with an in-memory backend and a
-different bundle ID. It has no power, privilege, or permission implementation.
-Run these commands in **zsh**:
+This development stack is **not installed or armed**. The existing build 5 remains
+the running app. Positive installation requires matching Apple-issued app/helper
+signatures and notarization; no suitable identity is available on this Mac.
+There is no ad-hoc privileged fallback. Signed IPC, approval, closed-lid behavior,
+critical-event recovery and native acceptance remain separate gates.
+
+Settings provides explicit setup, approval navigation, repair and verified helper
+removal. Its helper actions stay in a fixed footer for a layout below the warning. Native window renders and clicks verify these
+controls; whole-desktop stacking/occlusion remains unverified. Removal first restores normal sleep,
+seals activation admission and verifies the same helper connection before asking
+the OS to unregister. A failed removal offers Finish helper removal, including
+after reconnect. Pending OS work cannot be treated as finished at a timeout.
+Wake/focus checks never activate or register automatically. Client work and owned
+sessions use a balanced App Nap activity that permits system and display sleep.
+
+The GUI links read-only probes, shared IPC, client and setup modules; privileged
+writers and the daemon runtime remain separate. Regression commands in **zsh**:
 
 ```zsh
-swift run --disable-sandbox --cache-path .build/cache AlwaysOnChecks
+swift build -c debug
+swift build -c release
+.build/debug/AlwaysOnChecks
+.build/debug/AlwaysOnEngineChecks
+.build/debug/AlwaysOnNativeChecks
+.build/debug/AlwaysOnServiceChecks
+.build/debug/AlwaysOnDaemonChecks
+.build/debug/AlwaysOnClientChecks
+.build/debug/AlwaysOnSetupChecks
+```
+
+The independent preview uses the same native warning and Settings footer with an
+in-memory backend. It imports no native setup/client/power implementation. In
+**zsh**, after quitting any previous preview:
+
+```zsh
 bash scripts/build-always-on-preview.sh
 open "dist/Always-on Preview.app"
 ```
 
-Use Activate in the preview, then Deactivate on the centered warning. Toggle
-**Fail next restoration** to exercise the persistent recovery state and retry.
-**Simulate critical stop** exercises the UI/controller event, not battery or heat
-telemetry. Each simulated operation takes two seconds. No native sleep, hardware,
-helper recovery, or emergency behavior is established by the preview or tests.
-The warning is intended for usable displays at least 320 × 300 logical points;
-its content scrolls on small displays. Secure/login UI remains under OS control.
-
-The B1 recovery engine is isolated from the app and uses injected adapters only.
-Run `swift run --disable-sandbox --cache-path .build/cache AlwaysOnEngineChecks`
-for its journal, session, stop/race and restoration checks. The B2a native module
-is also isolated: run `swift run --disable-sandbox --cache-path .build/cache
-AlwaysOnNativeChecks` for disposable filesystem and harmless process tests.
-The suite never writes power settings or creates production journal storage.
-Authentication, app integration, installation and the separate arming drill
-remain pending.
-
-
-The B3a client remains isolated from application setup/UI. Run
-`swift run --disable-sandbox --cache-path .build/cache AlwaysOnClientChecks`
-for injected transport, reply-validation and recovery/lifecycle checks. It does
-not register or run a helper. Native connection setup fails closed without the
-matching Apple-issued app identity; positive signed acceptance remains pending.
-
-The B3b1 headless setup module adds explicit registration/approval/removal state
-and a read-only absence proof. Run
-`swift run --disable-sandbox --cache-path .build/cache AlwaysOnSetupChecks`.
-The GUI-facing dependency graph includes only read-only power/storage probes,
-shared IPC, and the client; native writers and daemon runtime stay separate.
-App wiring and signed staging remain subsequent slices. No actual helper setup
-or power change is performed by these checks.
+Choose a fixture to inspect active, setup, signing, approval, repair, activation,
+removal and failed-recovery states. Preview setup/removal/navigation are inert.
+Activation/restoration takes about two seconds; Fail next restoration exercises
+the persistent recovery warning. No power settings or installed apps change.
+The warning supports usable displays at least 320 × 300 logical points with
+scrolling content; that minimum does not establish that the full Settings footer
+fits alongside it. Cross-Space/fullscreen, multi-display, VoiceOver and physical
+sleep behavior require their own acceptance checks. See `VERIFICATION.md`.

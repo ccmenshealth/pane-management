@@ -890,3 +890,104 @@ suites with those same counts. Shell/plist/diff lint passed; no final compiler
 warnings. Exact commands remain the named S9 matrix. Evidence summaries and logs
 are in `.build/b3b1-evidence/final-green-summary.txt` and sibling files. Remote CI
 and pinned independent/lead/security review remain open at this builder handoff.
+
+
+## B3b2 app integration candidate (2026-10-12)
+
+The native client/setup adapter now drives the shared controller, menu/Dock,
+warning and Settings. This candidate does not replace or run the installed app.
+Builder inherited the requested current model; exact model/effort metadata is
+not exposed. Independent code/manual-security and lead review remain required.
+CodeRabbit is prohibited by repository policy. Literal security tool unavailable;
+a separate read-only manual-security pass is required.
+
+### Automated evidence
+
+Evidence is retained locally, ignored by Git, in `.build/b3b2-evidence/`:
+
+- `run-red.py` records overlays, exact build/run commands and guaranteed source
+  restoration. `controller-inert.swift` preserves the final public interface with
+  inert behavior: the exact final controller suite compiles and fails **64/76**.
+- `activity-prefix.swift` is the actual pre-U9 client source, with only an ignored
+  activity parameter added for source compatibility: final client suite **10/181
+  failures**. No native activity is held by tests; all client constructions,
+  including real service/client loopbacks, inject an inert port.
+- `repair-prefix.swift` omits the new Settings repair route behind a compile-only
+  method shim: final setup suite **1/141 failures**. It covers uncertain startup
+  with a retained recovery directory, no automatic registration, explicit repair
+  registering once, client status recovering to off and no activation.
+- `coalescing-final-prefix.swift` reproduces the actual initial dirty-flag bug:
+  final controller suite **1/76 failures**. Requests before the first Task began
+  were discarded. Consuming the dirty flag only after the first refresh preserves
+  one follow-up. Original 58-assertion red output is also retained.
+- Separate `swift build -c debug` and `swift build -c release` passed. All debug
+  suites passed: SnapCore 60, controller 76, engine 176, native IO 114, service 355,
+  daemon 118, client 181, setup 141. Affected release suites passed 76/181/141.
+- `bash -n scripts/build-app.sh scripts/build-fixture.sh
+  scripts/build-always-on-preview.sh`, `plutil -lint Resources/*.plist` and
+  `git diff --check` passed. Stable-path app packaging was not run locally.
+- Inert preview packaging, deep/strict ad-hoc verification and plist validation
+  passed. Candidate preview executable SHA256:
+  `dbe68fadc8254cc3089b6b70f686d6c63521dcbc0192beaee9f3fd4c9a0f00f1`.
+  Remote CI remains pending at this bookmark; native evidence follows below.
+
+### Recoverability and sibling audit
+
+| State | Offered exit and settlement |
+|---|---|
+| Fresh off | Explicit Activate; quit safe only while current proof remains fresh |
+| Active / activation pending | Deactivate remains usable; stop/quit latch survives late activation; owned refresh preserves token |
+| Stopping / actual OS work pending | Wait; retain warning and block quit until actual settlement, never a timeout acknowledgment |
+| Unknown / failed restoration | Retry deactivation, explicit Settings repair and Check again; uncertainty keeps warning |
+| Fresh unregistered / missing signing | Set up only with valid identity; otherwise signing explanation and Check again; verified absence permits quit |
+| Approval / missing bundle | Explicit Settings approval or installation repair then Check again; refresh never navigates/registers |
+| Removal failed | Retry deactivation and Settings removal; fresh daemon status exposes sealed removalRequired across reconnect |
+| removalRequired | Quiet verified off; Finish helper removal opens Settings; sole actual Remove button is there, no Activate |
+| Removed | Quiet in-process; wake/relaunch reruns absence proof and retained journal routes to explicit repair |
+
+All surfaces use the same controller action and title; warning invokes that action
+rather than hardcoded Deactivate. Repair and removal are Settings-only methods;
+menu/warning navigation merely opens Settings. Settings pins compact actions below
+its scrolling description. Native window renders and clicks establish footer
+legibility and action routing, not whole-desktop occlusion or stacking.
+
+The scheduling activity has independent idempotent operation holds acquired before
+lane suspension, plus an owned-token hold. Loss, orphan recovery, queued stop,
+heartbeat and actual unregister settlement preserve continuity; settled no-token
+failures and client disposal release their own holds. The sole production option
+is userInitiatedAllowingIdleSystemSleep; tests verify no system/display sleep or
+latencyCritical flag. This does not prove OS scheduling or physical lid behavior.
+
+No helper registration/unregistration/execution, native power mutation, root
+journal, signing enrollment, privacy grant or installed app change occurred.
+Original build5 remains PID96007. Apple-issued signing, signed installation/IPC,
+critical-event/lid drills, installed Dock and unobserved cross-Space/fullscreen,
+multi-display and VoiceOver checks remain unresolved. The 320x300 warning minimum
+does not establish full Settings footer reachability on constrained displays.
+
+B3b2 native preview progress (lead CUA inspection): active warning measured
+520x390, Escape did not dismiss it, and Deactivate → pending → off passed.
+Setup available and missing signing remained quiet. Approval, unknown recovery
+and missing-installation warnings rendered; approval's Settings route and explicit
+inert Login Items action passed, as did unknown → Settings repair → approval.
+The fixed footer actions were legible and exercised on the current laptop render. The first fixture process was terminated with
+SIGTERM after CUA window navigation stalled; this is fixture cleanup, not evidence
+of a successful protected quit. Preview-only Show Preview Controls (Command–1)
+was then added and its debug/release packaging verified. Production is unchanged.
+
+Lead subsequently observed all eleven fixture states in native window-only CUA
+renders. Active and activation-pending, approval, installation repair, unknown,
+removal-pending and removal-failed warnings had correct primary enabled/disabled
+state. Setup-available, missing-signing and removalRequired stayed quiet, with no
+fake Activate. Failed-removal Settings link → actual inert Remove → off passed;
+normal Quit from off was confirmed by process absence. A post-quit CUA AX query
+can relaunch the fixture, so the final check used process status without another
+AX query. The installed build5 PID96007 remained the sole app process afterward.
+Screenshots were rendered inline in the lead's CUA tool outputs, not published.
+
+Two copy corrections followed inspection: checking now says to keep the app open,
+and a pending recovery with disabled action says to wait instead of retrying an
+unavailable Deactivate action. Both use the shared description; separate debug/
+release builds and controller checks were rerun. This does not claim whole-desktop
+stacking/occlusion, cross-Spaces/fullscreen, multi-display, VoiceOver, installed
+Dock acceptance or physical behavior; those gates remain open.

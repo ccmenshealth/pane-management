@@ -1,132 +1,152 @@
 import Foundation
 import AlwaysOnCore
+import AlwaysOnUI
 
 @MainActor final class Backend: AlwaysOnBackend {
-    var observation: AlwaysOnObservation = .off
-    var activationResult: AlwaysOnObservation = .active
-    var stopResult: AlwaysOnObservation = .off
-    var activates = 0, stops = 0
-    var holdActivation = false, holdStop = false
-    var activation: CheckedContinuation<AlwaysOnObservation, Never>?
-    var stop: CheckedContinuation<AlwaysOnObservation, Never>?
-    func status() async -> AlwaysOnObservation { observation }
-    func activate() async -> AlwaysOnObservation {
-        activates += 1
-        if holdActivation { return await withCheckedContinuation { activation = $0 } }
-        return activationResult
+    var snapshot = AlwaysOnSnapshot(revision: 0, state: .off, action: .activate, quitSafe: true)
+    var onChange: ((AlwaysOnSnapshot) -> Void)?
+    var refreshes = 0, activates = 0, stops = 0, setups = 0, removals = 0, navigations = 0
+    var holdRefresh = false, holdActivation = false, holdStop = false, holdRemoval = false
+    var refreshGate: CheckedContinuation<Void, Never>?, activationGate: CheckedContinuation<Void, Never>?
+    var stopGate: CheckedContinuation<Void, Never>?, removalGate: CheckedContinuation<Void, Never>?
+    var stopFails = false
+    func emit(_ state: AlwaysOnState, _ action: AlwaysOnAction, safe: Bool = false, pending: Bool = false, secondary: String? = nil) {
+        snapshot = .init(revision: snapshot.revision + 1, state: state, action: action, secondaryTitle: secondary, lifecyclePending: pending, quitSafe: safe)
+        onChange?(snapshot)
     }
-    func deactivate() async -> AlwaysOnObservation {
+    func refresh() async {
+        refreshes += 1
+        if holdRefresh { await withCheckedContinuation { refreshGate = $0 } }
+    }
+    func activate() async {
+        activates += 1; emit(.activating, .deactivate, pending: true)
+        if holdActivation { await withCheckedContinuation { activationGate = $0 } }
+        emit(.active, .deactivate)
+    }
+    func deactivate() async {
         stops += 1
-        if holdStop { return await withCheckedContinuation { stop = $0 } }
-        return stopResult
+        if holdStop { await withCheckedContinuation { stopGate = $0 } }
+        emit(stopFails ? .recoveryRequired("readback failed") : .off, stopFails ? .deactivate : .activate, safe: !stopFails)
     }
+    func setup() async { setups += 1; emit(.setupRequired("Approval needed"), .checkSetup, secondary: "Open Login Items") }
+    func remove() async {
+        removals += 1; emit(.recoveryRequired("Removing"), .wait, pending: true)
+        if holdRemoval { await withCheckedContinuation { removalGate = $0 } }
+        emit(.unavailable("Removed"), .setUp, safe: true)
+    }
+    func openLoginItems() { navigations += 1 }
 }
-
 @main enum Checks {
     @MainActor static func main() async {
-        var failures = 0, assertions = 0
-        func check(_ condition: @autoclosure () -> Bool, _ name: String) {
-            assertions += 1
-            if !condition() { failures += 1; print("FAIL: \(name)") }
-        }
-        func wait(_ label: String, until completed: () -> Bool) async {
+        var assertions = 0, failures = 0
+        func check(_ value: Bool, _ label: String) { assertions += 1; if !value { failures += 1; print("FAIL: \(label)") } }
+        func wait(_ label: String, _ condition: () -> Bool) async {
             let deadline = ProcessInfo.processInfo.systemUptime + 2
-            while !completed() {
-                if ProcessInfo.processInfo.systemUptime >= deadline {
-                    failures += 1; print("FAIL: timeout waiting for \(label)"); return
-                }
-                await Task.yield()
+            while !condition() && ProcessInfo.processInfo.systemUptime < deadline { await Task.yield() }
+            check(condition(), "settled \(label)")
+        }
+        let b = Backend(), c = AlwaysOnController(backend: Backend())
+        check(c.requestQuit(), "fresh off permits quit")
+        for surface in ["Dock", "menu", "Settings", "warning"] {
+            let b = Backend(), c = AlwaysOnController(backend: b)
+            c.perform(.activate); c.perform(.activate)
+            await wait(surface + " active") { c.state == .active }
+            check(b.activates == 1, "repeated activation rejected")
+            c.perform(.deactivate); c.perform(.deactivate)
+            await wait(surface + " off") { c.state == .off }
+            check(b.stops == 1, "repeated stop rejected")
+        }
+        let owned = AlwaysOnController(backend: b)
+        owned.perform(.activate); await wait("owned active") { owned.state == .active }
+        for _ in 0..<3 { let n = b.refreshes; owned.checkSetup(); await wait("owned refresh") { b.refreshes > n && owned.canRemove } }
+        check(owned.state == .active && b.stops == 0, "startup wake focus preserve owned active")
+        check(b.setups == 0 && b.navigations == 0 && b.removals == 0, "refresh has no implicit lifecycle/navigation")
+        let stale = b.snapshot
+        b.emit(.recoveryRequired("newer"), .deactivate)
+        b.onChange?(stale); b.onChange?(.init(revision: b.snapshot.revision, state: .off, action: .activate, quitSafe: true))
+        check(owned.state == .recoveryRequired("newer"), "stale and equal revisions ignored")
+        do {
+            let b = Backend(), c = AlwaysOnController(backend: b); b.holdActivation = true; b.holdStop = true
+            c.perform(.activate); await wait("held activation") { b.activationGate != nil }
+            check(c.action == .deactivate && c.actionEnabled, "pending activation keeps stop actionable")
+            var replies: [Bool] = []; c.onQuitDecision = { replies.append($0) }
+            check(!c.requestQuit(), "quit during activation waits")
+            await wait("queued stop") { b.stopGate != nil }
+            b.activationGate?.resume(); b.activationGate = nil
+            await wait("activation returned") { b.snapshot.state == .active }
+            check(c.state == .stopping && replies.isEmpty, "late active cannot erase stop or quit")
+            b.stopGate?.resume(); b.stopGate = nil
+            await wait("quit restored") { !replies.isEmpty }
+            check(replies == [true] && c.state == .off, "quit exactly once after confirmed off")
+        }
+        do {
+            let b = Backend(), c = AlwaysOnController(backend: b); b.holdActivation = true
+            c.perform(.activate); await wait("early stop activation") { b.activationGate != nil }
+            c.perform(.deactivate); await wait("early stop returned") { b.stops == 1 && b.snapshot.state == .off }
+            check(c.state == .stopping && !c.canRemove, "early stop cannot clear held activation")
+            b.activationGate?.resume(); b.activationGate = nil
+            await wait("late unsafe settlement") { c.state != .stopping }
+            check(!c.requestQuit(), "late active never claims safe quit")
+            await wait("late active restored") { c.state == .off }
+        }
+        do {
+            let b = Backend(), c = AlwaysOnController(backend: b); b.holdRefresh = true
+            c.checkSetup(); check(c.state == .checking && !c.requestQuit(), "wake immediately revokes safe snapshot")
+            for _ in 0..<20 { c.checkSetup() }
+            await wait("refresh held") { b.refreshGate != nil }
+            check(b.refreshes == 1, "refresh coalesces in-flight")
+            b.holdRefresh = false; b.refreshGate?.resume(); b.refreshGate = nil
+            await wait("coalesced followup") { c.canRemove }
+            check(b.refreshes == 2, "one dirty followup only")
+        }
+        do {
+            let b = Backend(), c = AlwaysOnController(backend: b); b.stopFails = true
+            b.emit(.active, .deactivate)
+            var replies: [Bool] = []; c.onQuitDecision = { replies.append($0) }
+            check(!c.requestQuit(), "unsafe quit waits for recovery")
+            await wait("failed quit") { !replies.isEmpty }
+            check(replies == [false] && c.state == .recoveryRequired("readback failed"), "failed stop refuses quit visibly")
+            b.stopFails = false; c.perform(.deactivate); await wait("retry") { c.state == .off }
+        }
+        do {
+            let b = Backend(), c = AlwaysOnController(backend: b); var settings = 0
+            c.onOpenSettings = { settings += 1 }
+            b.emit(.removalRequired, .openSettings, safe: true)
+            c.perform(c.action)
+            check(settings == 1 && b.removals == 0 && b.activates == 0 && c.requestQuit(), "finish removal only routes to Settings")
+            b.emit(.setupRequired("Approve"), .checkSetup, secondary: "Open Login Items")
+            c.perform(.checkSetup); await wait("approval recheck") { c.canRemove }
+            check(b.navigations == 0, "approval recheck never navigates")
+            c.perform(.openLoginItems); check(b.navigations == 1, "explicit approval navigation")
+            b.emit(.unavailable("Not installed"), .setUp, safe: true)
+            c.perform(.setUp); await wait("explicit setup") { c.canRemove }
+            check(b.setups == 1, "setup only explicit action")
+            b.holdRemoval = true; c.removeHelperFromSettings(); await wait("removal held") { b.removalGate != nil }
+            var replies: [Bool] = []; c.onQuitDecision = { replies.append($0) }
+            check(!c.requestQuit() && !c.canRemove && !c.actionEnabled, "actual lifecycle blocks quit and mutation")
+            c.perform(.setUp); c.removeHelperFromSettings()
+            check(b.removals == 1 && b.setups == 1 && replies.isEmpty, "unsettled removal retains ownership")
+            b.removalGate?.resume(); b.removalGate = nil; await wait("removed quit") { !replies.isEmpty }
+            check(replies == [true], "settled removal permits quit")
+        }
+        do {
+            let b = Backend(), c = AlwaysOnController(backend: b)
+            let rows: [(AlwaysOnState, AlwaysOnAction, String, Bool)] = [
+                (.off, .activate, "Activate always-on mode", false),
+                (.active, .deactivate, "Deactivate", true),
+                (.activating, .deactivate, "Deactivate", true),
+                (.recoveryRequired("failure"), .deactivate, "Retry deactivation", true),
+                (.unavailable("setup"), .setUp, "Set up always-on helper", false),
+                (.unavailable("signing"), .checkSetup, "Check again", false),
+                (.setupRequired("approve"), .checkSetup, "Check again", true),
+                (.removalRequired, .openSettings, "Finish helper removal in Settings", false),
+                (.stopping, .wait, "Please wait…", true)]
+            for (state, action, label, warning) in rows {
+                b.emit(state, action)
+                check(c.actionTitle == label && c.action == action, "shared label matches dispatched action: \(label)")
+                check(c.state.showsWarning == warning && c.actionEnabled == (action != .wait), "shared warning/action availability: \(label)")
             }
         }
-        func settle(_ controller: AlwaysOnController) async {
-            await wait("controller completion") {
-                switch controller.state {
-                case .checking, .activating, .stopping: return false
-                case .off, .active, .recoveryRequired, .unavailable: return true
-                }
-            }
-        }
-        func ready(_ backend: Backend) async -> AlwaysOnController {
-            let controller = AlwaysOnController(backend: backend)
-            controller.checkSetup(); await settle(controller); return controller
-        }
-        let b = Backend(), c = await ready(Backend())
-        check(c.state == .off, "startup verifies off")
-        check(c.requestQuit(), "verified off permits quit")
-        // Shared actions used by Dock, status, Settings and warning.
-        for entry in ["Dock", "status", "Settings", "warning"] {
-            let controller = await ready(Backend())
-            controller.perform(.activate); await settle(controller)
-            check(controller.state == .active, "\(entry) activation uses verified backend")
-            controller.perform(.deactivate); await settle(controller)
-            check(controller.state == .off, "\(entry) deactivation confirms off")
-        }
-        let repeated = await ready(b)
-        repeated.perform(.activate); repeated.perform(.activate); await settle(repeated)
-        check(b.activates == 1, "repeated activation is serialized")
-        repeated.perform(.activate); await settle(repeated)
-        check(b.activates == 1, "active activation is idempotent")
-        repeated.criticalStop(); await settle(repeated)
-        check(repeated.state == .off && b.stops == 1, "critical event restores")
-        await settle(repeated); check(b.activates == 1, "critical stop never resumes")
-        let late = Backend(); late.holdActivation = true
-        let canceled = await ready(late)
-        canceled.perform(.activate); await wait("held activation") { late.activation != nil }
-        check(canceled.state == .activating, "pending activation is not active")
-        canceled.perform(.deactivate); canceled.perform(.activate)
-        check(canceled.state == .stopping, "cancellation has a visible stopping state")
-        late.activation?.resume(returning: .active); late.activation = nil; await settle(canceled)
-        check(canceled.state == .off && late.stops == 1 && late.activates == 1, "late success restores instead of rearming")
-        let failing = Backend(); let recovery = await ready(failing)
-        recovery.perform(.activate); await settle(recovery)
-        failing.stopResult = .unknown("readback failed")
-        var quitReplies: [Bool] = []; recovery.onQuitDecision = { quitReplies.append($0) }
-        check(!recovery.requestQuit(), "active quit waits")
-        await settle(recovery)
-        check(recovery.state == .recoveryRequired("readback failed"), "restore failure remains visible")
-        check(quitReplies == [false], "restore failure refuses quit")
-        failing.stopResult = .off; recovery.perform(.deactivate); await settle(recovery)
-        check(recovery.state == .off, "retry restores")
-        recovery.perform(.activate); await settle(recovery)
-        check(!recovery.requestQuit(), "quit again awaits restoration"); await settle(recovery)
-        check(quitReplies == [false, true], "quit succeeds only after readback off")
-        let unavailable = AlwaysOnController(backend: UnavailableAlwaysOnBackend())
-        unavailable.checkSetup(); await settle(unavailable)
-        if case .unavailable = unavailable.state { check(true, "missing backend") }
-        else { check(false, "missing backend is explained") }
-        unavailable.perform(.activate); await settle(unavailable)
-        if case .unavailable = unavailable.state { check(true, "no fake activation") }
-        else { check(false, "missing backend cannot fake activation") }
-        check(unavailable.requestQuit(), "safe missing backend allows quit")
-        let invalid = Backend(); invalid.activationResult = .unknown("invalid reply")
-        let rejected = await ready(invalid); rejected.perform(.activate); await settle(rejected)
-        check(invalid.stops == 1 && rejected.state == .off, "unknown activation triggers restoration")
-        let startup = Backend(); startup.observation = .active
-        let restarted = await ready(startup)
-        check(startup.stops == 1 && restarted.state == .off && startup.activates == 0, "startup restores stale active state without resuming")
-        let slow = Backend(); slow.holdStop = true
-        let stopping = await ready(slow); stopping.perform(.activate); await settle(stopping)
-        stopping.perform(.deactivate); stopping.perform(.deactivate); await wait("held stop") { slow.stop != nil }
-        check(slow.stops == 1 && stopping.state == .stopping, "repeated stop stays pending until confirmed")
-        slow.stop?.resume(returning: .active); slow.stop = nil; await settle(stopping)
-        if case .recoveryRequired = stopping.state { check(true, "active stop reply") }
-        else { check(false, "still active readback cannot claim off") }
-        let ambiguous = Backend()
-        ambiguous.observation = .unknown("configured helper unreachable")
-        ambiguous.stopResult = .unknown("configured helper unreachable")
-        let uncertain = await ready(ambiguous)
-        check(ambiguous.stops == 1 && uncertain.state == .recoveryRequired("configured helper unreachable"), "ambiguous startup must restore and retain recovery on failure")
-        let refused = Backend(); refused.activationResult = .off
-        let neverActive = await ready(refused); neverActive.perform(.activate); await settle(neverActive)
-        if case .unavailable = neverActive.state { check(true, "refused activation") }
-        else { check(false, "off reply does not claim successful activation") }
-        let quitDuringActivation = Backend(); quitDuringActivation.holdActivation = true
-        let waiting = await ready(quitDuringActivation)
-        var ended = false; waiting.onQuitDecision = { ended = $0 }
-        waiting.perform(.activate); await wait("held quit activation") { quitDuringActivation.activation != nil }
-        check(!waiting.requestQuit(), "quit during activation waits")
-        quitDuringActivation.activation?.resume(returning: .active); quitDuringActivation.activation = nil; await settle(waiting)
-        check(ended && waiting.state == .off && quitDuringActivation.stops == 1, "quit during activation restores late success")
         print("\(assertions) always-on assertions; \(failures) failures")
         if failures > 0 { exit(1) }
     }

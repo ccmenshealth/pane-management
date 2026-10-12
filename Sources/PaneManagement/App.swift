@@ -3,6 +3,8 @@ import SwiftUI
 import ApplicationServices
 import AlwaysOnCore
 import AlwaysOnUI
+import AlwaysOnSetup
+import AlwaysOnClient
 
 @main
 enum PaneManagementApp {
@@ -21,7 +23,11 @@ enum PaneManagementApp {
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
     private let dockMenu = NSMenu()
-    let alwaysOn = AlwaysOnController(backend: UnavailableAlwaysOnBackend())
+    let alwaysOn = AlwaysOnController(backend: SetupPresentationAdapter(SetupCoordinator(
+        service: NativeSetupService(),
+        client: SetupClientAdapter(AlwaysOnClient(transport: NativeClientTransport(), scheduler: SystemClientScheduler())),
+        proof: NativeSetupProof())))
+    private var wakeObserver: NSObjectProtocol?
     private var alwaysOnWarnings: AlwaysOnWarnings?
     private var alwaysOnStarted = false
 
@@ -47,6 +53,10 @@ enum PaneManagementApp {
         dockMenu.delegate = self
         alwaysOnWarnings = AlwaysOnWarnings(controller: alwaysOn)
         alwaysOn.onQuitDecision = { NSApp.reply(toApplicationShouldTerminate: $0) }
+        alwaysOn.onOpenSettings = { [weak self] in self?.showSettings() }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.alwaysOn.checkSetup() }
+        }
         alwaysOnStarted = true
         alwaysOn.checkSetup()
         controller.start()
@@ -76,17 +86,16 @@ enum PaneManagementApp {
     }
     private func alwaysOnMenuItem() -> NSMenuItem {
         let state = alwaysOn.state
-        let item = NSMenuItem(title: state.actionTitle, action: #selector(alwaysOnAction(_:)), keyEquivalent: "")
-        item.target = self; item.representedObject = state.action
-        item.isEnabled = state != .stopping
-        if state == .stopping { item.action = nil }
+        let item = NSMenuItem(title: alwaysOn.actionTitle, action: #selector(alwaysOnAction(_:)), keyEquivalent: "")
+        item.target = self; item.representedObject = alwaysOn.action
+        item.isEnabled = alwaysOn.actionEnabled
+        if !alwaysOn.actionEnabled { item.action = nil }
         item.state = state == .active ? .on : .off
         return item
     }
     @objc private func alwaysOnAction(_ sender: NSMenuItem) {
         guard let action = sender.representedObject as? AlwaysOnAction else { return }
         alwaysOn.perform(action)
-        if case .checkSetup = action { showSettings() }
     }
     private func settingsMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
@@ -148,13 +157,19 @@ enum PaneManagementApp {
         if controller.assistant.isVisible || controller.palette.isVisible || controller.groupPicker.isVisible { return false }
         showSettings(); return true
     }
+    func applicationDidBecomeActive(_ notification: Notification) {
+        if alwaysOnStarted { alwaysOn.checkSetup() }
+    }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Duplicate launches terminate before owning a power session. They must
         // neither wait for an uninstalled callback nor restore another instance.
         guard alwaysOnStarted else { return .terminateNow }
         return alwaysOn.requestQuit() ? .terminateNow : .terminateLater
     }
-    func applicationWillTerminate(_ notification: Notification) { controller.stop() }
+    func applicationWillTerminate(_ notification: Notification) {
+        if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
+        controller.stop()
+    }
 }
 
 struct SettingsView: View {
@@ -180,7 +195,7 @@ struct SettingsView: View {
                         Text("Windows-style snapping, with the other half included.").foregroundStyle(.secondary)
                     }
                 }
-                GroupBox { AlwaysOnControls(controller: alwaysOn).padding(8).frame(maxWidth: .infinity, alignment: .leading) }
+                GroupBox { AlwaysOnControls(controller: alwaysOn, actions: false).padding(8).frame(maxWidth: .infinity, alignment: .leading) }
                 Text(preferences.status).font(.callout).foregroundStyle(preferences.accessibility ? Color.green : Color.orange)
                 if NSRunningApplication.runningApplications(withBundleIdentifier: "local.snapbridge.testwindows").isEmpty == false {
                     VStack(alignment: .leading, spacing: 8) {
@@ -262,6 +277,10 @@ struct SettingsView: View {
                 Text("Local prototype · macOS 14+ · No network connections\nWindow previews stay in memory and are cleared when the picker closes. Snap groups last until Pane Management quits. Full-screen Spaces and some app-specific window limits aren’t supported.")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }.padding(26)
+        }.safeAreaInset(edge: .bottom) {
+            AlwaysOnActions(controller: alwaysOn, settings: true)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                .background(.regularMaterial)
         }.frame(width: 580, height: 700)
     }
     private func permissionRow(_ title: String, detail: String, granted: Bool, button: String, action: @escaping () -> Void) -> some View {

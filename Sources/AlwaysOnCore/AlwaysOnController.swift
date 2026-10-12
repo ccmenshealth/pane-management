@@ -1,132 +1,150 @@
 import Foundation
 import Combine
 
-/// Results are readback observations, not acknowledgments that a request was sent.
-/// They do not verify physical sleep, lid behavior, or emergency-warning timing.
-public enum AlwaysOnObservation: Equatable {
-    case off
-    case active
-    /// No owned override exists, and activation is unavailable. A configured but
-    /// unreachable helper MUST return unknown, including after a UI restart.
-    case unavailable(String)
-    /// State could not be verified; restoring normal sleep remains necessary.
-    case unknown(String)
+public enum AlwaysOnState: Equatable, Sendable {
+    case checking, off, activating, active, stopping, removalRequired
+    case recoveryRequired(String), unavailable(String), setupRequired(String)
 }
-
+public enum AlwaysOnAction: Equatable, Sendable {
+    case activate, deactivate, checkSetup, setUp, openSettings, openLoginItems, wait
+}
+public struct AlwaysOnSnapshot: Equatable, Sendable {
+    public let revision: UInt64
+    public let state: AlwaysOnState
+    public let action: AlwaysOnAction
+    public let secondaryTitle: String?
+    public let lifecyclePending: Bool
+    public let quitSafe: Bool
+    public init(revision: UInt64, state: AlwaysOnState, action: AlwaysOnAction,
+                secondaryTitle: String? = nil, lifecyclePending: Bool = false, quitSafe: Bool = false) {
+        self.revision = revision; self.state = state; self.action = action
+        self.secondaryTitle = secondaryTitle; self.lifecyclePending = lifecyclePending; self.quitSafe = quitSafe
+    }
+}
 @MainActor public protocol AlwaysOnBackend: AnyObject {
-    // Implementations must bound requests, authenticate replies and never persist
-    // an activation intention across process restarts. No backend exists yet.
-    func status() async -> AlwaysOnObservation
-    func activate() async -> AlwaysOnObservation
-    func deactivate() async -> AlwaysOnObservation
+    var snapshot: AlwaysOnSnapshot { get }
+    var onChange: ((AlwaysOnSnapshot) -> Void)? { get set }
+    func refresh() async
+    func activate() async
+    func deactivate() async
+    func setup() async
+    func remove() async
+    func openLoginItems()
 }
 
-public enum AlwaysOnState: Equatable {
-    case checking, off, activating, active, stopping
-    case recoveryRequired(String), unavailable(String)
-}
-
-public enum AlwaysOnAction { case activate, deactivate, checkSetup }
-
+/// Presentation consumes authoritative revisioned observations. The client owns
+/// token/orphan recovery; an ordinary owned-active refresh must not stop it.
 @MainActor public final class AlwaysOnController: ObservableObject {
     @Published public private(set) var state: AlwaysOnState = .checking
+    @Published public private(set) var action: AlwaysOnAction = .wait
+    @Published public private(set) var secondaryTitle: String?
     public var onQuitDecision: ((Bool) -> Void)?
+    public var onOpenSettings: (() -> Void)?
     private let backend: AlwaysOnBackend
-    public init(backend: AlwaysOnBackend) { self.backend = backend }
-    private var busy = false
-    private var stopRequested = false
-    private var quitPending = false
-
+    private var latest: AlwaysOnSnapshot
+    private var operations = Set<UUID>()
+    private var activation: UUID?, stopping: UUID?
+    private var stopCompleted = false
+    private var refreshing = false, refreshAgain = false, quitPending = false
+    public init(backend: AlwaysOnBackend) {
+        self.backend = backend; latest = backend.snapshot
+        backend.onChange = { [weak self] in self?.receive($0) }
+        render()
+    }
+    public var actionEnabled: Bool { action != .wait }
+    public var canRemove: Bool { operations.isEmpty && !refreshing && !latest.lifecyclePending }
+    public var needsRepair: Bool {
+        switch latest.state { case .recoveryRequired, .setupRequired: return true; default: return false }
+    }
+    public var canOpenLoginItems: Bool { secondaryTitle == "Open Login Items" && canRemove }
+    private var safe: Bool { latest.quitSafe && operations.isEmpty && !refreshing && !latest.lifecyclePending }
+    private func receive(_ value: AlwaysOnSnapshot) {
+        guard value.revision > latest.revision else { return }
+        latest = value; render(); settleQuit()
+    }
+    private func render() {
+        secondaryTitle = latest.secondaryTitle
+        if stopping != nil { state = .stopping; action = .wait }
+        else if activation != nil { state = .activating; action = .deactivate }
+        else if refreshing && latest.quitSafe { state = .checking; action = .wait }
+        else { state = latest.state; action = latest.action }
+    }
+    private func settleQuit() {
+        guard quitPending, operations.isEmpty, !refreshing, !latest.lifecyclePending else { return }
+        quitPending = false; onQuitDecision?(safe)
+    }
+    /// App startup, wake and focus all enter this coalescing driver. Revocation of
+    /// stale safe state is synchronous, before the first suspension.
     public func checkSetup() {
-        guard !busy else { return }
-        switch state {
-        case .checking, .off, .unavailable: break
-        default: return
-        }
-        busy = true; stopRequested = false; state = .checking
+        if refreshing { refreshAgain = true; return }
+        refreshing = true; render()
         Task {
-            let result = await backend.status()
-            switch result {
-            case .active, .unknown:
-                await restore()
-            case .off, .unavailable:
-                finish(result)
+            while true {
+                await backend.refresh(); receive(backend.snapshot)
+                guard refreshAgain else { break }
+                refreshAgain = false
             }
+            refreshing = false; render(); settleQuit()
         }
     }
-
-    public func perform(_ action: AlwaysOnAction) {
-        switch action {
+    public func perform(_ requested: AlwaysOnAction) {
+        switch requested {
+        case .openSettings: onOpenSettings?()
+        case .openLoginItems: if canOpenLoginItems { backend.openLoginItems() }
         case .checkSetup: checkSetup()
+        case .wait: break
         case .activate:
-            guard !busy, state == .off else { return }
-            busy = true; stopRequested = false; state = .activating
+            guard action == .activate, canRemove, !quitPending else { return }
+            let id = UUID(); activation = id; operations.insert(id); render()
             Task {
-                let result = await backend.activate()
-                if stopRequested { await restore(); return }
-                switch result {
-                case .active: busy = false; state = .active
-                case .unknown: await restore()
-                case .off:
-                    finish(.unavailable("Activation was not confirmed. Normal sleep is restored. Check setup before trying again."))
-                case .unavailable: finish(result)
-                }
+                // Stop requested before this task started prevents the activation.
+                if stopping == nil { await backend.activate() }
+                receive(backend.snapshot); operations.remove(id)
+                if activation == id { activation = nil }
+                settleStop(); render(); settleQuit()
             }
         case .deactivate:
-            switch state {
-            case .off, .unavailable: return
-            default: break
+            guard stopping == nil, action == .deactivate || activation != nil else { return }
+            let id = UUID(); stopping = id; stopCompleted = false; operations.insert(id); render()
+            Task {
+                await backend.deactivate(); receive(backend.snapshot)
+                if stopping == id { stopCompleted = true }
+                settleStop(); render(); settleQuit()
             }
-            stopRequested = true; state = .stopping
-            // Do not cancel an in-flight backend call: a late write must finish
-            // before the serialized restore. The helper owns timeout recovery.
-            guard !busy else { return }
-            busy = true
-            Task { await restore() }
+        case .setUp:
+            guard action == .setUp, canRemove else { return }
+            runLifecycle { await self.backend.setup() }
         }
     }
-
+    private func settleStop() {
+        guard stopCompleted, activation == nil, let id = stopping else { return }
+        operations.remove(id); stopping = nil; stopCompleted = false
+    }
+    /// Called only by the explicit Settings removal button, never by menu/warning.
+    public func removeHelperFromSettings() {
+        guard canRemove else { return }
+        runLifecycle { await self.backend.remove() }
+    }
+    public func repairHelperFromSettings() {
+        guard canRemove, needsRepair else { return }
+        runLifecycle { await self.backend.setup() }
+    }
+    private func runLifecycle(_ work: @escaping @MainActor () async -> Void) {
+        let id = UUID(); operations.insert(id); state = .checking; action = .wait
+        Task {
+            await work(); receive(backend.snapshot); operations.remove(id)
+            render(); settleQuit()
+        }
+    }
     public func criticalStop() { perform(.deactivate) }
-
-    /// false means the AppKit caller must wait for onQuitDecision, including a
-    /// negative reply on restore failure. Force Quit/OS death need helper recovery.
     public func requestQuit() -> Bool {
-        switch state {
-        case .off, .unavailable: return true
-        default:
-            quitPending = true
-            perform(.deactivate)
-            return false
+        if safe { return true }
+        quitPending = true
+        if action == .deactivate || activation != nil { perform(.deactivate) }
+        else if operations.isEmpty && !refreshing && !latest.lifecyclePending {
+            // No cancellable operation is pending. Reply asynchronously for AppKit.
+            Task { self.settleQuit() }
         }
+        return false
     }
-
-    private func restore() async {
-        state = .stopping
-        finish(await backend.deactivate())
-    }
-
-    private func finish(_ result: AlwaysOnObservation) {
-        busy = false
-        let safe: Bool
-        switch result {
-        case .off: state = .off; safe = true
-        case .unavailable(let reason): state = .unavailable(reason); safe = true
-        case .active:
-            state = .recoveryRequired("The Mac still reports always-on mode. Normal sleep has not been restored.")
-            safe = false
-        case .unknown(let reason): state = .recoveryRequired(reason); safe = false
-        }
-        if quitPending { quitPending = false; onQuitDecision?(safe) }
-    }
-}
-
-/// Honest production boundary for this UI-only slice. This performs no power IO.
-@MainActor public final class UnavailableAlwaysOnBackend: AlwaysOnBackend {
-    public init() {}
-    private var result: AlwaysOnObservation {
-        .unavailable("Always-on setup is not available in this build. Normal sleep settings have not been changed.")
-    }
-    public func status() async -> AlwaysOnObservation { result }
-    public func activate() async -> AlwaysOnObservation { result }
-    public func deactivate() async -> AlwaysOnObservation { result }
 }

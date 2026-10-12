@@ -857,3 +857,25 @@ failed recovery and check production option flags. This scheduling correction is
 part of B3b2 integration, with separate red evidence; report its size if over target.
 Local SDK NSProcessInfo.h defines allowing-idle option by removing system-sleep
 flag, independently of display-sleep flag. No native activity need be held in tests.
+
+
+B3b2 U6 clarification: Settings uses a fixed bottom actions footer, also present
+in the inert 580x700 preview. Its compact rows expose primary/approval and
+Settings-only repair/removal without placing the actionable controls under the
+centered 520x390 warning. Native current-laptop geometry must be inspected.
+The 320x300 warning minimum is not a full Settings reachability claim.
+
+B3b2 U-R2: unknown state with absent registration and a retained recovery journal
+must offer explicit Repair helper setup in Settings. It invokes existing guarded
+setup, which registers only when notRegistered; startup recovery then belongs to
+the helper/client. It never unregisters/reregisters or autoactivates. Missing
+bundle/signing remains actionable installation diagnosis and Check again.
+
+U9 sources: [Apple App Nap](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/AppNap.html),
+[prioritizing app work](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/power_efficiency_guidelines_osx/PrioritizeWorkAtTheAppLevel.html),
+[allowing idle system sleep](https://developer.apple.com/documentation/foundation/processinfo/activityoptions/userinitiatedallowingidlesystemsleep).
+Each client operation acquires an independently owned, idempotent activity hold
+before lane suspension. A separate token hold covers the owned session; loss
+transfers to recovery before releasing it. One underlying activity spans all
+holds, and actual unregister completion, not its reporting deadline, releases
+that operation. Tests inject inert activity ports, including real loopbacks.

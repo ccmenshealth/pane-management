@@ -86,6 +86,7 @@ private enum Failure: Error { case fixture }
     @MainActor static func rejectsAsync(_ label: String, _ action: () async throws -> Void) async { do { try await action(); check(false, label) } catch { check(true, label) } }
     @MainActor static func spin(_ condition: () -> Bool) async { for _ in 0..<10000 { if condition() { check(true, "fixture reached suspension"); return }; await Task.yield() }; check(false, "fixture reached suspension") }
     @MainActor static func main() async {
+        await presentation()
         let fresh = Harness()
         check(fresh.service.reads == 0 && fresh.service.registrations == 0, "constructor is inert")
         await fresh.setup.startup()
@@ -239,6 +240,46 @@ private enum Failure: Error { case fixture }
             rejects("missing parent not accepted as child absence") { _ = try TrustedStorage.fixtureAbsent(parent: root.appendingPathComponent("missing"), expectedUID: getuid()) }
             check(!FileManager.default.fileExists(atPath: child.path), "probe never creates child")
         } catch { check(false, "filesystem fixture: \(error)") }
+    }
+    @MainActor static func presentation() async {
+        do {
+            let h = Harness(); h.proof.absent = false
+            let adapter = SetupPresentationAdapter(h.setup), controller: AlwaysOnController
+            controller = AlwaysOnController(backend: adapter)
+            await adapter.refresh()
+            check(controller.needsRepair && controller.action == .deactivate, "retained journal needs explicit repair exit")
+            check(h.service.registrations == 0, "uncertain startup never registers automatically")
+            controller.perform(.openSettings)
+            check(h.service.registrations == 0, "repair navigation never registers")
+            controller.repairHelperFromSettings()
+            await spin { controller.canRemove }
+            check(h.service.registrations == 1 && h.client.statuses == 1 && controller.state == .off, "explicit repair registers missing helper and observes recovered off")
+            check(h.client.activations == 0, "repair never autoactivates")
+        }
+        let h = Harness(), adapter: SetupPresentationAdapter
+        adapter = SetupPresentationAdapter(h.setup)
+        var revisions: [UInt64] = []; adapter.onChange = { revisions.append($0.revision) }
+        await adapter.refresh()
+        check(adapter.snapshot.action == .setUp && adapter.snapshot.quitSafe, "adapter fresh setup")
+        h.service.signed = false; await adapter.refresh()
+        check(adapter.snapshot.action == .checkSetup && adapter.snapshot.quitSafe, "adapter missing signing")
+        h.service.values = [.requiresApproval]; await adapter.refresh()
+        check(adapter.snapshot.action == .checkSetup && adapter.snapshot.secondaryTitle == "Open Login Items", "adapter approval action")
+        check(h.service.opens == 0, "adapter refresh no implicit navigation")
+        adapter.openLoginItems(); check(h.service.opens == 1, "adapter explicit approval")
+        h.service.values = [.notFound]; await adapter.refresh()
+        check(adapter.snapshot.action == .checkSetup && !adapter.snapshot.quitSafe, "adapter missing installation")
+        h.service.values = [.enabled]; await adapter.refresh()
+        check(adapter.snapshot.state == .off && adapter.snapshot.action == .activate, "adapter available off")
+        await adapter.activate(); check(adapter.snapshot.state == .active && adapter.snapshot.action == .deactivate, "adapter activate")
+        await adapter.refresh(); check(adapter.snapshot.state == .active && h.client.stops == 0, "adapter owned active refresh")
+        h.client.event(.unknown("Unavailable"))
+        check(adapter.snapshot.action == .deactivate && adapter.snapshot.secondaryTitle == "Repair setup in Settings", "adapter recovery remedy")
+        h.client.event(.removalRequired)
+        check(adapter.snapshot.state == .removalRequired && adapter.snapshot.action == .openSettings && adapter.snapshot.quitSafe, "adapter quiet finish removal")
+        h.client.removeOK = false; await adapter.remove()
+        check(adapter.snapshot.secondaryTitle == "Retry helper removal in Settings" && !adapter.snapshot.quitSafe, "adapter failed removal")
+        check(zip(revisions, revisions.dropFirst()).allSatisfy { $0 < $1 }, "adapter preserves increasing revision")
     }
     @MainActor static func bounded() async {
         let gate = DispatchSemaphore(value: 0)

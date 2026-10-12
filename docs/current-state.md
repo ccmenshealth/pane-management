@@ -1,5 +1,29 @@
 # Pane Management — Current State
 
+## Bookmark — B3b2 integration candidate (2026-10-12)
+
+- Isolated codex/always-on-integration wires authenticated setup/client state into
+  the shared UI. Placeholder backend is removed. Wake/focus coalesces, preserves
+  owned active sessions and never autoactivates; quit waits for actual settlement.
+- Settings-only explicit repair closes the retained-journal/missing-registration
+  exit. Helper actions use a compact pinned footer; inert preview models it.
+  Client App Nap activity permits system/display sleep and balances independent
+  operation/token holds. Tests inject inert activity ports throughout.
+- Debug suites60/76/176/114/355/118/181/141 and affected release76/181/141 pass;
+  separate debug/release builds and lint pass. Inert/pre-fix failures64/76,
+  10/181,1/141 and coalescing1/76 are retained in `.build/b3b2-evidence`.
+- Lead observed all11 native inert fixture states, fixed footer action routing,
+  activation/deactivation and normal quit fromoff. Window-only renders do not
+  establish globalstacking/occlusion or other native acceptance. Final CI and
+  fresh independent code/manual-security plus lead review pending. No CodeRabbit. Current model inherited;
+  exact model/effort metadata unavailable. Scope modestly exceeds800changedlines
+  for coupled controller replacement, U9 scheduling and required recovery exit.
+- Build5 remains running unchanged at PID96007. No helper/power/journal/grant or
+  installed-bundle changes. Missing Apple Developer identity blocks signed native
+  acceptance/install; native/physical acceptance and first arming remain separate.
+- Next: pin/push draft PR above setup PR9,
+  independent review plus lead/CI gates, then B3c signed staging. No merge/arming.
+
 ## Bookmark — B3b2 integration planning (2026-10-12)
 
 - Isolated codex/always-on-integration fast-forwarded to reviewed setup PR #9

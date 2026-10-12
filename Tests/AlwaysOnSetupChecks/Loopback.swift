@@ -56,13 +56,13 @@ private let session = ConsoleSession(uid: 501, auditSession: 7)
     let power = Power(), journal = Journal(), clock = Clock(), environment = Environment()
     let service = ServiceCoordinator(journal: journal, power: power, clock: clock, environment: environment)
     await service.start()
-    let client = AlwaysOnClient(transport: Transport(service), scheduler: SystemClientScheduler())
+    let client = AlwaysOnClient(transport: Transport(service), scheduler: SystemClientScheduler(), activity: Activity())
     check(await client.status().state == .off, "loopback starts usable off")
     let failed = await client.remove { $0(.failure(ClientFailure.removal)) }
     check(!failed, "loopback failed unregister")
     check(await client.status().state == .removalRequired, "same client rediscovers closed admission after failure")
     check(await client.deactivate().state == .removalRequired, "retry restore preserves removal exit")
-    let fresh = AlwaysOnClient(transport: Transport(service), scheduler: SystemClientScheduler())
+    let fresh = AlwaysOnClient(transport: Transport(service), scheduler: SystemClientScheduler(), activity: Activity())
     check(await fresh.status().state == .removalRequired, "new client discovers daemon removal state")
     check(await fresh.activate().state == .removalRequired && power.writes.isEmpty, "closed admission cannot offer usable activation")
     let registration = Registration(), setup = SetupCoordinator(service: registration, client: SetupClientAdapter(fresh), proof: Proof())
@@ -73,6 +73,12 @@ private let session = ConsoleSession(uid: 501, auditSession: 7)
     check(setup.observation.quitSafe && setup.observation.remedy == .setUp, "finished removal settled")
     let next = ServiceCoordinator(journal: Journal(), power: Power(), clock: clock, environment: environment)
     await next.start()
-    let restarted = AlwaysOnClient(transport: Transport(next), scheduler: SystemClientScheduler())
+    let restarted = AlwaysOnClient(transport: Transport(next), scheduler: SystemClientScheduler(), activity: Activity())
     check(await restarted.status().state == .off, "new daemon incarnation can reopen after recovery")
+}
+
+private final class Activity: ClientActivity {
+    var begins = 0, ends = 0
+    func begin() -> AnyObject { begins += 1; return NSObject() }
+    func end(_ token: AnyObject) { ends += 1 }
 }

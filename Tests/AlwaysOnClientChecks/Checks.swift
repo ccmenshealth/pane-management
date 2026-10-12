@@ -37,7 +37,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
     @MainActor static func main() async {
         var count = 0, failures = 0
         func check(_ ok: Bool, _ label: String) { count += 1; if !ok { failures += 1; print("FAIL: \(label)") } }
-        let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s)
+        let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
         check(await c.status().state == .off, "verified status off")
         check(await c.activate().state == .active, "fresh activation")
         check(t.channels.first?.requests.filter { $0.operation == .activate }.count == 1, "activation exactly once")
@@ -52,7 +52,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
                 if r.operation == .prepareForUpdateOrRemoval { prepared = true; done(.success(try! BoundaryPolicy.encode(.init(state: .off, outcome: .prepared, preparationPermit: p, requiresRemoval: true)))) }
                 else { done(.success(try! BoundaryPolicy.encode(.init(state: .off, preparationPermit: prepared ? p : nil, requiresRemoval: prepared)))) }
             }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s)
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             let task = Task { await c.remove { held = $0 } }; await pump(); s.advance(5); await pump()
             check(c.observation.removalPending, "timed out unregister retains lifecycle slot")
             check(isUnknown(c.observation.state), "pending unregister remains unknown")
@@ -69,7 +69,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             t.make = { let h = Channel(); h.handler = { r, done in
                 if first { first = false; held = done } else { done(.success(try! BoundaryPolicy.encode(.init(state: r.operation == .activate ? .active : .off, outcome: r.operation == .activate ? .activated : .observed, activationToken: r.operation == .activate ? UUID() : nil)))) }
             }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s)
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             let status = Task { await c.status() }; await pump()
             let activation = Task { await c.activate() }; await pump()
             let stop = Task { await c.deactivate() }; await pump()
@@ -80,7 +80,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         do {
             let t = Transport(), s = Scheduler(); var held: ((Result<Data, Error>) -> Void)?; var calls = 0
             t.make = { let h = Channel(); h.handler = { _, done in calls += 1; if calls == 1 { done(.success(try! BoundaryPolicy.encode(.init(state: .checking, outcome: .rejected)))) } else { held = done } }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s); let task = Task { await c.status() }; await pump()
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity()); let task = Task { await c.status() }; await pump()
             s.advance(4); await pump(); s.advance(1); await pump()
             check(t.channels.count == 2, "readiness total budget includes later RPC")
             t.fail = true; s.advance(5); await pump(); held?(.failure(ClientFailure.connectionLost)); await pump()
@@ -116,7 +116,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         for outcome in [ServiceOutcome.rejected, .invalidRequest] {
             let t = Transport(), s = Scheduler()
             t.make = { let h = Channel(); h.handler = { _, done in done(.success(bytes(.init(state: .off, outcome: outcome, requiresRemoval: true)))) }; return h }
-            let client = AlwaysOnClient(transport: t, scheduler: s)
+            let client = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             check(isUnknown(await client.status().state), "rejected removal metadata cannot assert safe state")
         }
         do {
@@ -127,7 +127,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
                     outcome: r.operation == .activate ? .activated : .observed,
                     activationToken: r.operation == .activate ? UUID() : nil, requiresRemoval: stopping))))
             }; return h }
-            let client = AlwaysOnClient(transport: t, scheduler: s)
+            let client = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             _ = await client.activate()
             check(await client.deactivate().state == .removalRequired, "owned stop propagates removal state")
         }
@@ -139,7 +139,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
                     outcome: r.operation == .activate ? .activated : .observed,
                     activationToken: r.operation == .activate ? UUID() : nil, requiresRemoval: closed))))
             }; return h }
-            let client = AlwaysOnClient(transport: t, scheduler: s); _ = await client.activate(); s.advance(10)
+            let client = AlwaysOnClient(transport: t, scheduler: s, activity: Activity()); _ = await client.activate(); s.advance(10)
             let deadline = ProcessInfo.processInfo.systemUptime + 2
             while !closed && ProcessInfo.processInfo.systemUptime < deadline { await Task.yield() }
             let afterHeartbeat = await client.status()
@@ -155,7 +155,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         do {
             let t = Transport(), s = Scheduler(); var statuses = 0
             t.make = { let h = Channel(); h.handler = { r, done in statuses += 1; done(.success(bytes(.init(state: statuses == 1 ? .checking : .off, outcome: statuses == 1 ? .rejected : .observed)))) }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s)
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             let task = Task { await c.status() }; await pump(); s.advance(0.25); await pump()
             check(await task.value.state == .off, "readiness settles")
             check(t.channels[0].requests.map(\.operation) == [.status, .status], "status-only readiness")
@@ -163,7 +163,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         do {
             let t = Transport(), s = Scheduler()
             t.make = { let h = Channel(); h.handler = { _, done in done(.success(bytes(.init(state: .checking, outcome: .rejected)))) }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s); let task = Task { await c.status() }
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity()); let task = Task { await c.status() }
             for _ in 0..<45 { await pump(); s.advance(0.25) }; await pump()
             check(isUnknown(await task.value.state), "readiness timeout visible")
             check(t.channels.count == 2, "one bounded reconnect")
@@ -172,7 +172,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         for outcome in [ServiceOutcome.rejected, .invalidRequest] {
             let t = Transport(), s = Scheduler()
             t.make = { let h = Channel(); h.handler = { _, done in done(.success(bytes(.init(state: .off, outcome: outcome)))) }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s)
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             check(isUnknown(await c.status().state), "cached rejected off not authoritative \(outcome)")
             check(isUnknown(await c.activate().state), "rejected off prevents activation \(outcome)")
             check(t.channels.flatMap(\.requests).allSatisfy { $0.operation == .status }, "no mutation after rejection")
@@ -182,7 +182,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             let t = Transport(), s = Scheduler(); var held: ((Result<Data, Error>) -> Void)?
             var first = true
             t.make = { let h = Channel(); if first { first = false; h.handler = { r, done in if r.operation == .activate { held = done } else { done(.success(bytes(good))) } } }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s); let task = Task { await c.activate() }; await pump()
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity()); let task = Task { await c.activate() }; await pump()
             s.advance(5, fire: !callbackLate)
             if callbackLate { held?(.success(bytes(.init(state: .active, outcome: .activated, activationToken: UUID())))) }
             await pump(); check(await task.value.state == .off, "ambiguous activation restored \(callbackLate)")
@@ -195,7 +195,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         do {
             let t = Transport(), s = Scheduler(); var held: ((Result<Data, Error>) -> Void)?
             t.make = { let h = Channel(); h.handler = { r, done in if r.operation == .activate { held = done } else { done(.success(bytes(good))) } }; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s); var activePublished = false
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity()); var activePublished = false
             c.onObservation = { if $0.state == .active { activePublished = true } }
             let activating = Task { await c.activate() }; await pump(); let stopping = Task { await c.deactivate() }; await pump()
             held?(.success(bytes(.init(state: .active, outcome: .activated, activationToken: UUID())))); await pump()
@@ -205,13 +205,13 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         }
         do {
             let t = Transport(), s = Scheduler(); t.make = { let h = Channel(); h.state = .active; return h }
-            let c = AlwaysOnClient(transport: t, scheduler: s)
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             check(await c.status().state == .off, "orphan restored")
             check(t.channels.flatMap(\.requests).allSatisfy { $0.token == nil }, "orphan never adopts token")
         }
         for initiallyActive in [false, true] {
             for loss in ["interruption", "invalidation"] {
-                let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s)
+                let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
                 _ = initiallyActive ? await c.activate() : await c.status()
                 var states: [ClientState] = []; c.onObservation = { states.append($0.state) }
                 let old = t.channels[0]; old.lose(); old.lose(); await pump()
@@ -223,7 +223,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             }
         }
         for heartbeatState in [ServiceState.off, .recoveryRequired, .active] {
-            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s)
+            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             _ = await c.activate(); let old = t.channels[0]
             old.handler = { _, done in done(.success(bytes(.init(state: heartbeatState, outcome: heartbeatState == .active ? .rejected : .observed)))) }
             s.advance(10); await pump()
@@ -231,13 +231,13 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             check(t.channels.count == 2, "heartbeat renew stops on failure")
         }
         do {
-            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s)
+            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             _ = await c.status(); t.fail = true; t.channels[0].lose(); await pump()
             check(isUnknown(c.observation.state), "failed recovery remains visible")
             t.fail = false; check(await c.deactivate().state == .off, "human retry exits recovery")
         }
         for operation in [ServiceOperation.status, .activate, .heartbeat, .deactivate] {
-            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s)
+            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             _ = operation == .status ? await c.status() : await c.activate()
             let old = t.channels[0]
             old.handler = { r, done in
@@ -254,7 +254,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             check(!old.isOpen, "malformed closes \(operation) generation")
         }
         do {
-            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s)
+            let t = Transport(), s = Scheduler(), c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             _ = await c.activate(); let old = t.channels[0]; var held: ((Result<Data, Error>) -> Void)?
             old.handler = { _, done in held = done }
             let foreground = Task { await c.status() }; await pump(); let calls = old.requests.count
@@ -279,7 +279,7 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
                     } else { done(.success(bytes(good))) }
                 }; return h
             }
-            let c = AlwaysOnClient(transport: t, scheduler: s)
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: Activity())
             let task = Task { await c.remove { done in registeredCalls += 1; if failure == "expectedLoss" { t.channels.last?.lose() }; if failure != "timeout" { done(failure == "unregister" ? .failure(ClientFailure.removal) : .success(())) } } }
             await pump(); if failure == "timeout" { s.advance(5); await pump() }
             let success = failure == "none" || failure == "expectedLoss"
@@ -291,7 +291,66 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
                 check(rounds == 2 && t.channels.count == 2, "fresh prepare after unregister error")
             }
         }
+        do {
+            let t = Transport(), s = Scheduler(), a = Activity()
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: a)
+            check(a.begins == 0, "activity constructor inert")
+            _ = await c.status(); check(a.begins == 1 && a.ends == 1, "off status balances activity")
+            _ = await c.activate(); check(a.begins == 2 && a.ends == 1, "owned token retains activity")
+            _ = await c.status(); s.advance(10); await pump()
+            check(a.begins == 2 && a.ends == 1, "owned refresh and heartbeat never gap activity")
+            t.channels.last?.lose(); await pump()
+            check(c.observation.state == .off && a.begins == 2 && a.ends == 2, "loss transfers hold through recovery")
+            t.fail = true; _ = await c.deactivate()
+            check(a.begins == 3 && a.ends == 3, "failed recovery releases settled no-token activity")
+        }
+        do {
+            let t = Transport(), s = Scheduler(), a = Activity()
+            var held: ((Result<Data, Error>) -> Void)?
+            t.make = { let h = Channel(); h.handler = { r, done in
+                if r.operation == .activate { held = done }
+                else { done(.success(bytes(.init(state: .off)))) }
+            }; return h }
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: a)
+            let activate = Task { await c.activate() }; await pump()
+            let stop = Task { await c.deactivate() }; await pump()
+            check(a.begins == 1 && a.ends == 0, "queued stop independently retains activity")
+            held?(.success(bytes(.init(state: .active, outcome: .activated, activationToken: UUID()))))
+            _ = await activate.value; _ = await stop.value
+            check(a.begins == 1 && a.ends == 1, "late activation stop balances shared activity")
+        }
+        do {
+            let t = Transport(), s = Scheduler(), a = Activity(); var held: (@MainActor (Result<Void, Error>) -> Void)?
+            let p = PreparationPermit(incarnation: UUID(), epoch: 2)
+            t.make = { let h = Channel(); var prepared = false; h.handler = { r, done in
+                if r.operation == .prepareForUpdateOrRemoval { prepared = true }
+                done(.success(bytes(.init(state: .off, outcome: r.operation == .prepareForUpdateOrRemoval ? .prepared : .observed,
+                    preparationPermit: prepared ? p : nil, requiresRemoval: prepared))))
+            }; return h }
+            let c = AlwaysOnClient(transport: t, scheduler: s, activity: a)
+            let removal = Task { await c.remove { held = $0 } }; await pump(); s.advance(5); await pump()
+            check(a.begins == 1 && a.ends == 0 && c.observation.removalPending, "unregister notice does not release activity")
+            t.channels.last?.lose(); await pump()
+            check(a.ends == 0, "expected disconnect retains removal activity")
+            held?(.failure(ClientFailure.removal)); _ = await removal.value
+            check(a.begins == 1 && a.ends == 1, "actual failed unregister balances activity")
+        }
+        do {
+            let a = Activity(), t = Transport(), s = Scheduler()
+            var client: AlwaysOnClient? = AlwaysOnClient(transport: t, scheduler: s, activity: a)
+            _ = await client?.activate(); client = nil
+            check(a.begins == 1 && a.ends == 1, "client disposal balances owned activity")
+        }
+        check(!SystemClientActivity.options.contains(.idleSystemSleepDisabled), "activity permits idle system sleep")
+        check(!SystemClientActivity.options.contains(.idleDisplaySleepDisabled), "activity permits display sleep")
+        check(!SystemClientActivity.options.contains(.latencyCritical), "activity does not request latency critical")
         print("AlwaysOnClientChecks: \(count) assertions, \(failures) failures")
         if failures != 0 { exit(1) }
     }
+}
+
+private final class Activity: ClientActivity {
+    var begins = 0, ends = 0
+    func begin() -> AnyObject { begins += 1; return NSObject() }
+    func end(_ token: AnyObject) { ends += 1 }
 }

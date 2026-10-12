@@ -13,46 +13,88 @@ extension AlwaysOnState {
         case .stopping: return "Restoring normal sleep…"
         case .recoveryRequired: return "Normal sleep needs recovery"
         case .unavailable: return "Always-on mode is unavailable"
+        case .setupRequired: return "Always-on setup needs attention"
+        case .removalRequired: return "Finish helper removal"
         }
     }
     public var explanation: String {
         switch self {
-        case .checking: return "Checking whether normal sleep is available. You can request deactivation while this check finishes."
+        case .checking: return "Checking whether normal sleep is available. Keep Pane Management open until this check finishes."
         case .off: return "Normal sleep is available. Always-on mode must be activated manually."
         case .activating: return "Activation has not been confirmed. Deactivate to cancel and restore normal sleep."
         case .active: return "Your Mac will stay awake even with the lid open. Deactivate before using it normally. Emergency sleep protection is not guaranteed."
         case .stopping: return "Keep Pane Management open. This warning stays until normal sleep has been confirmed."
         case .recoveryRequired(let reason): return "Normal sleep could not be confirmed. \(reason) Keep the Mac out of your bag and retry deactivation."
-        case .unavailable(let reason): return reason
+        case .unavailable(let reason), .setupRequired(let reason): return reason
+        case .removalRequired: return "Normal sleep is verified. Finish removing the helper in Settings before setting it up again."
         }
     }
     public var showsWarning: Bool {
-        switch self { case .off, .unavailable: return false; default: return true }
-    }
-    public var actionTitle: String {
-        switch self {
-        case .off: return "Activate always-on mode"
-        case .unavailable: return "Check always-on setup"
-        case .recoveryRequired: return "Retry deactivation"
-        case .stopping: return "Deactivating…"
-        default: return "Deactivate"
-        }
-    }
-    public var action: AlwaysOnAction {
-        switch self { case .off: return .activate; case .unavailable: return .checkSetup; default: return .deactivate }
+        switch self { case .off, .unavailable, .removalRequired: return false; default: return true }
     }
 }
 
-/// Shared Settings/fixture control. The menu items use the same state/action mapping.
+extension AlwaysOnController {
+    public var explanation: String {
+        if action == .wait, case .recoveryRequired(let reason) = state {
+            return "\(reason) Keep Pane Management open and wait for completion."
+        }
+        return state.explanation
+    }
+    public var actionTitle: String {
+        switch action {
+        case .activate: return "Activate always-on mode"
+        case .deactivate: return state == .active || state == .activating ? "Deactivate" : "Retry deactivation"
+        case .checkSetup: return "Check again"
+        case .setUp: return "Set up always-on helper"
+        case .openSettings: return "Finish helper removal in Settings"
+        case .openLoginItems: return "Open Login Items"
+        case .wait: return "Please wait…"
+        }
+    }
+}
+
+/// Shared description and actions; Settings pins actions outside its scrolling body.
 public struct AlwaysOnControls: View {
     @ObservedObject var controller: AlwaysOnController
-    public init(controller: AlwaysOnController) { self.controller = controller }
+    private let actions: Bool
+    public init(controller: AlwaysOnController, actions: Bool = true) { self.controller = controller; self.actions = actions }
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(controller.state.heading).font(.headline)
-            Text(controller.state.explanation).font(.callout).fixedSize(horizontal: false, vertical: true)
-            Button(controller.state.actionTitle) { controller.perform(controller.state.action) }
-                .disabled(controller.state == .stopping)
+            Text(controller.explanation).font(.callout).fixedSize(horizontal: false, vertical: true)
+            if actions { AlwaysOnActions(controller: controller) }
+        }
+    }
+}
+public struct AlwaysOnActions: View {
+    @ObservedObject var controller: AlwaysOnController
+    private let settings: Bool
+    public init(controller: AlwaysOnController, settings: Bool = false) { self.controller = controller; self.settings = settings }
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !settings || controller.action != .openSettings {
+                Button(controller.actionTitle) { controller.perform(controller.action) }.disabled(!controller.actionEnabled)
+            }
+            if let title = controller.secondaryTitle {
+                if title == "Open Login Items" {
+                    Button(settings ? title : "Approval options in Settings") { controller.perform(settings ? .openLoginItems : .openSettings) }
+                        .disabled(settings && !controller.canOpenLoginItems)
+                } else if !settings {
+                    Button(title) { controller.perform(.openSettings) }
+                }
+            }
+            if settings {
+                HStack {
+                    if controller.needsRepair {
+                        Button("Repair helper setup") { controller.repairHelperFromSettings() }.disabled(!controller.canRemove)
+                        if controller.action != .checkSetup {
+                            Button("Check again") { controller.checkSetup() }.disabled(!controller.canRemove)
+                        }
+                    }
+                    Button("Remove always-on helper") { controller.removeHelperFromSettings() }.disabled(!controller.canRemove)
+                }
+            }
         }
     }
 }
@@ -81,16 +123,19 @@ private struct WarningView: View {
             Text(controller.state.heading).font(.system(size: 25, weight: .bold))
                 .multilineTextAlignment(.center).accessibilityAddTraits(.isHeader)
             ScrollView {
-                Text(controller.state.explanation).font(.system(size: 15))
+                Text(controller.explanation).font(.system(size: 15))
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }.frame(height: 76)
-            Button { controller.perform(.deactivate) } label: {
-                Text(controller.state.actionTitle).font(.system(size: 19, weight: .bold))
+            Button { controller.perform(controller.action) } label: {
+                Text(controller.actionTitle).font(.system(size: 19, weight: .bold))
                     .frame(maxWidth: .infinity).padding(.vertical, 9)
             }.keyboardShortcut(.defaultAction)
-                .accessibilityHint("Restores normal sleep before removing this warning")
+                .accessibilityHint("Performs the displayed always-on recovery action")
                 .buttonStyle(.borderedProminent).tint(Color(red: 0.84, green: 0.015, blue: 0.035))
-                .disabled(controller.state == .stopping)
+                .disabled(!controller.actionEnabled)
+            if let title = controller.secondaryTitle {
+                Button(title == "Open Login Items" ? "Approval options in Settings" : title) { controller.perform(.openSettings) }
+            }
             if preview { Text("PREVIEW ONLY · No power settings change").font(.caption.bold()).foregroundStyle(.secondary) }
             }.padding(26).frame(maxWidth: .infinity)
         }
