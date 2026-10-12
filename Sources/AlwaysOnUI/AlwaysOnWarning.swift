@@ -110,6 +110,22 @@ private struct WarningTriangle: Shape {
     }
 }
 
+/// Alternating 45-degree bands; clipped by the warning's existing rounded outline.
+private struct WarningStripes: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            let band: CGFloat = 24
+            for x in stride(from: rect.minX - rect.height, through: rect.maxX, by: band * 2) {
+                path.move(to: CGPoint(x: x, y: rect.minY))
+                path.addLine(to: CGPoint(x: x + band, y: rect.minY))
+                path.addLine(to: CGPoint(x: x + band + rect.height, y: rect.maxY))
+                path.addLine(to: CGPoint(x: x + rect.height, y: rect.maxY))
+                path.closeSubpath()
+            }
+        }
+    }
+}
+
 private struct WarningView: View {
     @ObservedObject var controller: AlwaysOnController
     let preview: Bool
@@ -120,6 +136,7 @@ private struct WarningView: View {
                 WarningTriangle().fill(Color(red: 0.84, green: 0.015, blue: 0.035))
                 Text("!").font(.system(size: 58, weight: .black)).foregroundStyle(.white).offset(y: 9)
             }.frame(width: 96, height: 84).accessibilityLabel("Warning")
+            VStack(spacing: 16) {
             Text(controller.state.heading).font(.system(size: 25, weight: .bold))
                 .multilineTextAlignment(.center).accessibilityAddTraits(.isHeader)
             ScrollView {
@@ -137,9 +154,19 @@ private struct WarningView: View {
                 Button(title == "Open Login Items" ? "Approval options in Settings" : title) { controller.perform(.openSettings) }
             }
             if preview { Text("PREVIEW ONLY · No power settings change").font(.caption.bold()).foregroundStyle(.secondary) }
+            }
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .windowBackgroundColor)).padding(-8))
             }.padding(26).frame(maxWidth: .infinity)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background {
+            ZStack {
+                Color(nsColor: .windowBackgroundColor)
+                ZStack {
+                    Color.yellow
+                    WarningStripes().fill(.black)
+                }.opacity(0.10)
+            }.accessibilityHidden(true).allowsHitTesting(false)
+        }
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red, lineWidth: 5))
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }

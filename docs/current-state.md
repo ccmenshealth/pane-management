@@ -11,8 +11,8 @@
   option to investigate, not part of this cosmetic slice; no certificate, Keychain,
   helper, installation or power changes are authorized here. No merge or arming.
 - Current model inherited; exact runtime model/effort metadata is unavailable.
-  Next: build, existing UI regressions, native inert preview and independent/lead
-  review plus CI. CodeRabbit prohibited; security review not applicable to cosmetics.
+  Debug/release builds, 76 UI assertions, shell/diff lint and inert preview packaging
+  passed. Next: native render/actions and independent/lead review plus CI. CodeRabbit prohibited; security review not applicable to cosmetics.
 
 ## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
 

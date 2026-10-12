@@ -1,3 +1,34 @@
+## Warning stripes candidate — 2026-10-12
+
+The shared warning adds native 45-degree black/yellow bands at 10% opacity,
+with opaque backing behind text and controls. Window dimensions, scrolling,
+red triangle, action labels/routing and controller recovery states are unchanged.
+The pattern is accessibility-hidden and ignores pointer events. No new state,
+permission, signing or privileged operation is introduced.
+
+- Separate `swift build -c debug` and `swift build -c release` passed (49.22s and
+  51.16s). `.build/debug/AlwaysOnChecks`: 76 assertions, zero failures.
+- `bash -n scripts/*.sh`, individual `bash -n` on every script and
+  `git diff --check` passed. Preview packaging passed; strict ad-hoc preview
+  signature verification passed. Stable app packaging was not run locally.
+- Native inert preview: `dist/Always-on Preview.app`, executable SHA256
+  `6d310dc4c060944055d09736ee8248a47a7af1596b5f9f40051aed9b4454dff3`.
+  Lead captured the baseline active warning before this change; final native
+  active/pending/retry rendering and action checks are pending at this candidate.
+  Small-screen, cross-Space/fullscreen and physical behavior remain unverified.
+- No new automated test mirrors the decorative implementation; existing behavior
+  regressions plus real native rendering are the gates. Logs retained locally in
+  ignored `.build/warning-stripes-evidence/`. Screenshots are not published.
+- Sibling audit: every warning state uses this same view; Dock/menu/Settings
+  behavior is untouched. Existing visible recovery exits remain Deactivate,
+  Retry deactivation, Check again, explicit Settings or waiting for settlement.
+- Current model inherited, exact model/effort metadata unavailable. Independent
+  and lead final review plus remote CI remain pending. Security review is not
+  applicable to this purely decorative slice; CodeRabbit remains prohibited.
+- User rejected paid signing. Local certificate feasibility is a separate open
+  investigation, not implemented or proven here. Existing app stays unchanged;
+  no helper registration, Keychain, journal, power, installation or arming action.
+
 ## B3c isolated signed staging candidate — 2026-10-12
 
 Code pin `3ced0980ceb21773b95d87a29508da03f9b61f3b` adds only the signed staging
