@@ -1,5 +1,22 @@
 # Pane Management — Current State
 
+## Investigation update — guarded sleep override (2026-10-12)
+
+- User authorized investigation only and clarified that critical battery/heat
+  sleep should remain available. The lead and a separate read-only architecture
+  reviewer examined the matching Apple sources and host SDK/man pages.
+- A guarded global override could reduce ordinary failure risk, but has no
+  automatic expiry or caller ownership; advisory warnings do not guarantee time
+  to restore native emergency sleep. Prearming also changes open-lid behavior.
+  It does not satisfy the original requirements and is not validated for travel.
+- Findings, sources, failure matrix, and the bounded next experimental scope are
+  in [the plan](closed-lid-plan.md#guarded-override-investigation--october-12-2026).
+  No power settings, permissions, helpers, or installed app were changed.
+- No power implementation is underway. A best-effort prototype needs a separate
+  scope decision; live testing needs its own concrete test-Mac plan. Dock PR #2
+  remains separate and draft, with the native acceptance blocker below. Its
+  latest prior documentation-head CI passed on `9eafea56fab4de34ce51fb3b8de7051b7145b864`.
+
 ## Bookmark — Build 6 retained; build 5 restored (2026-10-12)
 
 - Slice 1 of [the locked plan](closed-lid-plan.md) is implemented on
