@@ -1,5 +1,17 @@
 # Pane Management — Current State
 
+## Bookmark — Always-on build authorized (2026-10-12)
+
+- User explicitly authorized building the broader mode despite the investigation
+  limits and requested a persistent centered warning with a deactivate button.
+  This supersedes the investigation-only/open-lid constraints below.
+- [Locked build decisions and slices](always-on-build.md) govern implementation.
+  UI/controller slice is on `codex/always-on-ui`, stacked on Dock PR #2; helper
+  security architecture is under separate read-only review. No live activation
+  or privileged installation is authorized as part of the current build phase.
+- Build 5 remains installed. Dock native acceptance and permission refresh remain
+  pending; do not replace the running app to create build evidence.
+
 ## Investigation update — guarded sleep override (2026-10-12)
 
 - User authorized investigation only and clarified that critical battery/heat
