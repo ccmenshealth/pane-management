@@ -1,5 +1,19 @@
 # Pane Management — Current State
 
+## Bookmark — B3a client planning (2026-10-12)
+
+- Isolated `codex/always-on-client` starts from daemon PR #7 head
+  `dbee2a891c8d0d597f20a72d31467b0d7dd77860`. Fresh independent read-only
+  code/manual-security and lead source review clear, no actionable finding.
+  CI `38291211680` passed, including nested helper packaging. Daemon worktree
+  remained clean at the pinned head; current inherited model, metadata unavailable.
+- K1–K8 lock shared IPC/signing extraction and bounded client. Next B3b supplies
+  setup/repair/absence proof and app wiring; B3c signed staging workflow. No install,
+  registration or arming. Positive signed acceptance is blocked by the user's
+  lack of Apple Developer identity; no unrelated identity or fallback authorized.
+- Build5 remains running unchanged. Native UI/physical acceptance stays open;
+  all PRs remain draft until those gates are resolved. CodeRabbit prohibited.
+
 ## Bookmark — Native daemon candidate (2026-10-12)
 
 - `codex/always-on-daemon` adds the fixed signed XPC/launchd boundary, cached native
