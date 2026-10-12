@@ -15,7 +15,10 @@
   disabling automatic hosting size constraints passes 84/84 debug/release checks.
   Native measured/bounded geometry remains the source of window height.
 - Debug/release compilation, shell/diff lint and inert preview packaging pass.
-  Next: final native QA, independent delta review and CI. No merge or arming.
+  Lead native QA passed the exact final preview: compact active/restoring states,
+  expanded recovery with all text/actions and no scrollbar, Deactivate/Retry/
+  Settings navigation and Escape behavior. Product pin `692192f`; next independent
+  delta review and CI. No merge or arming.
 
 ## Bookmark — warning stripes cosmetic slice (2026-10-12)
 

@@ -19,7 +19,13 @@ constraints; the separate native content measurement owns the bounded frame.
 - Separate debug/release compilation, shell syntax for each script and diff lint
   passed. Preview packaging and strict ad-hoc signature passed. Current executable
   SHA256 `dad1ffd86cec4043e0974fd80db157d690a37531bd19abda62ba4cc675e197fe`.
-  Final CUA rendering/actions, independent delta review and CI remain pending.
+  Lead CUA rendering/actions passed on this exact preview: activation/active/
+  restoring rendered at 1040×658 physical pixels; recovery expanded to 1040×738.
+  Full text and both actions were visible; AX exposed a normal container, with
+  no scrollbar. Escape did not dismiss; Deactivate and Retry worked; Repair setup
+  in Settings opened controls. Triangle, stripes and opaque backing were legible.
+  Independent delta review and CI remain pending. Small-display geometry is only
+  offscreen automated evidence; no live power, Spaces or global stacking claim.
 - Local evidence: `.build/warning-stripes-evidence/geometry-before.log`,
   `geometry-experiment.log`, `layout-red.log`, `layout-green.log`, release logs and
   `layout-prefixed-test-shim.patch`. To reproduce red, apply that access-only patch

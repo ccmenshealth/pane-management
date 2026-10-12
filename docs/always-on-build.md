@@ -1020,3 +1020,11 @@ window is ordered front. Before the fix, 84 assertions yield four failures:
 active bounds/content fit/centering and recovery bounds (8064pt actual height).
 Fix the hosting view's automatic size constraints while keeping explicit native
 content measurement. Lead must repeat native rendering after the fix.
+
+W-R1 product fix `692192f`: debug/release 84/84 pass. Lead CUA final preview SHA
+`dad1ffd86cec4043e0974fd80db157d690a37531bd19abda62ba4cc675e197fe` passed:
+active/activation/restoring 1040×658 physical pixels; recovery 1040×738, full
+text/buttons, no scrollbar. Escape does not dismiss; Deactivate, Retry and
+Settings navigation work. Offscreen small-frame geometry is checked, physical
+small-screen/Spaces/global stacking and live power remain unverified. Fresh
+independent delta review and CI pending; no merge or arming.
