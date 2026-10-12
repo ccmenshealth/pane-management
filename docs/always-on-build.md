@@ -491,6 +491,75 @@ setup repair/unknown warning. Setup registers/authenticates only, never activate
 - Independent/lead code and native-auth security review, CI, and the documented
   signing/install/physical/UI acceptance gates remain open at builder handoff.
 
+#### B3 sequential integration slices (locked 2026-10-12)
+
+B3a implements the shared wire/signing target and bounded app-side client, with
+injected transport/scheduler fixtures. B3b adds native setup/absence proof,
+backend/controller/menu/Settings integration and preview acceptance. B3c supplies
+signed staging/notarization instructions and any necessary packaging changes.
+Each slice gets a fresh read-only code/security reviewer and lead acceptance
+before the next writer starts. No slice installs, registers, arms or replaces
+build 5. Missing Apple Developer identity blocks positive signed/native acceptance,
+not these implementations. Current inherited model overrides old skill pins.
+
+##### B3a client decisions K1–K8
+
+- K1: Extract only shared fixed identifiers, AlwaysOnXPC, canonical codecs and
+  reciprocal signing into a small target. Audit/telemetry/listener/runtime and
+  native privileged ports stay daemon-side. Preserve existing server behavior
+  and sibling tests; the GUI must not link the daemon implementation merely to
+  obtain protocol declarations. App wiring belongs to B3b.
+- K2: Reply decode enforces maximum 4096 bytes, exact fields/version, canonical
+  sorted JSON, bounded reason, canonical UUID/permit fields, and valid semantic
+  combinations. Only activated+active carries an activation token; prepared+off
+  requires a permit, and sealed observed+off may carry one. Other combinations
+  cannot carry either authority. Validate reply against the requested operation:
+  status never yields a token; an activation succeeds only with its own fresh
+  token. Unknown/malformed/contradictory replies never become safe off.
+- K3: One authenticated NSXPC connection generation at a time; derive same-team
+  peer requirement only from validated self and set before activation. One RPC
+  in flight, exactly-once completion, fixed 5-second monotonic deadline including
+  callback-time deadline validation; close on timeout/error/loss/malformed reply.
+  Both loss callbacks fence synchronously before scheduling actor work. No PID,
+  Team-ID configuration, ad-hoc bypass, private API, argv/env test mode, or logs
+  containing tokens. In-process injected ports are allowed.
+- K4: New connection may initially reject status while native console collection
+  runs. Retry status only at 250 ms spacing within a fixed 5-second readiness
+  budget; readiness never retries a mutation. Activation is sent at most once.
+  Ambiguous activation invalidates, drops authority, then reconnects and attempts
+  retryRestore with fresh authenticated status. Bounded attempts stop at visible
+  recovery-required; a human retry starts another bounded attempt.
+- K5: Activation token exists only in memory on the same generation. Heartbeat
+  every 10 seconds, serialized with foreground operations. Interruption,
+  invalidation, timeout, malformed reply or non-active heartbeat cancels renewal,
+  drops token and starts bounded recovery. Off connections are monitored too;
+  a configured helper loss must publish uncertainty, never retain stale off.
+  Global active without this client's memory token is orphaned and restored,
+  never adopted. Deactivate uses own token when available, otherwise retryRestore.
+  User stop during activation waits for settlement and restores a late success.
+- K6: Client observations carry a revision or equivalent stale-completion fence.
+  Heartbeat/loss cannot be overwritten by an older foreground result. Coalesce
+  background events during a foreground call and publish its conservative settled
+  observation. Keep the client independent from UI setup policy; B3b combines
+  these observations with registration/absence proof and controller quit rules.
+- K7: Removal is a single serialized client operation: prepare, require off plus
+  permit, then immediate same-connection status with the identical permit and
+  strict off. Before calling an injected unregister closure, synchronously check
+  that connection generation/fence is still valid. Failure aborts unregister and
+  leaves recovery/reprepare available. Never reuse permits across attempts or
+  reconnection. Actual SMAppService call and UI belong to B3b. No pgrep inference.
+- K8: AlwaysOnClientChecks covers strict wire shapes, negative native signing,
+  readiness success/timeout, exactly-once and delayed callback deadlines, both
+  loss forks, no token adoption, ambiguous activation, late-stop success,
+  heartbeat and off-connection loss recovery, stale completions, prepare permit
+  mismatch/incarnation/loss/unregister error and fresh reprepare. Use harmless
+  injected peers, never a registered/root helper or real power writes. Overlay
+  final tests on compiling pre-fix/inert source and retain behavioral red evidence.
+  Run every prior suite, separate debug/release compilation, script/plist/diff
+  lint, CI and fresh independent/manual-security plus lead review. No UI change
+  or installed/signed acceptance claim. Aim near 800 changed code/test lines;
+  report cohesive overage before expanding scope.
+
 #### B3 fresh setup state
 
 An optional never-configured launch may report unavailable without an alarm only
