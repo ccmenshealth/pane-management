@@ -112,8 +112,13 @@ preserving native emergency protection.
   operations. No live process, filesystem journal, XPC, registration or app wiring.
   Dependencies model guarded telemetry, monotonic time, durable journal and
   bounded power IO. Tests must model late writes after a failed/timed-out call.
-- B2: native protected journal, fixed bounded process/readback adapter and
-  authenticated SMAppService daemon. No live install/registration/activation.
+- B2a, `codex/always-on-native-io`: native protected journal and fixed bounded
+  process/readback adapter, tested in disposable unprivileged fixtures. No daemon,
+  app wiring, live power writes, installation or registration.
+- B2b: authenticated SMAppService daemon, console/audit and telemetry monitoring,
+  fixed XPC contract, admission-closed prepare/removal lifecycle and loopback tests.
+  No live install/registration/activation. This split keeps native boundaries
+  separately reviewable.
 - B3: authenticated app client, setup/removal coordinator, monitoring, app wiring
   and signed packaging. Final installation/arming remains a distinct drill.
 
@@ -188,6 +193,68 @@ review and tests belong to B2/B3.
   requires setup repair; no recovery method bypasses that boundary.
 
 ### Review ledger
+
+- Engine PR #4: independent ownership/storage/token security fallback review of
+  `4a99728` found R1: concurrent status could report off before initial readback.
+  Fix `28eeffe` adds checking state before every unresolved ownership read;
+  16 targeted pre-fix failures and final inert 176/102 versus implemented 176/0.
+  Lead delta review clears the source fix; independent delta and final-head CI
+  are pending while the B2a brief is prepared. No native IO builder starts until
+  the independent delta clears. Other lead findings and targeted red evidence
+  are recorded in VERIFICATION.md. No live operation, install or merge occurred.
+
+### B2a locked native IO contract
+
+- P1: Implement `RecoveryJournal` and `RecoveryPower` in a separate native module.
+  Production constructors have fixed locations/commands. Test injection may use
+  temporary user-owned directories and harmless executables but must not be
+  exposed in the later IPC protocol. No test executes a power write, even false.
+- P2: Production journal is `/var/db/local.snapbridge.alwayson`, directory 0700,
+  regular files 0600, root owner and single link. Use descriptor-relative openat,
+  O_NOFOLLOW/O_EXCL, validated parent/directory/file metadata, bounded decoding,
+  atomic rename plus file/directory fsync, and a held process lock. No client path.
+  Validate again before cleanup; absent files are distinct from permission or
+  metadata failures. Malformed contents in validated storage may be corrupt;
+  unsafe owner/mode/link/type must throw. New files use restrictive umask/modes.
+- P3: Durable envelope includes schema version, UUID generation/token, console
+  UID/audit ID, phase, boot identifier and prior baseline=false. Decode strictly;
+  never resume a recorded lease. An old boot record still authorizes restoration
+  of unresolved intent/active/restoring; off remains cleanup-only. Native journal
+  serializes engine calls; disk stalls are not promised to have a timeout.
+- P4: Production writes only `/usr/bin/pmset` with fixed argument arrays for
+  disablesleep 1 or 0, no shell or caller environment/arguments. Run off the
+  service executor, sanitize environment, cap/drain output, impose a monotonic
+  deadline, terminate then kill and reap before returning a timeout/error.
+  Do not start a second writer until the first is known quiescent. An unkillable
+  kernel/process hang cannot honestly satisfy a bounded-completion guarantee;
+  it must not permit a later conflicting writer or successful state report.
+- P5: After successful command, require fresh synchronized CFPreferences and
+  IOPMrootDomain SleepDisabled Boolean agreement within a fixed readback deadline.
+  Use public CFPreferences APIs with `com.apple.PowerManagement`, key
+  `SystemPowerSettings`, nested `SleepDisabled`, AnyUser/CurrentHost; require
+  actual CFBoolean types. IORegistry lookup/enumeration failure, wrong type,
+  synchronization failure, mismatch and missing post-write values are errors.
+  A successfully absent key remains nil; never normalize read errors/absence
+  into false. The native release may refuse absent initial preference/root;
+  no unverified OS-default inference is required. This host publishes false/No.
+- P6: Readback confirms persistent preference plus root-domain receipt/enqueue,
+  not physical sleep or emergency timing. No brightness, display assertions,
+  input interception or broad power-setting restore/change is allowed.
+- P7: Fail-first native checks use real disposable filesystem objects and harmless
+  subprocess fixtures plus injected power/readback transport. Cover safe round
+  trip and restart, lock contention, symlinks/hardlinks/types/modes, corruption,
+  before/after durable failures, strict Boolean/absent/error readback, timeout,
+  cancellation, nonzero exit, output cap/draining and no delayed write after return.
+  Fakes must model a writer that applied before failing. Verify temporary fixtures
+  clean up without touching production paths. Native positive root installation,
+  actual pmset mutation and physical sleep remain unverified until the arming drill.
+
+P5 source evidence: Apple IOKitUser tag `IOKitUser-100231.120.3`,
+`pwr_mgt.subproj/IOPMEnergyPrefs.c` (IOPMCopySystemPowerSettings) and
+`IOPMLibPrivate.h` (constant strings); PowerManagement tag
+`PowerManagement-1846.120.8.0.1`, `pmset/pmset.m` stores CFBoolean values.
+These internal source names guide public CFPreferences reads; do not import
+private IOKit functions or headers into the product.
 
 - Engine PR #4, `4a99728180f364d6ee384a2b8ec6120ef7994b95`: independent
   review found only R1 (P2), false off during the first ownership read
