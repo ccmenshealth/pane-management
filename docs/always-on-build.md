@@ -194,6 +194,14 @@ review and tests belong to B2/B3.
 
 ### Review ledger
 
+- Coordinator PR #6, `7164b2e5a23cc9ab262c66f6f82f768a7ed0c7c8`: independent
+  read-only code/manual-security fallback and lead reviews clear with no remaining
+  actionable finding; reviewed worktree stayed clean. Inherited model used, exact
+  metadata unavailable. CI `38288409516` passed including service347/0 and packaging.
+  Final compiled inert347/162; two targeted eight-failure regressions fixed shared
+  restoration settlement and strict final removal confirmation. B2b2 may start;
+  native signed/auth/telemetry/installation/physical acceptance remain open.
+
 - Native IO PR #5, `f54707554029284a7760746f897e5c12efb158a2`: fresh read-only
   independent code/manual-security fallback and lead reviews found no remaining
   actionable issue. ACL allocation ownership matched Apple's Libc filesec source.

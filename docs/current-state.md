@@ -3,8 +3,9 @@
 ## Bookmark — Native daemon planning (2026-10-12)
 
 - `codex/always-on-daemon` is an isolated planning branch on coordinator PR #6
-  head `7164b2e`. Independent/security review and CI remain pending; no native
-  builder starts before acceptance. Locked N1–N8 are in `always-on-build.md`.
+  head `7164b2e`. Independent and lead code/manual-security reviews clear with
+  no remaining finding; CI `38288409516` passed. Native boundary builder may
+  start. Locked N1–N8 are in `always-on-build.md`.
 - Next: native authentication/telemetry/daemon boundary, then B3 app client/setup/
   removal integration. No live helper registration, power mutation or arming.
   User confirmed no Apple Developer account. Apple-issued signing remains a
