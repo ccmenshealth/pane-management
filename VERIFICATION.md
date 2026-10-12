@@ -23,7 +23,9 @@ No Team ID, Apple anchor, certificate-name trust or ad-hoc fallback is used.
 - Authentication failures keep existing Check again/explicit repair/removal exits;
   no new durable state or automatic certificate enrollment. Rotation needs a
   coordinated normal-sleep restore, removal and reinstall with one certificate.
-- Independent code/manual-security, lead review and remote CI pending. CodeRabbit
+- Independent read-only code/manual-security and lead reviews clear at `d6742fa`;
+  clean before/after, no actionable findings. CI `38304383789` passed. Literal
+  security-review tool unavailable; fresh manual fallback used. CodeRabbit
   unavailable under repository restriction; current model inherited, exact
   model/effort metadata unavailable. No merge, install or arming.
 - No native certificate creation, keychain change, signing, helper execution or

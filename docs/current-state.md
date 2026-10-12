@@ -12,8 +12,12 @@
 - Candidate implementation passes separate debug/release builds, daemon149/0,
   client181/0, setup141/0 and controller76/0; shell/diff lint passed. Actual pre-fix
   source with API-only compatibility shims fails32/149 boundary assertions.
-- Next: draft PR, independent code/manual-security and lead review plus CI. Local
-  certificate creation/staging/native service acceptance are subsequent slices.
+- Draft PR13 at `d6742fa` cleared fresh independent code/manual-security and lead
+  reviews, clean before/after with no actionable findings. CI `38304383789` passed.
+  No literal security-review tool available; independent manual fallback used.
+  Next: isolated harmless ping probe/local staging under codex/local-signing-probe,
+  based on this reviewed product pin. Actual certificate creation, approval and
+  native acceptance remain unperformed; no paid membership is being pursued.
 
 ## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
 
