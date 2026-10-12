@@ -106,6 +106,56 @@ preserving native emergency protection.
 
 ## Backend handoff (design only; separate slice)
 
+### Backend implementation sequence
+
+- B1, `codex/always-on-engine`: pure testable recovery engine and typed fixed
+  operations. No live process, filesystem journal, XPC, registration or app wiring.
+  Dependencies model guarded telemetry, monotonic time, durable journal and
+  bounded power IO. Tests must model late writes after a failed/timed-out call.
+- B2: native protected journal, fixed bounded process/readback adapter and
+  authenticated SMAppService daemon. No live install/registration/activation.
+- B3: authenticated app client, setup/removal coordinator, monitoring, app wiring
+  and signed packaging. Final installation/arming remains a distinct drill.
+
+For B1 lock these state rules: startup first reads ownership journal; unresolved
+records restore before accepting activation. Missing/corrupt ownership with a
+true setting is an external conflict, never a silent takeover. Activation writes
+durable intent before enable, confirms command plus both readbacks before active,
+then commits active before replying. Every interruption after intent attempts
+restore; failed restoration retains recovery and a retry action. An off record
+may be cleared only after verified off. Any uncertain write outcome must be
+treated as potentially applied. All operations serialize; stop/critical/expired
+session events latch through in-flight activation so late success is restored.
+Journal and power IO failures are separately injectable and bounded by adapters.
+
+Bind generated tokens to authenticated non-root console UID/audit session.
+Heartbeat expiry, connection loss, console change, Final battery warning,
+Critical thermal, stale/failed telemetry, and externally cleared override stop
+without automatic rearm. Caller-supplied values cannot alter deadlines/commands.
+Initial absent root property is distinct from post-write verified off; require
+explicit matching booleans for all successful writes. An external true write
+while owned cannot be distinguished and remains a documented limitation.
+Prepare-for-update/removal returns success only after verified restoration;
+the eventual sole unregister coordinator must recheck before unregistering.
+
+Use fake journal/power/clock/guard adapters in B1 tests, never live power calls.
+Test failures after every await boundary, startup across each journal phase,
+pending-enable cancellation, telemetry/heartbeat/session expiry, conflicting
+ownership, invalid tokens/session identity, external clear, failed restoration
+retry, and prepare-removal. Meaningful red behavior must compile against an
+inert scaffold. Add an engine suite to CI and retain red evidence locally.
+
+### Review ledger
+
+- UI PR #3, `1923274f40256ea0be5060c48b922b6c680b11e9`: independent fresh
+  read-only review and lead source review found no blocking code issue. Exact-head
+  CI run `38278803917` passed. Worktree clean before/after review. Current inherited
+  model used; exact reviewer metadata unavailable. Native render reviewed by both
+  builder and lead; cross-Space/fullscreen, multiple-screen, VoiceOver and installed
+  Dock acceptance remain open. Repeated labeled controller tests do not establish
+  native menu wiring. Security boundary not implemented in UI-only slice; B2/B3
+  require independent security review. CodeRabbit unavailable by repo restriction.
+
 Use an SMAppService LaunchDaemon with dedicated Apple-issued matching app/helper
 signatures and notarization. Do not add a legacy/ad-hoc privileged fallback or
 reuse the unrelated VCMC identity. Missing signing blocks registration and

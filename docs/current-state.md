@@ -1,5 +1,17 @@
 # Pane Management — Current State
 
+## Bookmark — Recovery engine slice starting (2026-10-12)
+
+- UI PR #3 pinned `1923274` passed independent and lead source review and CI run
+  `38278803917`. Native warning render passed; remaining physical/native gates
+  listed below still block installation/merge. No power setting has changed.
+- `codex/always-on-engine`, isolated `always-on-engine` worktree, starts from that
+  reviewed UI head. It implements a testable recovery engine with fake adapters;
+  native privileged adapters and app integration are subsequent sequential slices.
+- Locked behavior, gates and review ledger are in `always-on-build.md`.
+  Build 5 remains installed and running. Matching Apple-issued signing identity
+  is not yet available; user question pending. No unrelated identity may be used.
+
 ## Bookmark — Always-on UI candidate (2026-10-12)
 
 - `codex/always-on-ui` implements the state/controller boundary, shared Dock/status
