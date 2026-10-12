@@ -1009,3 +1009,14 @@ privileged fallbacks are not authorized. No additional feature slice is pending.
   keep actions reachable. No fixed per-state heights or controller behavior change.
   Lead verifies normal native fixtures; small-screen fallback remains unproven if
   unavailable without changing the fixture API. No new visual-mirroring test.
+
+#### W-R1 native sizing regression
+
+Lead native rendering at `5db1aba` failed: blank warning at 520×3483 logical points.
+Offscreen native reproduction measured 329pt content, assigned 520×329, then
+AppKit's hosting constraints expanded the panel to 3483pt after run-loop settlement.
+A narrow offscreen layout SPI shares production layout with existing checks; no
+window is ordered front. Before the fix, 84 assertions yield four failures:
+active bounds/content fit/centering and recovery bounds (8064pt actual height).
+Fix the hosting view's automatic size constraints while keeping explicit native
+content measurement. Lead must repeat native rendering after the fix.

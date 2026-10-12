@@ -1,3 +1,33 @@
+## W-R1 native sizing correction — 2026-10-12
+
+Native QA rejected `5db1aba`: the warning rendered blank at 520×3483 logical
+points despite measuring 329pt of content. An offscreen native reproduction
+confirmed that default NSHostingView size constraints expanded the panel after
+`setFrame` returned. The visible hosting view now disables automatic sizing
+constraints; the separate native content measurement owns the bounded frame.
+
+- New native geometry checks use a narrow `LayoutChecks` SPI to invoke the exact
+  production layout on an offscreen panel. They never order it front or invoke
+  power/setup actions. They let AppKit's run loop settle before assertions.
+- Actual pre-fix behavior with access/refactor-only test shim: **84 assertions,
+  four failures**. Active settled at 3483pt and recovery at 8064pt, violating
+  content fit, bounds and centering. The unchanged implementation compiled.
+- Fixed debug/release checks: **84 assertions, zero failures**. Active is 329pt,
+  long recovery 445pt; a synthetic 320×300 usable frame clamps to 296×276,
+  and returning to active shrinks to the original centered frame. This verifies
+  offscreen native geometry, not physical small-display scrolling or rendering.
+- Separate debug/release compilation, shell syntax for each script and diff lint
+  passed. Preview packaging and strict ad-hoc signature passed. Current executable
+  SHA256 `dad1ffd86cec4043e0974fd80db157d690a37531bd19abda62ba4cc675e197fe`.
+  Final CUA rendering/actions, independent delta review and CI remain pending.
+- Local evidence: `.build/warning-stripes-evidence/geometry-before.log`,
+  `geometry-experiment.log`, `layout-red.log`, `layout-green.log`, release logs and
+  `layout-prefixed-test-shim.patch`. To reproduce red, apply that access-only patch
+  to `5db1aba`, build debug and run AlwaysOnChecks. No screenshot data is published.
+- Coordinated fixture-only missing-signing copy now says app/helper must use the
+  same certificate, matching the separate local-signing implementation. This
+  branch makes no production signing/authentication change or privileged action.
+
 ## Content-sized warning revision — 2026-10-12
 
 W6 supersedes the fixed warning height after the user saw a scrollbar in recovery.

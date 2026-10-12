@@ -249,21 +249,39 @@ private final class WarningPanel: NSPanel {
                 panel.animationBehavior = .none
                 panels[key] = panel
             }
-            let visible = screen.visibleFrame
-            let width = min(520, visible.width - 24)
-            // Measure the actual shared content at this display's available width.
-            // The measuring view has no scroll container or fixed vertical proposal.
-            let measurement = NSHostingView(rootView: WarningContent(controller: controller, preview: preview)
-                .frame(width: width).fixedSize(horizontal: false, vertical: true))
-            let contentHeight = ceil(measurement.fittingSize.height)
-            let maximumHeight = visible.height - 24
-            let root = WarningView(controller: controller, preview: preview, overflow: contentHeight > maximumHeight)
-            if let hosting = panel.contentView as? NSHostingView<WarningView> { hosting.rootView = root }
-            else { panel.contentView = NSHostingView(rootView: root) }
-            let size = NSSize(width: width, height: min(contentHeight, maximumHeight))
-            panel.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height), display: true)
+            Self.layout(panel, controller: controller, preview: preview, visible: screen.visibleFrame)
             panel.orderFrontRegardless() // Never makeKey or activate: typing stays with the current app.
         }
         for key in Array(panels.keys) where !present.contains(key) { panels.removeValue(forKey: key)?.orderOut(nil) }
     }
+    private static func layout(_ panel: NSPanel, controller: AlwaysOnController, preview: Bool, visible: NSRect) {
+        let width = min(520, visible.width - 24)
+        // Measure the actual shared content at this display's available width.
+        // The measuring view has no scroll container or fixed vertical proposal.
+        let measurement = NSHostingView(rootView: WarningContent(controller: controller, preview: preview)
+            .frame(width: width).fixedSize(horizontal: false, vertical: true))
+        let contentHeight = ceil(measurement.fittingSize.height)
+        let maximumHeight = visible.height - 24
+        let root = WarningView(controller: controller, preview: preview, overflow: contentHeight > maximumHeight)
+        let hosting: NSHostingView<WarningView>
+        if let existing = panel.contentView as? NSHostingView<WarningView> {
+            hosting = existing; hosting.rootView = root
+        } else { hosting = NSHostingView(rootView: root) }
+        // Explicit fitting above owns the window size. Hosting's default min/max
+        // constraints otherwise expand this borderless window after setFrame.
+        hosting.sizingOptions = []
+        if panel.contentView !== hosting { panel.contentView = hosting }
+        let size = NSSize(width: width, height: min(contentHeight, maximumHeight))
+        panel.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height), display: true)
+    }
+
+    /// Exercises the production layout without displaying a window or touching power.
+    @_spi(LayoutChecks) public static func layoutOffscreenPanel(
+        controller: AlwaysOnController, preview: Bool, visibleFrame: NSRect, reusing panel: NSPanel? = nil
+    ) -> NSPanel {
+        let panel = panel ?? WarningPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        layout(panel, controller: controller, preview: preview, visible: visibleFrame)
+        return panel
+    }
+
 }

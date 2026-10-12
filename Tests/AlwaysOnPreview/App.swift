@@ -18,7 +18,7 @@ import AlwaysOnUI
         switch fixture {
         case "Active": emit(.active, .deactivate)
         case "Setup available": emit(.unavailable("Always-on helper is not set up."), .setUp, safe: true)
-        case "Missing signing": emit(.unavailable("Install the app with matching Apple-issued signatures, then check again."), .checkSetup, safe: true)
+        case "Missing signing": emit(.unavailable("Install the app and helper signed with the same certificate, then check again."), .checkSetup, safe: true)
         case "Approval": emit(.setupRequired("Approve the helper in Login Items, then check again."), .checkSetup, "Open Login Items")
         case "Repair installation": emit(.setupRequired("Repair the signed app installation, then check again."), .checkSetup)
         case "Unknown recovery": emit(.recoveryRequired("Helper connection was lost."), .deactivate, "Repair setup in Settings")

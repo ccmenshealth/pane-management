@@ -10,10 +10,12 @@
   Preview is stopped. Builder owns this UI-only revision, same isolated PR #12.
 - Local signing is now user-authorized as a separate slice; this builder does not
   change certificates, authentication, installation, power or controller behavior.
-- W6 uses native content fitting size, includes action/secondary updates, and limits
-  hidden-indicator scrolling to screen overflow. Debug/release, 76 UI assertions,
-  shell/diff lint and inert preview packaging pass. Next: native QA, independent
-  delta review and CI. No merge or arming.
+- W-R1: native QA rejected `5db1aba` after hosting constraints expanded a 329pt
+  measured warning to 3483pt. Offscreen regression failed four assertions first;
+  disabling automatic hosting size constraints passes 84/84 debug/release checks.
+  Native measured/bounded geometry remains the source of window height.
+- Debug/release compilation, shell/diff lint and inert preview packaging pass.
+  Next: final native QA, independent delta review and CI. No merge or arming.
 
 ## Bookmark — warning stripes cosmetic slice (2026-10-12)
 

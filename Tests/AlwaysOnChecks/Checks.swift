@@ -1,6 +1,7 @@
 import Foundation
 import AlwaysOnCore
-import AlwaysOnUI
+@_spi(LayoutChecks) import AlwaysOnUI
+import AppKit
 
 @MainActor final class Backend: AlwaysOnBackend {
     var snapshot = AlwaysOnSnapshot(revision: 0, state: .off, action: .activate, quitSafe: true)
@@ -45,6 +46,43 @@ import AlwaysOnUI
             while !condition() && ProcessInfo.processInfo.systemUptime < deadline { await Task.yield() }
             check(condition(), "settled \(label)")
         }
+        // Native layout is intentionally offscreen. Let AppKit settle constraints:
+        // the regression only appears after the explicit setFrame has returned.
+        func layoutChecks() {
+            _ = NSApplication.shared
+            let backend = Backend(), controller = AlwaysOnController(backend: Backend())
+            let live = AlwaysOnController(backend: backend)
+            let visible = NSRect(x: 50, y: 80, width: 1000, height: 700)
+            func settle(_ panel: NSPanel) {
+                panel.contentView?.layoutSubtreeIfNeeded()
+                RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+            }
+            backend.emit(.active, .deactivate)
+            let panel = AlwaysOnWarnings.layoutOffscreenPanel(controller: live, preview: true, visibleFrame: visible)
+            settle(panel)
+            let active = panel.frame
+            print("Native active layout: \(active)")
+            check(visible.insetBy(dx: 12, dy: 12).contains(active), "native active panel stays within usable bounds after settling")
+            check(active.height > 200 && active.height < 500, "native active panel fits ordinary content")
+            check(abs(active.midX - visible.midX) < 1 && abs(active.midY - visible.midY) < 1, "native active panel remains centered")
+            backend.emit(.recoveryRequired("The helper could not confirm restoration. " + String(repeating: "Additional recovery information. ", count: 8)), .deactivate, secondary: "Repair setup in Settings")
+            _ = AlwaysOnWarnings.layoutOffscreenPanel(controller: live, preview: true, visibleFrame: visible, reusing: panel)
+            settle(panel)
+            print("Native recovery layout: \(panel.frame)")
+            check(panel.frame.height > active.height, "native recovery content increases panel height")
+            check(visible.insetBy(dx: 12, dy: 12).contains(panel.frame), "native longer content remains bounded")
+            let small = NSRect(x: -320, y: 40, width: 320, height: 300)
+            _ = AlwaysOnWarnings.layoutOffscreenPanel(controller: live, preview: true, visibleFrame: small, reusing: panel)
+            settle(panel)
+            print("Native constrained layout: \(panel.frame)")
+            check(small.insetBy(dx: 12, dy: 12).contains(panel.frame), "native overflow respects small usable display")
+            backend.emit(.active, .deactivate)
+            _ = AlwaysOnWarnings.layoutOffscreenPanel(controller: live, preview: true, visibleFrame: visible, reusing: panel)
+            settle(panel)
+            check(panel.frame == active, "native panel shrinks back after recovery")
+            check(!panel.isVisible && controller.state == .off, "native layout checks never display a window or activate")
+        }
+        layoutChecks()
         let b = Backend(), c = AlwaysOnController(backend: Backend())
         check(c.requestQuit(), "fresh off permits quit")
         for surface in ["Dock", "menu", "Settings", "warning"] {
