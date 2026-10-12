@@ -1,5 +1,23 @@
 # Pane Management — Current State
 
+## Bookmark — Native daemon candidate (2026-10-12)
+
+- `codex/always-on-daemon` adds the fixed signed XPC/launchd boundary, cached native
+  telemetry and nested helper packaging, stacked on coordinator PR #6. App-side
+  registration/client/setup/removal remains B3; no helper was run or registered.
+- The native audit probe confirms this host's current process has matching console
+  and audit identity plus required local/graphic/authenticated flags. Battery probe
+  reports normal. These read-only probes do not prove signed IPC or physical sleep.
+- Initial compiled policy scaffold failed 37/41 assertions. Final exact inert
+  boundary overlay failed 86/118; implementation passes 118/0. Lead finding N-R1
+  produced six pre-fix failures across stalled battery/thermal recovery. Console
+  validation now has its own single-flight queue. Evidence is in `VERIFICATION.md`.
+- Next: pinned independent code/manual-security review and CI, then B3 after lead
+  acceptance. Missing Apple Developer identity blocks positive signed acceptance
+  and installation, not remaining code. No enrollment/purchase or fallback.
+- Build 5 remains at the original path as PID 96007, without permissions or power
+  changes. CodeRabbit remains unavailable under the repository exclusion.
+
 ## Bookmark — Native daemon planning (2026-10-12)
 
 - `codex/always-on-daemon` is an isolated planning branch on coordinator PR #6

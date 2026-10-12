@@ -1,3 +1,70 @@
+## Native daemon boundary candidate (2026-10-12)
+
+B2b2 adds `PaneAlwaysOn`, the fixed SMAppService daemon plist, reciprocal signing
+requirement support and server enforcement, kernel UID/audit-session policy,
+bounded six-operation ingress, native cached telemetry, and nested helper signing.
+The main app still uses its prior unavailable backend; B3 owns integration.
+
+The initial compiling policy scaffold produced **41 assertions / 37 failures**.
+The exact final inert boundary overlay produced **118 / 86 failures**; the
+implemented boundary produced **118 / 0** after the session-collection repair.
+Ignored local evidence includes `.build/evidence/daemon-initial-red.txt`,
+`daemon-final-red.txt`, `run-final-inert.py`, `inert-*.swift`, `daemon-green.txt`,
+`daemon-gauntlet.txt`, `daemon-final-gauntlet.txt`, `daemon-session-stall-red.txt`
+and `session-probe.txt`. The overlay runner restores source
+in a `finally` block. These are behavior failures, not compiler failure evidence.
+
+Lead finding **N-R1**: a battery/thermal read that never returned also blocked
+console validation in the original shared collector. After five seconds, the
+coordinator could no longer admit authenticated status/recovery. The targeted
+pre-fix run compiled **118 assertions / 6 failures**, three each for battery and
+thermal stalls. Separate coalesced power and session queues now leave console
+authentication fresh and allow status/retry while unknown power telemetry still
+refuses activation. The unchanged watchdog remains independent. Both sibling
+power read paths and untracking/coalescing are covered.
+
+Local full gauntlet passed SnapCore 60/0, controller 34/0, engine 176/0, native IO
+114/0, coordinator 347/0, daemon 105/0 before N-R1, separate debug/release builds,
+script/plist lint and whitespace check. After N-R1, daemon 118/0 and separate
+final debug/release/script/plist/diff checks pass; unchanged earlier suites were
+not repeated. No Swift linter is configured. Current inherited model was used;
+exact builder model/effort metadata is unavailable.
+
+Read-only native probes: public libbsm audit lookup succeeds; the current process
+matches the console UID/audit session and required authenticated/graphic/console,
+non-remote flags. The battery enumeration/type validation returns normal. No
+personal identifiers are retained. The check executable's actual ad-hoc identity
+fails the Apple-issued self-validation path as intended. Fake identity ports test
+ordering and policy only; positive reciprocal signed IPC remains unverified.
+
+| Failure/state | Exit exposed to B3 | Evidence/limit |
+| --- | --- | --- |
+| Root/self signing fails before startup | Setup repair; no active claim | Preflight refuses constructor; actual ad-hoc check rejected |
+| New connection not collected yet | Checking, bounded status retry on same connection | First status rejected, later same connection observes off |
+| Malformed/oversized request or concurrent request | Rejected; next valid request may retry | Canonical shape/version/size checks and production ingress slot |
+| Loss before admission or while activation awaits | Warning until confirmed off; reconnect/retry restore | Both baseline/enable loss cases with real coordinator and fake power |
+| Same-user reconnect or late old invalidation | Retry restore, then fresh activation | No inherited token; late old loss cannot stop new lease |
+| Battery/thermal unknown, stale, Final/Critical | Automatic restore; remain off | Cached guard monitor through real coordinator; no Serious cutoff |
+| Stalled power telemetry | Recovery remains possible through independent session collection | Targeted fixture described below |
+| Native power/journal failure | Recovery required; Retry/Deactivate | Earlier engine/native slices; no live privileged drill here |
+| Preparing/removal | Stay sealed, final readback and unregister in B3 | Coordinator suite; process absence alone does not prove removal |
+
+The warning UI and final setup/removal controls belong to earlier/B3 slices;
+this PR adds no UI and has no new render claim. The ingress tests call the actual
+exported bridge in process; they do not establish signed NSXPC transport success.
+OS None/Nominal may conceal internal telemetry errors. Console double-read plus
+cached polling is not an atomic UID-to-ASID mapping. Native readback remains a
+setting receipt, not proof of kernel event consumption or physical sleep. Kernel,
+disk/executor or whole-process scheduler stalls remain outside bounded recovery.
+
+The local main-app packaging script was not run while build 5 is active. CI must
+exercise nested-helper-before-app signing and verify both. Its ad-hoc bundle is
+not installable as a trusted service. The `pgrep` overwrite guard is only a current
+process check; B3's sole replacement/removal flow must prepare, strictly recheck,
+and unregister even if a registered crash-throttled helper has no current PID.
+No helper execution/registration, production journal creation, pmset write,
+permission change, installed app replacement or UI automation occurred.
+
 # Verification record
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.

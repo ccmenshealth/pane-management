@@ -8,6 +8,10 @@ let package = Package(
     targets: [
         .target(name: "SnapCore"),
         .target(name: "AlwaysOnCore"),
+        .target(name: "AlwaysOnAudit", linkerSettings: [.linkedLibrary("bsm")]),
+        .target(name: "AlwaysOnDaemon", dependencies: ["AlwaysOnCore", "AlwaysOnService", "AlwaysOnNative", "AlwaysOnAudit"]),
+        .executableTarget(name: "PaneAlwaysOn", dependencies: ["AlwaysOnDaemon"]),
+        .executableTarget(name: "AlwaysOnDaemonChecks", dependencies: ["AlwaysOnDaemon", "AlwaysOnService", "AlwaysOnCore"], path: "Tests/AlwaysOnDaemonChecks"),
         .target(name: "AlwaysOnService", dependencies: ["AlwaysOnCore"]),
         .executableTarget(name: "AlwaysOnServiceChecks", dependencies: ["AlwaysOnService", "AlwaysOnCore"], path: "Tests/AlwaysOnServiceChecks"),
         .target(name: "AlwaysOnNative", dependencies: ["AlwaysOnCore"]),

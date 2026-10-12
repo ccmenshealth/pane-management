@@ -25,7 +25,7 @@ jobs:
       - name: Validate source metadata
         run: |
           bash -n scripts/build-app.sh scripts/build-fixture.sh scripts/build-always-on-preview.sh
-          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist Resources/AlwaysOnPreviewInfo.plist
+          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist Resources/AlwaysOnPreviewInfo.plist Resources/local.snapbridge.alwayson.service.plist
           git diff --check
       - name: Build application with supplied artwork
         run: bash scripts/build-app.sh
@@ -39,6 +39,8 @@ jobs:
         run: .build/release/AlwaysOnNativeChecks
       - name: Run service coordinator checks
         run: .build/release/AlwaysOnServiceChecks
+      - name: Run native daemon boundary checks
+        run: .build/release/AlwaysOnDaemonChecks
       - name: Package always-on UI preview
         run: bash scripts/build-always-on-preview.sh
       - name: Package disposable test helper
@@ -47,6 +49,8 @@ jobs:
         run: |
           codesign --verify --deep --strict "dist/Always-on Preview.app"
           plutil -lint "dist/Always-on Preview.app/Contents/Info.plist"
+          codesign --verify --strict "dist/Pane Management.app/Contents/MacOS/PaneAlwaysOn"
+          plutil -lint "dist/Pane Management.app/Contents/Library/LaunchDaemons/local.snapbridge.alwayson.service.plist"
           codesign --verify --deep --strict "dist/Pane Management.app"
           codesign --verify --deep --strict "dist/Pane Management Test Windows.app"
           plutil -lint "dist/Pane Management.app/Contents/Info.plist" "dist/Pane Management Test Windows.app/Contents/Info.plist"

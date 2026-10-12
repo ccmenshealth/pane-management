@@ -463,6 +463,34 @@ setup repair/unknown warning. Setup registers/authenticates only, never activate
   may exceed the ~800-line guideline modestly; report scope rather than splitting
   authentication from its enforcement just to meet a line count.
 
+#### B2b2 implementation handoff
+
+- `AlwaysOnDaemon` uses a canonical JSON `Data` request (maximum 1,024 bytes),
+  bounded reply (4,096 bytes, reason at most 2,048 UTF-8 bytes), and only the six
+  version 1 operations. B3 should use `BoundaryPolicy.encode` and `AlwaysOnXPC`.
+  Wire size limits apply after Foundation decodes Data; they do not claim a bound
+  on the transport's initial allocation. No identifiers/tokens are logged.
+- `TrustedIdentity.peerRequirement(own: .app)` supplies B3's derived helper
+  requirement. Set it on the connection before activation. Server sets both the
+  listener and per-connection requirement before activation. Actual matching
+  Apple-issued authentication is unverified; no account exists yet.
+- New connections are tracked before async collection. Initial request may return
+  checking/rejected until cached console/audit validation arrives. Retry status
+  on that same connection with a fixed deadline; readiness is not activation.
+  Each connection admits once to a unique opaque key, permits one in-flight
+  request, and closes irreversibly on either interruption or invalidation.
+- Power collection, console/audit collection and the monitor watchdog each have
+  independent scheduling and coalescing. Lead finding N-R1 split the shared power/
+  session queue after six pre-fix failures for stuck battery/thermal readers. Final
+  suite is 118/0; exact compiled inert overlay 118/86. Recovery
+  requests require fresh console authentication, while unknown battery/thermal
+  denies activation. Final/Critical restoration uses the real coordinator.
+- B3 must not interpret `pgrep` as unregistration proof: a registered service can
+  lack a PID during crash throttling. Replacement requires the sole prepared,
+  strictly rechecked and unregistered path even when the build-script guard passes.
+- Independent/lead code and native-auth security review, CI, and the documented
+  signing/install/physical/UI acceptance gates remain open at builder handoff.
+
 #### B3 fresh setup state
 
 An optional never-configured launch may report unavailable without an alarm only
