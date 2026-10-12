@@ -563,6 +563,84 @@ not these implementations. Current inherited model overrides old skill pins.
   or installed/signed acceptance claim. Aim near 800 changed code/test lines;
   report cohesive overage before expanding scope.
 
+##### B3b sequential split and setup decisions S1–S9
+
+B3b1 is a headless read-only native/setup coordinator slice. B3b2 then adapts the
+controller, warning/menu/Settings UI and app lifecycle to it. This keeps native
+filesystem/ServiceManagement policy independently reviewable before UI wiring.
+No installed application or service changes occur in either build slice.
+
+- S1: Extract `AlwaysOnReadOnly` containing the existing strict public power
+  decoder and bounded reader, shared fixed journal-directory name and trusted
+  parent/ACL validation, plus a new absence-only probe. NativeRecoveryPower and
+  NativeRecoveryJournal reuse those implementations. Keep mkdir/lock/records/
+  writes/process execution in AlwaysOnNative. GUI dependency graph must exclude
+  AlwaysOnNative, AlwaysOnDaemon and audit code. Preserve earlier suite evidence
+  with extraction regression checks; no rewrite of already reviewed policies.
+- S2: Absence traverses `/private/var/db` from `/` with descriptor-relative
+  O_DIRECTORY/O_NOFOLLOW/O_CLOEXEC opens and root-owner/non-group-or-other-writable/
+  valid empty-or-absent ACL checks. fstatat of the fixed child with
+  AT_SYMLINK_NOFOLLOW accepts only -1/ENOENT. Existing child of any type, permission
+  denial, unsafe parent, malformed ACL and all other failures are uncertainty.
+  Never open/create the child. Test-only temporary-parent injection is allowed,
+  not a production path/UID option. Run filesystem reads off MainActor with a
+  fixed bounded report deadline and single-flight worker retained through stalls;
+  late results cannot overwrite newer state or create a growing work queue.
+- S3: Optional unavailable requires a fresh ordered bracket: notRegistered,
+  strict dual-false power receipt, secure directory absence, notRegistered again.
+  No cache/persisted proof; fresh at launch/wake/setup transitions. Any uncertainty
+  means visible setupRequired/unknown. Snapshot races/root interference remain
+  limitations. Successful removal may yield same-process quiet unavailable from
+  its verified live permit; next launch/wake repeats proof and the retained root
+  directory intentionally produces conservative repair. No storage cleanup here.
+- S4: Add one MainActor setup coordinator with injected client, service and
+  read-only ports. Publish a single increasing revision with state, fixed remedy,
+  and lifecycle-pending flag. Remint client observations; newer loss/heartbeat/
+  setup events must defeat an older probe/foreground completion. Expose headless
+  startup/refresh, explicit setup, activate, deactivate, remove and explicit
+  approval-navigation methods. Constructor and startup never register, activate,
+  open Settings, write power or create journal storage.
+- S5: SMAppService uses only daemon(plistName: fixed filename). Model status
+  notRegistered/enabled/requiresApproval/notFound distinctly. Only explicit setup
+  on notRegistered validates trusted app identity then registers once; enabled
+  reconnects/recovers without duplicate registration; requiresApproval offers
+  a separately clicked Open Login Items Settings action; notFound explains that
+  the signed installation needs repair and offers recheck. Never unregister/
+  reregister as a repair shortcut. Re-read status after register success/error
+  to resolve already-registered/denied races. Missing signature stays quiet only
+  after S3 proof; otherwise warning-visible. No ad-hoc/legacy/VCMC fallback.
+- S6: Registration runs on a dedicated non-main serial executor. A reporting
+  deadline may show pending but cannot cancel, retry or release a registration
+  slot while it may still apply. Read-only service status is bounded/single-flight
+  independently; stuck OS reads cannot block UI or queue unlimited jobs. Removal
+  uses the B3a sole prepare/final-recheck flow and immediate callback-based
+  SMAppService.unregister; marshal global completion to MainActor. Preserve
+  client removalPending until actual settlement. All setup/register/activation/
+  removal mutations are excluded throughout an existing lifecycle operation,
+  including its preparation phase. Expected unregister loss cannot erase success.
+- S7: Recoverability values support Set Up for fresh safe state; Open Login Items
+  for approval; Check Again plus signed-install repair explanation for notFound/
+  signing failure; Retry deactivation AND Repair setup for configured uncertainty;
+  Deactivate for active; Retry removal after failed removal with fresh permit.
+  Pending OS operation visibly says waiting and excludes competing mutations.
+  off alone enables activation. setupRequired/unknown are not quit-safe. No
+  silent auto-resume after process restart, reconnect, wake or repair.
+- S8: Tests cover every triple-proof receipt/status/error fork; real temporary
+  filesystem file/dir/symlink/writable/wrong-owner/ACL parent and ENOENT-only
+  policy; stalled/late read; zero startup mutations/navigation; full registration
+  status/error/identity matrix; newer observation defeating older proof; pending
+  register/unregister exclusions; late actual settlement; expected removal loss
+  and retry. Use fake ServiceManagement/client ports and temporary user storage;
+  never call real register/unregister or construct production journal/writer.
+  Preserve compiling pre-fix/inert red evidence. A public read-only live probe is
+  allowed but is not required and proves only its instantaneous observation.
+- S9: Add AlwaysOnSetupChecks to CI; run all prior suites and new setup checks,
+  separate debug/release build/typecheck, bash/plist/diff lint, remote CI, fresh
+  independent/manual-security plus lead review. No new UI in B3b1; B3b2 must
+  render all new warning/actions in the native inert preview. No merge/install/
+  registration/arming. Prefer a cohesive ~800-line slice; modest extraction/test
+  overage must be reported, not hidden. Signing/native acceptance remain open.
+
 #### B3 fresh setup state
 
 An optional never-configured launch may report unavailable without an alarm only
