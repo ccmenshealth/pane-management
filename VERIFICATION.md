@@ -2,6 +2,100 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## Always-on UI/controller candidate — October 12, 2026
+
+This is the UI/state slice stacked on Dock PR #2. The actual production backend
+is `UnavailableAlwaysOnBackend`: no simulated activation, `pmset`, power API,
+privileged installation, brightness write, keyboard/trackpad hook, persistence or
+network operation is added. A separate in-memory fixture executable shares the
+warning/controller code under bundle ID `local.snapbridge.alwaysonpreview`.
+Readback states mean setting observations, never proof of physical sleep/lid or
+emergency behavior. Configured-but-unreachable helper status must be unknown,
+not unavailable; the future backend owns authentication, bounded operations,
+telemetry, heartbeat expiry and durable recovery.
+
+Fail-first evidence: `AlwaysOnChecks` compiled against the disabled controller
+scaffold with no-op actions and produced **34 assertions, 31 failures** (exit 1).
+Failures included startup off verification, shared action activation/deactivation,
+serialization, cancellation/late completion, critical stop, missing backend,
+unknown activation, stale/ambiguous startup restoration, failure/retry and quit
+completion. Three negative quit assertions already passed because the inert
+scaffold always refused quit; their successful-completion partners failed. This
+was a behavior failure, not a missing-symbol compile failure. The exact red log
+and scaffold are retained locally under ignored `.build/evidence/` as
+`always-on-red.txt` and `AlwaysOnController.disabled.swift`. Restoring the
+implementation yields **34 assertions, zero failures**. The four named entry
+labels exercise the shared controller API; they do not simulate actual Dock,
+status-menu, Settings or warning event dispatch. Native evidence is separate.
+
+Local gates:
+
+- `swift run --disable-sandbox --cache-path .build/cache SnapCoreChecks`:
+  **60 scenarios, zero failures**.
+- `swift run --disable-sandbox --cache-path .build/cache AlwaysOnChecks`:
+  **34 assertions, zero failures**; new named CI step added.
+- Separate debug/typecheck and release `swift build` commands with
+  `--disable-sandbox --cache-path .build/cache`: passed.
+- `bash -n scripts/build-app.sh scripts/build-fixture.sh scripts/build-always-on-preview.sh`,
+  source plist lint (including `AlwaysOnPreviewInfo.plist`) and
+  `git diff --check`: passed. No standalone Swift linter is configured.
+- Preview and disposable-window fixture packaging, strict deep code-signature
+  verification and bundled plist lint: passed in the isolated worktree.
+- Main-app packaging/installation intentionally not run; its existing running-app
+  guard remains unchanged and installed build 5 was preserved. CI must package
+  and verify the main bundle on its clean runner.
+
+Native CUA acceptance, using only the isolated preview:
+
+- Actual app-only warning screenshots show red triangle/white exclamation,
+  prominent exact activated heading, explanation and large red Deactivate button.
+  The final 520 × 390-point layout is fully legible with no clipping. The warning
+  has no close/minimize affordance; AX exposes a system dialog, heading and button.
+- Closing preview controls left the active warning visible. Escape did not
+  dismiss it. A Command-H attempt did not dismiss it, but this does not prove a
+  successful app-hide action, since controls were already closed.
+- Return on the warning invoked Deactivate. The live stopping warning remained,
+  changed copy truthfully and disabled its pending button. It disappeared only
+  after the simulated off observation. A later native click passed the same path.
+- Simulated restore failure on Quit kept the process alive and showed Recovery
+  with Retry deactivation. Native Retry entered stopping then confirmed off.
+- Simulated critical stop went active → stopping → off and stayed off. It tests
+  an explicit controller event, not actual battery or heat telemetry.
+- Preview fullscreen entry/exit was exercised, but CUA captures its selected
+  window only; the control-window render alone does not establish overlay
+  stacking on fullscreen Spaces. Cross-app/fullscreen/Space, multi-display and
+  hot-plug behavior, Hide All, user-observed absence of focus stealing, and
+  VoiceOver traversal remain acceptance gaps. `canHide=false`, nonactivating
+  panels, `hidesOnDeactivate=false`, all-Spaces/fullscreen-auxiliary collection
+  behavior, screen reconciliation and scrollable small-screen content are
+  implemented and source-audited, not a claim of completed physical acceptance.
+- Preview ended **off and quit**. `pgrep -x AlwaysOnPreview` returned no process;
+  original `PaneManagement` PID **96007** remained. No private desktop screenshot
+  was saved or uploaded. CUA captures were app-only and emitted in the builder
+  session; there is no documented local image artifact save API in that tool.
+
+The lead independently inspected the final preview via CUA and reported the
+red/white triangle, active text, explanation and large Deactivate clearly rendered
+without clipping. Its click showed Restoring/disabled button before removal; the
+lead then quit the preview and confirmed PID 96007 remained. This is lead visual
+review, not a substitute for the separate pinned-head code review.
+
+Sibling-path source audit: Dock and status menus share the item factory and
+retain explicit action intent; Settings uses the same state/action mapping;
+warning Deactivate calls the same controller. Pending items cannot initiate a
+second activation. Settings/reopen reconciles warnings without suppressing the
+existing snap-chooser exclusions. All normal app/menu/Settings quits pass the
+application termination delegate; restore failure sends a negative quit reply.
+A duplicate-launch audit caught the early termination path preceding callback
+installation: the final code exits duplicates immediately before starting a
+power lifecycle, so they neither hang nor restore another instance's session.
+No direct native duplicate-launch claim is made for the new main app.
+
+CodeRabbit is unavailable under the repo restriction. Independent/lead review
+remains required for this UI/backend boundary; helper/auth/storage security
+review belongs to the separate backend slice. Nothing is merged, armed or
+presented as dependable backpack operation.
+
 ## Dock presence candidate — October 12, 2026
 
 Build 6 adds running Dock presence and a retained custom Dock menu with Settings

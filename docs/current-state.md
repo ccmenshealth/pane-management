@@ -1,5 +1,32 @@
 # Pane Management — Current State
 
+## Bookmark — Always-on UI candidate (2026-10-12)
+
+- `codex/always-on-ui` implements the state/controller boundary, shared Dock/status
+  actions, Settings status, quit-before-restore handling, and persistent warning
+  panels. It is stacked on `codex/dock-presence`; both remain draft candidates.
+- The production backend reports **setup unavailable** and performs no power IO.
+  No helper, privileged operation, display/backlight write or input interception
+  is implemented in this slice. Backend design/handoff is in
+  [the locked build plan](always-on-build.md#backend-handoff-design-only-separate-slice).
+- 34 feature assertions pass after a compiled inert-scaffold run failed 31 of
+  those assertions; 60 existing scenarios, separate debug/release builds and
+  source/fixture metadata/signature checks pass. Concrete output and limits are in
+  `VERIFICATION.md`. Independent/lead pinned-head review and remote checks remain
+  required before this candidate can advance.
+- Native CUA inspected the **actual** isolated warning in active, pending,
+  stopping and recovery states, including Return/Deactivate and failure/retry.
+  The final 520 × 390-point render passed visual inspection. Full cross-Space,
+  other-app fullscreen stacking, multiple-display/hot-plug and VoiceOver
+  acceptance remain unverified; code configuration does not prove those behaviors.
+- Isolated preview: `dist/Always-on Preview.app`, bundle identifier
+  `local.snapbridge.alwaysonpreview`. It uses only an in-memory simulated backend.
+  Preview was deactivated and quit after verification. Original installed build 5
+  remains running as PID 96007; no installed bundle, permission or power setting
+  was changed. Main-app packaging was not run because build 5 must keep running.
+- User-authorized current model was used; exact builder model/effort metadata is
+  unavailable. CodeRabbit remains unavailable by explicit repository restriction.
+
 ## Bookmark — Always-on build authorized (2026-10-12)
 
 - User explicitly authorized building the broader mode despite the investigation

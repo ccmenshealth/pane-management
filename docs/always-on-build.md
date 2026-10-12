@@ -91,5 +91,52 @@ preserving native emergency protection.
 
 ## Findings and handoff
 
-- UI builder pending; helper security architecture review in progress.
+- UI/controller slice implemented; local regression/build/lint/fixture gates pass.
+  Inert scaffold compiled with 34 assertions/31 failures; implemented controller
+  passes 34/0. Actual CUA warning active/pending/stopping/recovery renders and
+  deactivate/retry/failed-quit behavior inspected. See `VERIFICATION.md` for
+  exact evidence and remaining cross-Space/multi-screen acceptance gaps.
+- Builder sibling audit fixed duplicate-launch termination before power lifecycle
+  initialization; duplicate processes must not wait for an uninstalled callback
+  or restore another instance's session. No main-app native launch was performed.
+- Independent/lead pinned-head review and remote checks remain pending at handoff.
+  CodeRabbit unavailable by repository restriction. Helper security architecture
+  is recorded below; implementation remains a separate slice.
 - No live power state or installed application was changed to start this build.
+
+## Backend handoff (design only; separate slice)
+
+Use an SMAppService LaunchDaemon with dedicated Apple-issued matching app/helper
+signatures and notarization. Do not add a legacy/ad-hoc privileged fallback or
+reuse the unrelated VCMC identity. Missing signing blocks registration and
+installation, not isolated development/loopback tests. Plan any eventual install
+path migration explicitly; do not move installed build 5 during development.
+
+The app and helper must set reciprocal public NSXPC code-signing requirements
+before resuming a connection: exact identifiers, Apple anchor and Team ID.
+Validate the non-root current console UID/audit session and bind the session token.
+Only fixed operations are allowed: status, activate, heartbeat, deactivate,
+retryRestore, prepareForUpdateOrRemoval. Accept no caller commands, paths,
+preference keys, or timeouts. Root-only protected `/var/db` recovery records need
+intent plus fsync before enable; serialize generation ownership. Unresolved
+startup records restore before new sessions. Fixed bounded asynchronous
+`/usr/bin/pmset` arguments must be followed by agreement between persistent
+preference and IOPMrootDomain `SleepDisabled` Boolean readbacks. This confirms a
+setting receipt, not physical sleep or emergency timing.
+
+Heartbeat expiry, connection loss, console switch, final battery warning and
+critical thermal warning restore and remain off. Use notifications plus polling;
+None/Nominal can disguise unknown telemetry and remain a documented limit.
+Refuse an existing true override with no owned recovery record, never reassert an
+externally cleared false value, and disclose that an identical external true
+write cannot be distinguished. The sole unregister/update/removal lifecycle must
+restore and recheck first. Unknown restoration keeps warning/retry visible.
+
+For the UI protocol, `.unavailable` asserts no owned override exists and no
+activation is available. It is valid for this slice's never-implemented backend,
+not for a configured-but-unreachable helper. Such startup/disconnect ambiguity
+must be `.unknown`; the controller attempts restoration and retains recovery UI
+on uncertainty. Replace the unavailable adapter wholesale in the backend slice.
+No automatic resume is permitted. Do not add display-on assertions, brightness
+writes, or keyboard/trackpad interception. Closed-lid darkness and actual hardware
+behavior require the separately authorized physical drill.

@@ -1,6 +1,8 @@
 import AppKit
 import SwiftUI
 import ApplicationServices
+import AlwaysOnCore
+import AlwaysOnUI
 
 @main
 enum PaneManagementApp {
@@ -13,12 +15,15 @@ enum PaneManagementApp {
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+@MainActor final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let preferences = Preferences()
     lazy var controller = SnapController(preferences: preferences)
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
     private let dockMenu = NSMenu()
+    let alwaysOn = AlwaysOnController(backend: UnavailableAlwaysOnBackend())
+    private var alwaysOnWarnings: AlwaysOnWarnings?
+    private var alwaysOnStarted = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let identifier = Bundle.main.bundleIdentifier ?? "local.snapbridge.app"
@@ -40,6 +45,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu(); menu.delegate = self; item.menu = menu
         rebuildMenu(menu)
         dockMenu.delegate = self
+        alwaysOnWarnings = AlwaysOnWarnings(controller: alwaysOn)
+        alwaysOn.onQuitDecision = { NSApp.reply(toApplicationShouldTerminate: $0) }
+        alwaysOnStarted = true
+        alwaysOn.checkSetup()
         controller.start()
         PreviewAccess.shared.check(userInitiated: false)
         if !preferences.accessibility || CommandLine.arguments.contains("--settings") { showSettings() }
@@ -56,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func rebuildDockMenu() {
         dockMenu.removeAllItems()
         dockMenu.addItem(snappingMenuItem())
+        dockMenu.addItem(alwaysOnMenuItem())
         dockMenu.addItem(.separator())
         dockMenu.addItem(settingsMenuItem())
     }
@@ -63,6 +73,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let item = NSMenuItem(title: preferences.enabled ? "Pause snapping" : "Resume snapping", action: #selector(toggle), keyEquivalent: "")
         item.target = self
         return item
+    }
+    private func alwaysOnMenuItem() -> NSMenuItem {
+        let state = alwaysOn.state
+        let item = NSMenuItem(title: state.actionTitle, action: #selector(alwaysOnAction(_:)), keyEquivalent: "")
+        item.target = self; item.representedObject = state.action
+        item.isEnabled = state != .stopping
+        if state == .stopping { item.action = nil }
+        item.state = state == .active ? .on : .off
+        return item
+    }
+    @objc private func alwaysOnAction(_ sender: NSMenuItem) {
+        guard let action = sender.representedObject as? AlwaysOnAction else { return }
+        alwaysOn.perform(action)
+        if case .checkSetup = action { showSettings() }
     }
     private func settingsMenuItem() -> NSMenuItem {
         let item = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
@@ -74,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let title = NSMenuItem(title: "Pane Management", action: nil, keyEquivalent: ""); title.isEnabled = false
         menu.addItem(title)
         menu.addItem(snappingMenuItem())
+        menu.addItem(alwaysOnMenuItem())
         menu.addItem(.separator())
         let layouts = NSMenuItem(title: "Choose layout   ⌃⌥Z", action: #selector(showLayouts), keyEquivalent: "")
         layouts.target = self; menu.addItem(layouts)
@@ -104,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 700),
                                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = "Pane Management"; window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, testAssist: { [weak self] in
+            window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, alwaysOn: alwaysOn, testAssist: { [weak self] in
                 self?.settingsWindow?.orderOut(nil)
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.2) { self?.controller.testAssistWithFixture() }
             }, testOtherApps: { [weak self] in
@@ -113,6 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }, testIntegration: { [weak self] in self?.controller.testFixtureIntegration() }))
             window.center(); settingsWindow = window
         }
+        alwaysOnWarnings?.reconcile()
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
@@ -122,11 +148,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if controller.assistant.isVisible || controller.palette.isVisible || controller.groupPicker.isVisible { return false }
         showSettings(); return true
     }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Duplicate launches terminate before owning a power session. They must
+        // neither wait for an uninstalled callback nor restore another instance.
+        guard alwaysOnStarted else { return .terminateNow }
+        return alwaysOn.requestQuit() ? .terminateNow : .terminateLater
+    }
     func applicationWillTerminate(_ notification: Notification) { controller.stop() }
 }
 
 struct SettingsView: View {
     @ObservedObject var preferences: Preferences
+    @ObservedObject var alwaysOn: AlwaysOnController
     @ObservedObject private var previewAccess = PreviewAccess.shared
     var testAssist: () -> Void
     var testOtherApps: () -> Void
@@ -147,6 +180,7 @@ struct SettingsView: View {
                         Text("Windows-style snapping, with the other half included.").foregroundStyle(.secondary)
                     }
                 }
+                GroupBox { AlwaysOnControls(controller: alwaysOn).padding(8).frame(maxWidth: .infinity, alignment: .leading) }
                 Text(preferences.status).font(.callout).foregroundStyle(preferences.accessibility ? Color.green : Color.orange)
                 if NSRunningApplication.runningApplications(withBundleIdentifier: "local.snapbridge.testwindows").isEmpty == false {
                     VStack(alignment: .leading, spacing: 8) {

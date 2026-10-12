@@ -24,17 +24,23 @@ jobs:
           persist-credentials: false
       - name: Validate source metadata
         run: |
-          bash -n scripts/build-app.sh scripts/build-fixture.sh
-          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist
+          bash -n scripts/build-app.sh scripts/build-fixture.sh scripts/build-always-on-preview.sh
+          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist Resources/AlwaysOnPreviewInfo.plist
           git diff --check
       - name: Build application with supplied artwork
         run: bash scripts/build-app.sh
       - name: Run regression checks
         run: .build/release/SnapCoreChecks
+      - name: Run always-on state regression checks
+        run: .build/release/AlwaysOnChecks
+      - name: Package always-on UI preview
+        run: bash scripts/build-always-on-preview.sh
       - name: Package disposable test helper
         run: bash scripts/build-fixture.sh
       - name: Verify application bundles
         run: |
+          codesign --verify --deep --strict "dist/Always-on Preview.app"
+          plutil -lint "dist/Always-on Preview.app/Contents/Info.plist"
           codesign --verify --deep --strict "dist/Pane Management.app"
           codesign --verify --deep --strict "dist/Pane Management Test Windows.app"
           plutil -lint "dist/Pane Management.app/Contents/Info.plist" "dist/Pane Management Test Windows.app/Contents/Info.plist"

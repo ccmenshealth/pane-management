@@ -157,3 +157,30 @@ See [CodeRabbit's automatic-review controls](https://docs.coderabbit.ai/configur
 - [Apple Accessibility API](https://developer.apple.com/documentation/applicationservices/axuielement)
 - [ScreenCaptureKit window capture](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-in-macos)
 - [Screenshot capture API](https://developer.apple.com/documentation/screencapturekit/scscreenshotmanager)
+
+## Always-on mode (UI development slice)
+
+The menu bar, Dock menu and Settings share an always-on controller. This build
+reports **setup unavailable** because the privileged backend has not been added;
+it does not change sleep settings or activate a simulated mode in the main app.
+The eventual mode is a broad manual override, including with the lid open.
+App-managed critical-warning recovery is best effort, not equivalent to leaving
+macOS emergency sleep protections untouched.
+
+The independent preview renders the same warning with an in-memory backend and a
+different bundle ID. It has no power, privilege, or permission implementation.
+Run these commands in **zsh**:
+
+```zsh
+swift run --disable-sandbox --cache-path .build/cache AlwaysOnChecks
+bash scripts/build-always-on-preview.sh
+open "dist/Always-on Preview.app"
+```
+
+Use Activate in the preview, then Deactivate on the centered warning. Toggle
+**Fail next restoration** to exercise the persistent recovery state and retry.
+**Simulate critical stop** exercises the UI/controller event, not battery or heat
+telemetry. Each simulated operation takes two seconds. No native sleep, hardware,
+helper recovery, or emergency behavior is established by the preview or tests.
+The warning is intended for usable displays at least 320 × 300 logical points;
+its content scrolls on small displays. Secure/login UI remains under OS control.

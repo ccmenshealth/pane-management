@@ -7,7 +7,11 @@ let package = Package(
     products: [.executable(name: "PaneManagement", targets: ["PaneManagement"])],
     targets: [
         .target(name: "SnapCore"),
-        .executableTarget(name: "PaneManagement", dependencies: ["SnapCore"]),
+        .target(name: "AlwaysOnCore"),
+        .target(name: "AlwaysOnUI", dependencies: ["AlwaysOnCore"]),
+        .executableTarget(name: "AlwaysOnChecks", dependencies: ["AlwaysOnCore"], path: "Tests/AlwaysOnChecks"),
+        .executableTarget(name: "AlwaysOnPreview", dependencies: ["AlwaysOnCore", "AlwaysOnUI"], path: "Tests/AlwaysOnPreview"),
+        .executableTarget(name: "PaneManagement", dependencies: ["SnapCore", "AlwaysOnCore", "AlwaysOnUI"]),
         .executableTarget(name: "SnapCoreChecks", dependencies: ["SnapCore"], path: "Tests/SnapCoreTests"),
         .executableTarget(name: "PaneManagementTestWindows", path: "Tests/TestWindows")
     ]
