@@ -1,5 +1,18 @@
 # Pane Management — Current State
 
+## Bookmark — B3c signed staging planning (2026-10-12)
+
+- codex/always-on-staging starts from integration PR10 head495f663. Independent
+  read-only code/manual-security and lead review clear, worktree clean, CI38298900984
+  green. Native inert11-state rendering/actions verified; global/native physical
+  acceptance remains open. Final preview quit; only original build5PID96007 runs.
+- V1–V8 lock isolated signed staging and synthetic validation. No Developer ID
+  exists; builder completes code/tests/preflight, never actual signing/submission.
+- This is final feasible build slice before signing/native acceptance handoff.
+  AllPRs remain draft/unmerged; no installed bundle/helper/power/journal/grant change.
+- Current model inherited; CodeRabbit prohibited. Next: isolated staging builder,
+  fresh independent/manual-security plus lead review and CI, then concrete handoff.
+
 ## Bookmark — B3b2 integration candidate (2026-10-12)
 
 - Isolated codex/always-on-integration wires authenticated setup/client state into

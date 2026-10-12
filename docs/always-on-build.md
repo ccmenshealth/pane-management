@@ -879,3 +879,83 @@ before lane suspension. A separate token hold covers the owned session; loss
 transfers to recovery before releasing it. One underlying activity spans all
 holds, and actual unregister completion, not its reporting deadline, releases
 that operation. Tests inject inert activity ports, including real loopbacks.
+
+
+### B3c signed staging decisions V1–V8 (locked 2026-10-12)
+
+- V1: Add scripts/build-signed-staging.sh and a small implementation/helper as
+  needed, with concise README instructions. Preserve existing stable-path ad-hoc
+  packager and running guards unchanged. Never open/install/move/replace/register/
+  unregister/launch/kill apps or helpers, read/write power settings, or change
+  privacy/security settings. This is preparation only, no arming.
+- V2: Require clean committed source and explicit --identity forty-hex certificate
+  fingerprint, --team-id ten uppercase-alphanumeric Team ID, --notary-profile
+  existing Keychain profile. Reject missing/invalid/duplicate arguments and '-'
+  identity before building. No identity auto-selection, credentials/secret input,
+  store-credentials, enrollment, VCMC or ad-hoc fallback. --preflight without an
+  identity checks only source/layout/fixed plists/tool availability, creates no
+  artifact and performs no signing/keychain/network operation.
+- V3: Before build require exact fingerprint in security find-identity -v -p
+  codesigning with Developer ID Application label and expected team. This is a
+  selection guard, not trust proof. Use argument arrays/quoted shell, no eval.
+  Build into task-local paths. Assemble in a newly owned private temporary
+  directory under dist/signed-staging, then publish a unique full-commit/UTC/UUID
+  candidate only after all verification succeeds. Never reuse or overwrite an
+  existing destination; cleanup own partial output on failure, preserve installed
+  build5. Recheck source clean/head before final publication.
+- V4: Fixed app ID local.snapbridge.app, executable PaneManagement; nested helper
+  ID/Mach service/launchd label local.snapbridge.alwayson.service, executable
+  PaneAlwaysOn and BundleProgram Contents/MacOS/PaneAlwaysOn. Copy established
+  assets/plists. Sign nested helper then outer app with explicit fingerprint,
+  fixed identifiers, --options runtime and --timestamp. No deep signing or
+  permissive/preserved entitlements. Verify both individually, outer deep/strict;
+  reject get-task-allow, absent hardened runtime or secure timestamp.
+- V5: Evaluate explicit codesign --verify -R requirements (inline requirements
+  use '=' prefix per tool syntax) on BOTH app/helper: anchor apple generic AND
+  certificate1 Developer ID CA OID1.2.840.113635.100.6.2.6 exists AND leaf
+  Developer ID Application OID1.2.840.113635.100.6.1.13 exists AND leaf subject.OU
+  exact expected Team ID AND fixed own identifier. Verify reported TeamIdentifiers
+  match expected. Use codesign APIs/CLI, not custom certificate trust parsing.
+- V6: Ditto submission ZIP, xcrun notarytool submit with existing keychain profile,
+  --wait --output-format json; require Accepted and nonempty valid submission ID.
+  Staple and validate ticket; reverify signatures/requirements and spctl --assess
+  --type execute. Recreate final ZIP from stapled app. Emit nonsecret manifest
+  with exact source, fixed IDs, selected fingerprint/team, submission ID/status,
+  verification outcomes and SHA256 final ZIP/app/helper executables. Do not call
+  notarization success installation or physical acceptance.
+- V7: Tests run with fully injected synthetic command results and disposable
+  directories; no actual signing/timestamp/notary submission/stapling or service
+  execution. Verify missing/invalid args/identity, dirty source, existing output,
+  plist drift, wrong identity/team/runtime/timestamp/entitlements, rejection or
+  malformed notary response, verification failures, cleanup and final publish
+  ordering. Fail-first compiling/runnable pre-fix or inert overlay with retained
+  red evidence; don't let test shims fall through to real side effects. Actual
+  read-only --preflight allowed only once committed clean. Positive signed run
+  blocked by missing Developer ID; report that without claiming synthetic proof.
+- V8: Shell/Python syntax or equivalent typecheck/lint, new packaging checks in
+  CI, separate Swift debug/release builds and full existing regression suite,
+  fresh independent code/manual-security and lead review plus final CI. No stable
+  app packaging locally while build5 runs. No merge/install/arming; final concrete
+  handoff includes source candidate, evidence, signing prerequisite and unresolved
+  native acceptance. Keep scope about800lines; current inherited model. CodeRabbit
+  prohibited. Actual future notarization submission/installation stays gated.
+
+Primary references: Apple TN3127 Inside Code Signing Requirements and Notarizing
+macOS Software Before Distribution, inspected October12. Developer ID Application
+requirements include Apple anchor, Developer ID issuer/leaf OIDs and expected team;
+notarization requires runtime, timestamp and absence of true get-task-allow.
+https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements
+https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution
+
+B3b2 review ledger: PR10 head495f6635dca37aca951926bc3d0ac23a6e529b67 cleared
+fresh independent read-only code/manual-security plus lead source review; clean
+before/after. CI38298900984 green. U-R1 coalescing and U-R2 missing explicit repair
+exit resolved with actual pre-fix assertions; hot-polling replaced with settlement
+latch. Current model inherited, exact metadata unavailable. No actionable findings.
+Lead CUA observed all11 inert states and native action routing. Final waiting-copy
+preview SHA dbe68fadc8254cc3089b6b70f686d6c63521dcbc0192beaee9f3fd4c9a0f00f1
+also checked. Normal preview quit fromoff confirmed by process absence; onlybuild5
+PID96007 remains. Screenshots are window-only, so global stacking/occlusion,
+Dock, Spaces/fullscreen, multidisplay/VoiceOver and physical signed acceptance
+remain open. First fixture SIGTERM was testcleanup only. No installation or power
+operation occurred. B3c may start; merges remain blocked on required native gates.
