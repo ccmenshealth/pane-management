@@ -982,3 +982,40 @@ prerequisite is a Developer ID Application certificate and existing notarization
 profile; then signed staging, installation/approval and real native/recovery
 acceptance need their separate authorization. Enrollment/purchase and alternate
 privileged fallbacks are not authorized. No additional feature slice is pending.
+
+### Local signing authentication — locked L1–L6 (2026-10-12)
+
+L1. Validate the executable's intact signature and fixed own identifier before
+reading its leaf certificate. Derive an exact 40-hex SHA-1 DER certificate pin
+solely for Apple's requirement language; revalidate own identity with that pin,
+then require the peer's fixed identifier and the same leaf certificate. No Apple
+anchor, Team ID, certificate common-name trust, peer-provided certificate, runtime
+configuration fallback or ad-hoc acceptance. Installed helper signing authority
+is the trust root; rotation requires coordinated off/removal/reinstallation.
+
+L2. Adapt the injectable SigningAuthority and tests for local certificates without
+Team IDs, both fixed roles, strict pins, missing/ad-hoc metadata, ordered self
+validation and failed revalidation. Retain runnable pre-fix red evidence. Native
+positive certificate acceptance is a later probe, not established by fakes.
+
+L3. Preserve engine, service, DTO, lease, privilege, setup and reciprocal NSXPC
+requirement-before-activation ordering. Correct obsolete Apple-only failure copy
+and document the pending local route. Preserve the paid staging packager.
+
+L4. Required separate gates: `swift build -c debug`, `swift build -c release`,
+`.build/debug/AlwaysOnDaemonChecks`, `.build/debug/AlwaysOnClientChecks`,
+`.build/debug/AlwaysOnSetupChecks`, `.build/debug/AlwaysOnChecks`,
+`bash -n scripts/*.sh`, `git diff --check`. No stable packaging while build 5 runs.
+
+L5. Fresh independent code/manual-security review, lead review and CI required.
+CodeRabbit is prohibited by repository policy. No real certificate generation,
+keychain writes, root journal, helper execution/registration/removal, installed
+bundle, privacy or power writes. No merge, install or arming.
+
+L6. Commit and push clean; draft PR based on `codex/always-on-staging`. Record
+exact pins and evidence. Local signing packaging and native acceptance are
+separate slices. Sources: Apple's Code Signing Requirement Language and TN2206.
+
+Recovery: authentication failure remains a setup/check-again state; explicit
+Settings repair/removal flow is unchanged. Missing/changed certificates cannot
+auto-enroll or authorize a peer. This slice introduces no durable state.

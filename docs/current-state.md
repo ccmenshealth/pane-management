@@ -1,5 +1,17 @@
 # Pane Management — Current State
 
+## Bookmark — local certificate authentication slice (2026-10-12)
+
+- User selected local signing. L1–L6 in `docs/always-on-build.md` supersede the
+  earlier Apple-only runtime identity lock. This slice changes authentication
+  policy only; positive local signing and service acceptance remain unverified.
+- Isolated `codex/local-signing-auth` starts at `bed5681`; current inherited
+  model/effort metadata unavailable. Builder owns only this worktree; warning UI
+  changes are separate. No merge, install, native certificate/keychain operation,
+  helper execution, power change or arming. Existing build 5 is preserved.
+- Next: fail-first boundary checks, implementation, named local gates, draft PR,
+  independent code/manual-security review and lead review plus CI.
+
 ## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
 
 - Draft PRs #2–#11 contain the Dock, warning, power recovery, authenticated
