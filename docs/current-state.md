@@ -2,9 +2,9 @@
 
 ## Bookmark — Coordinator planning (2026-10-12)
 
-- `codex/always-on-coordinator` is an isolated planning branch on native IO
-  PR #5 head `f547075`; B2a independent/security review and CI are pending.
-  Do not start its builder until the lead clears those gates.
+- `codex/always-on-coordinator` is an isolated branch on native IO
+  PR #5 head `f547075`; B2a independent and lead code/security review clear,
+  CI `38284998731` passed. Coordinator builder may start; no install/arming.
 - B2b1 coordinator and wire contracts C1–C9 are locked in `always-on-build.md`;
   B2b2 then adds native authentication/telemetry/daemon composition, followed by
   B3 app client/setup/removal and packaging. No installation/arming yet.

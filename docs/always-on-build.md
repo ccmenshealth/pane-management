@@ -194,6 +194,16 @@ review and tests belong to B2/B3.
 
 ### Review ledger
 
+- Native IO PR #5, `f54707554029284a7760746f897e5c12efb158a2`: fresh read-only
+  independent code/manual-security fallback and lead reviews found no remaining
+  actionable issue. ACL allocation ownership matched Apple's Libc filesec source.
+  Reviewed worktree stayed clean; current inherited model used, exact metadata
+  unavailable. CI `38284998731` passed including native114/0 and packaging/signature
+  checks. Final compiled inert114/94 and focused pre-ACL114/9 evidence retained.
+  Earlier process identity, read deadline and ACL sibling findings corrected.
+  Root installation/power mutation/physical acceptance remain unverified; no merge
+  or arming. B2b1 coordinator may proceed. CodeRabbit remains excluded.
+
 - Engine PR #4: independent ownership/storage/token security fallback review of
   `4a99728` found R1: concurrent status could report off before initial readback.
   Fix `28eeffe` adds checking state before every unresolved ownership read;
