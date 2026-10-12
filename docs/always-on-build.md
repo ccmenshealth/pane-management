@@ -982,3 +982,21 @@ prerequisite is a Developer ID Application certificate and existing notarization
 profile; then signed staging, installation/approval and real native/recovery
 acceptance need their separate authorization. Enrollment/purchase and alternate
 privileged fallbacks are not authorized. No additional feature slice is pending.
+
+### Warning stripes — locked W1–W5 (2026-10-12)
+
+- W1: Faint black/yellow diagonal stripes at approximately 10% opacity behind the
+  warning box; opaque text/control backing keeps content readable. The red triangle
+  remains the focal point.
+- W2: Native code shapes in the shared warning view, decorative/accessibility-hidden
+  and non-hit-testing. Preserve dimensions, window behavior, actions and all states.
+- W3: Cosmetic slice only, from stacked base `bed5681`; no signing, power, helper,
+  installation, permission or enrollment changes. Local signing remains a separate
+  follow-up, unproven on this Mac.
+- W4: Existing UI regressions and native preview before/after active, pending and
+  retry/long-copy states; small layout if feasible. No tests that merely mirror
+  visual implementation. No new state; all existing recovery exits stay unchanged.
+- W5: Separate debug/release compilation, AlwaysOnChecks, shell syntax, diff lint,
+  preview packaging, independent and lead review plus CI. No merge/install/arming.
+  CodeRabbit prohibited; auth/storage/security behavior unchanged. Sibling audit:
+  one shared warning renders every state; menu, Dock and Settings actions untouched.

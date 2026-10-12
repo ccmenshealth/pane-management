@@ -1,5 +1,19 @@
 # Pane Management — Current State
 
+## Bookmark — warning stripes cosmetic slice (2026-10-12)
+
+- User requested faint diagonal black/yellow warning stripes. Isolated branch
+  `codex/warning-stripes` starts from reviewed stacked base `bed5681` intentionally;
+  primary main and running build 5 stay unchanged. W1–W5 below lock this slice.
+- Preserve window geometry, recovery actions and controller behavior. Only native
+  decorative rendering changes; no new state or privileged operation.
+- User rejected paid membership. Dedicated local signing is a separate unproven
+  option to investigate, not part of this cosmetic slice; no certificate, Keychain,
+  helper, installation or power changes are authorized here. No merge or arming.
+- Current model inherited; exact runtime model/effort metadata is unavailable.
+  Next: build, existing UI regressions, native inert preview and independent/lead
+  review plus CI. CodeRabbit prohibited; security review not applicable to cosmetics.
+
 ## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
 
 - Draft PRs #2–#11 contain the Dock, warning, power recovery, authenticated
