@@ -2,6 +2,78 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## B1 pure recovery engine — October 12, 2026
+
+`RecoveryEngine` adds fixed typed service operations with injected journal,
+power, monotonic-clock and cached-guard contracts. It is not connected to the
+app. No native command, filesystem journal, XPC, registration, permission,
+installed-app or live power change is included. Build 5 remains the installed
+baseline. Current inherited model used; exact model/effort metadata unavailable.
+
+Fail-first: the final `AlwaysOnEngineChecks` suite compiled with the inert engine
+and produced **144 assertions, 74 failures, exit 1**. The implemented engine
+passes **144 assertions, zero failures**. Negative refusal assertions that already
+pass on an inert engine are paired with activation/recovery success assertions.
+The ignored `.build/evidence/RecoveryEngine.inert.swift` and `engine-red.txt`
+retain the scaffold and full red run; `engine-green.txt` retains the green run.
+A corrupt-record cleanup regression separately produced four failures before its
+fix (`corrupt-cleanup-red.txt`). Removing the revalidation reset reproduced one
+security-boundary assertion failure (`corrupt-security-red.txt`): stale corrupt
+classification must not authorize clearing after a later journal-load failure.
+The off-record ownership and slow-intent guard tests produced nine failures on
+the earlier implementation (`off-ownership-red.txt`) before their fixes. A busy
+heartbeat regression produced one failure before its fix
+(`heartbeat-busy-red.txt`): an expired lease must not reply active while a power
+read is suspended. Valid heartbeat metadata renews synchronously; invalid
+heartbeat metadata latches a stop while power/journal work remains serialized.
+
+The fake writer can suspend, apply and then throw; no fake writes after its call
+has completed. Read failures are injected at all activation reads and the restore
+confirmation. Journal load failures and before/after-persistence failures at
+intent, active, restoring, off and clear are injected. Tests cover every restart phase, invalid
+token/console/root, heartbeat deadline/renewal, critical/final/unknown/stale/future
+telemetry, clock regression, disconnect during inspection and failed restoration,
+cancellation during each activation read/write stage, external clear/conflict,
+failed cleanup retry and removal proof. These are adapter-contract simulations.
+
+Recoverability and await/failure matrix:
+
+| State or boundary | Exit / tested result |
+| --- | --- |
+| Missing journal, initial read failure | Recovery; Retry deactivation reloads ownership, never writes without intent |
+| Unowned true/disagreeing setting | Conflict; resolve external owner, retry; never silently take over |
+| Corrupt validated payload, strict dual off | Retry durably clears invalid record without a power write |
+| Corrupt true/unknown or unsafe journal validation | Refuse cleanup; resolve owner/setup issue, then retry |
+| Intent/active save throws before or after persistence | Preserve local ownership, serial restore; no active reply |
+| Enable/readback awaits or throws | Stop latch survives; settle possible write then disable and verify |
+| Active inspection awaits | Recheck stop/guards/deadline after read; external false never reasserts |
+| Restoring save fails | Still attempt disable for safety; retain recovery until retry durably finishes |
+| Disable/confirmation/off-save/clear fails | Recovery with retry; no successful removal/false off |
+| Restart at intent/active/restoring | Restore and durably clear before a new explicit activation |
+| Durable off record, including failed clear | Cleanup only with strict dual off; true/unknown conflicts, never writes power |
+| Verified off | Explicit new activation only; monitor never resumes automatically |
+| Prepare update/removal | Wait for pending writer, restore, fresh strict dual-off read; failure blocks removal |
+
+Sibling audit: token deactivation, token-lost/pending retry, disconnect, guard
+monitor, status inspection, startup and prepare-removal converge on the same
+serialized restore. All successful writes require both explicit Boolean receipts;
+only the initial root-domain property may be absent. No preference-absence
+normalization is implemented. Unknown/malformed read values must throw.
+
+Local gates: `SnapCoreChecks` **60/0**, `AlwaysOnChecks` **34/0**, and new
+`AlwaysOnEngineChecks` **144/0**, each via its separate `swift run --disable-sandbox
+--cache-path .build/cache` command. Separate debug and release build/typecheck,
+script syntax, all three source plists and whitespace checks passed. CI includes
+the new engine suite and clean-runner packaging.
+Main-app packaging was intentionally not run locally because the running-app
+guard preserves build 5. This slice has no UI change or live hardware proof.
+
+Independent and lead pinned-head review plus applicable ownership/storage/token
+security review remain required before acceptance. CodeRabbit is unavailable
+under the repository exclusion. No live activation or merge is authorized by
+these checks. B2/B3 native timing, auth, protected-file handling and lifecycle
+proof remain separate gates; UI/native acceptance gaps below remain open.
+
 ## Always-on UI/controller candidate — October 12, 2026
 
 This is the UI/state slice stacked on Dock PR #2. The actual production backend

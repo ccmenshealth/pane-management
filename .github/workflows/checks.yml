@@ -33,6 +33,8 @@ jobs:
         run: .build/release/SnapCoreChecks
       - name: Run always-on state regression checks
         run: .build/release/AlwaysOnChecks
+      - name: Run recovery engine regression checks
+        run: .build/release/AlwaysOnEngineChecks
       - name: Package always-on UI preview
         run: bash scripts/build-always-on-preview.sh
       - name: Package disposable test helper

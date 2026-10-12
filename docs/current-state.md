@@ -1,5 +1,19 @@
 # Pane Management — Current State
 
+## Bookmark — B1 recovery engine candidate (2026-10-12)
+
+- `codex/always-on-engine` implements the pure typed recovery engine and injected
+  fake-adapter checks, stacked on reviewed UI head `1923274`. The engine is not
+  wired into the app; no live power, privileged, permission or installed-app
+  operation was performed. Build 5 remains the running baseline.
+- Final suite compiled inert with 144 assertions/74 failures; implementation
+  passes 144/0. Existing suites pass 60/0 and 34/0. Evidence, recovery matrix and
+  adapter/native limits are in `VERIFICATION.md` and `always-on-build.md`.
+- Next: exact-head remote CI, independent read-only review, lead review and
+  ownership/storage/token security review. B2 native adapters follow only after
+  those reviews; installation/arming and existing UI native acceptance remain
+  separate gates. CodeRabbit is unavailable under the repository exclusion.
+
 ## Bookmark — Recovery engine slice starting (2026-10-12)
 
 - UI PR #3 pinned `1923274` passed independent and lead source review and CI run

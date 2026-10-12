@@ -145,6 +145,48 @@ ownership, invalid tokens/session identity, external clear, failed restoration
 retry, and prepare-removal. Meaningful red behavior must compile against an
 inert scaffold. Add an engine suite to CI and retain red evidence locally.
 
+### B1 adapter and lifecycle handoff
+
+The pure engine is implemented on `codex/always-on-engine`; executable regression
+suite `AlwaysOnEngineChecks` is in CI. It does not replace the app's unavailable
+backend. Security review of this typed contract is required; real native boundary
+review and tests belong to B2/B3.
+
+- Journal methods are synchronous and non-reentrant on the engine's main actor;
+  durable intent precedes enable and durable active precedes reply. B2 must wrap
+  records with schema, boot identity, generated UUID generation and prior baseline
+  false, validating root ownership, regular-file type, link/mode protections and
+  schema before returning a record. `corrupt` means only a malformed payload in
+  an already security-validated file; security validation failures throw.
+- Native journal syscalls/fsync are **not guaranteed bounded**. They can stall the
+  daemon main executor. Telemetry collection/watchdog scheduling must be isolated
+  from it; daemon/kernel/disk stalls still prevent recovery progress. This slice
+  proves transition ordering, not survival of such stalls.
+- Async power calls own fixed subprocess bounds and must quiesce every possible
+  writer before returning or throwing. Timeout/cancellation must terminate/reap;
+  throwing while a process can still write violates the contract. A write can
+  apply before failure. Both explicit Boolean readbacks must agree; read/type
+  errors throw and confirmed absence is nil. Initial preference must be false;
+  only initial root absence is allowed. Postwrite nil never proves off.
+- The service injects authenticated current console UID/audit session; callers do
+  not supply asserted identities. UUID tokens bind that identity and generation.
+  `retryRestore` is the explicit token-lost and pending-activation cancellation
+  exit. Native transport must authenticate both directions and avoid logging tokens.
+- Guards are cached samples with monotonic timestamps. B2 must schedule monitor
+  on notifications and polling, forward disconnects and preserve unknown telemetry.
+  Fixed freshness is five seconds and heartbeat lifetime is thirty seconds;
+  callers cannot choose either. These are advisory deadlines, not emergency proof.
+- Prepare removal is a verified snapshot, not a cross-process transaction. B2
+  must close activation admission across prepare/unregister; B3's sole coordinator
+  must recheck before unregistering. A coordinator alone cannot exclude a second
+  connection. An identical external true write while owned is indistinguishable.
+- A durable off record proves earlier restoration and has no remaining power
+  ownership. Startup, retry and monitoring only clear it after strict dual-off
+  evidence; a later true/unknown setting is a conflict and receives no write.
+- Corrupt payload cleanup is possible only through explicit retry/removal after
+  fresh strict dual-off evidence, with no power write. Unsafe filesystem metadata
+  requires setup repair; no recovery method bypasses that boundary.
+
 ### Review ledger
 
 - UI PR #3, `1923274f40256ea0be5060c48b922b6c680b11e9`: independent fresh

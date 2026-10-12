@@ -184,3 +184,8 @@ telemetry. Each simulated operation takes two seconds. No native sleep, hardware
 helper recovery, or emergency behavior is established by the preview or tests.
 The warning is intended for usable displays at least 320 × 300 logical points;
 its content scrolls on small displays. Secure/login UI remains under OS control.
+
+The B1 recovery engine is isolated from the app and uses injected adapters only.
+Run `swift run --disable-sandbox --cache-path .build/cache AlwaysOnEngineChecks`
+for its journal, session, stop/race and restoration checks. Native adapters,
+authentication, installation and the separate arming drill are still pending.
