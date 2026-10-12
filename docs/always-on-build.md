@@ -388,6 +388,89 @@ setup repair/unknown warning. Setup registers/authenticates only, never activate
 
 ### B2b2 native boundary handoff
 
+#### N1–N8 implementation lock
+
+- N1: B2b2 on `codex/always-on-daemon` adds the supported native boundary only
+  after B2b1 code/security/CI acceptance. Fixed executable target `PaneAlwaysOn`,
+  signing identifier/Mach service/launchd label `local.snapbridge.alwayson.service`.
+  App identifier remains `local.snapbridge.app`. BundleProgram is
+  `Contents/MacOS/PaneAlwaysOn`; launchd plist lives at
+  `Contents/Library/LaunchDaemons/local.snapbridge.alwayson.service.plist`.
+  Use SMAppService daemon packaging, RunAtLoad/KeepAlive, no legacy installation.
+  Do not launch/register the production daemon or perform native power writes.
+- N2: Validate self via SecCodeCopySelf, SecRequirementCreateWithString and
+  SecCodeCheckValidity with Apple generic anchor and fixed own identifier BEFORE
+  reading trusted kSecCodeInfoTeamIdentifier. Require a bounded safe Team ID and
+  revalidate self with certificate leaf subject OU equal to that team. Peer uses
+  same derived team + Apple generic anchor + fixed peer identifier. No configurable
+  team, PID authentication, ad-hoc/CDHash fallback or unrelated VCMC identity.
+  Listener setConnectionCodeSigningRequirement and client setCodeSigningRequirement
+  must precede activation/resume. Shared code may expose the app-side requirement
+  constructor for B3; app client itself remains B3.
+- N3: Kernel-provided effective UID/audit session are the only peer identity
+  inputs. Public audit_get_sinfo_addr must confirm same ASID and audit user equal
+  to non-root effective/console UID; reject default/invalid IDs, remote sessions,
+  missing authenticated/graphic/console flags. Double-read console UID around
+  audit lookup. A small public-lib bsm C shim is allowed if Swift imports require
+  it. No private API. Acceptance and subsequent validation use fresh cached facts;
+  neither status nor connection acceptance rebinds coordinator ownership.
+- N4: Fixed NSXPC protocol bridges only the six ServiceRequest operations. Bound
+  request/reply sizes and validate version/shape before invoking the coordinator.
+  No arbitrary commands, paths, identities or deadlines. Exact ConnectionKey is
+  captured per exported bridge; interruption AND invalidation idempotently call
+  disconnected for that key, including loss while admission is pending. Never
+  cancel an engine operation to discard a connection. Do not log lease tokens.
+- N5: Independent native collection caches battery, thermal and per-session
+  validation with monotonic timestamps. Use documented power/thermal/console
+  notifications plus a one-second poll/watchdog, below five-second freshness.
+  Watchdog scheduling cannot depend on a synchronous journal or telemetry read
+  completing; monitor still receives stale/unknown cache when collection stalls.
+  Avoid accumulating queued telemetry jobs. Unknown/enumeration/type/registration
+  failures remain unknown. Validate presence/type of an internal battery; don't
+  infer a healthy laptop from a failed/empty enumeration. Use OS Final battery
+  warning and Critical thermal only, no percentage or Serious cutoff. OS None/
+  Nominal internal-error ambiguity remains explicitly unprovable.
+- N6: Production entry verifies root and trusted self identity before constructing
+  fixed native journal/power. One lifetime instance of each is shared with the
+  coordinator, including strict final removal reads. Bootstrap resolves recovery
+  before listener accepts activation; status/retry remain available for recoverable
+  states. Never auto-activate/resume. No command-line/env fixture or bypass mode in
+  the production executable. In-process test injection belongs to library/tests.
+- N7: Unprivileged fixtures exercise strict DTO rejection, signing-requirement
+  construction/negative self validation, audit policy, telemetry failure/staleness,
+  bridge invalidation races, and coordinator/native-port composition with fake
+  power/journal. Public read-only identity/telemetry inspection is allowed; no
+  production journal constructor or native power write. Anonymous NSXPC negative
+  auth tests may run without Apple signing; positive signed reciprocal acceptance
+  remains unverified until the required identity exists. Never label mocked auth
+  as real signed acceptance. Preserve meaningful compiled pre-fix red evidence.
+- N8: Add AlwaysOnDaemonChecks to CI and run every prior suite plus it; separate
+  debug/release builds and script/plist/diff lint. Embed helper in clean-runner
+  packaging, sign nested code before outer app, verify both; local packaging must
+  refuse overwrite while PaneManagement OR PaneAlwaysOn runs. CI ad-hoc packaging
+  is not an installable/trusted helper. B3 supplies validated Apple signing and
+  notarization workflow. Existing installed build5/path/grants remain untouched.
+  Independent code/manual-security fallback + lead review are mandatory. No merge,
+  install, registration, permission changes or arming. A cohesive native boundary
+  may exceed the ~800-line guideline modestly; report scope rather than splitting
+  authentication from its enforcement just to meet a line count.
+
+#### B3 fresh setup state
+
+An optional never-configured launch may report unavailable without an alarm only
+after a fresh read-only triple proof: SMAppService notRegistered, strict public
+preference/root-domain false/false, and securely absent fixed journal directory.
+Traverse trusted canonical parents with owner/mode/ACL checks; use descriptor-
+relative no-follow lookup and accept only ENOENT. Bracket the observation with
+service status checks and recheck after wake/setup transitions. No persisted proof.
+This relies on durable intent remaining inside the stable directory before every
+true write; root interference and changes after a snapshot remain limitations.
+Existing/unverifiable directory, configured service or true/unknown receipt means
+setup-repair/unknown, never unavailable. Setup registers/authenticates only; it
+does not activate. Missing signing can leave a freshly proven safe optional setup
+diagnostic; it cannot hide an uncertain existing override. B3 must expose setup/
+repair alongside retry, and never map configured-unreachable to safe off.
+
 Use public reciprocal NSXPC code-signing requirements before connection/listener
 activation. Derive Team ID only after self validation against Apple generic anchor
 and the fixed own identifier, then validate again with that Team ID. Peer requires

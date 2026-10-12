@@ -1,5 +1,17 @@
 # Pane Management — Current State
 
+## Bookmark — Native daemon planning (2026-10-12)
+
+- `codex/always-on-daemon` is an isolated planning branch on coordinator PR #6
+  head `7164b2e`. Independent/security review and CI remain pending; no native
+  builder starts before acceptance. Locked N1–N8 are in `always-on-build.md`.
+- Next: native authentication/telemetry/daemon boundary, then B3 app client/setup/
+  removal integration. No live helper registration, power mutation or arming.
+  Apple-issued signing remains necessary for positive signed acceptance/install.
+- Lead repeated isolated UI hide check: CUA kept returning the controls window,
+  so hide/other-app stacking remain unverified. Preview was deactivated/quit;
+  process check confirms only original build5 PID96007. No installed change.
+
 ## Bookmark — Coordinator candidate (2026-10-12)
 
 - `codex/always-on-coordinator` implements pure `AlwaysOnService` coordinator and
