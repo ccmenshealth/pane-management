@@ -200,3 +200,11 @@ The B3a client remains isolated from application setup/UI. Run
 for injected transport, reply-validation and recovery/lifecycle checks. It does
 not register or run a helper. Native connection setup fails closed without the
 matching Apple-issued app identity; positive signed acceptance remains pending.
+
+The B3b1 headless setup module adds explicit registration/approval/removal state
+and a read-only absence proof. Run
+`swift run --disable-sandbox --cache-path .build/cache AlwaysOnSetupChecks`.
+The GUI-facing dependency graph includes only read-only power/storage probes,
+shared IPC, and the client; native writers and daemon runtime stay separate.
+App wiring and signed staging remain subsequent slices. No actual helper setup
+or power change is performed by these checks.

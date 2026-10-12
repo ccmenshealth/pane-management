@@ -2,6 +2,7 @@ import Foundation
 import Darwin
 import CoreFoundation
 import AlwaysOnCore
+import AlwaysOnReadOnly
 
 /// Construct once for the service lifetime; the held lock excludes other writers.
 /// Synchronous disk calls can stall the service executor. They have no fake timeout.
@@ -12,7 +13,7 @@ import AlwaysOnCore
     private let uid: uid_t
     private let boot: UUID
     private let fault: ((JournalFault) throws -> Void)?
-    private static let directoryName = "local.snapbridge.alwayson"
+    private static let directoryName = TrustedStorage.directoryName
     private static let recordName = "recovery.json"
     private static let limit = 32768
 
@@ -22,18 +23,7 @@ import AlwaysOnCore
         var bytes = [CChar](repeating: 0, count: size)
         guard sysctlbyname("kern.bootsessionuuid", &bytes, &size, nil, 0) == 0,
               let boot = UUID(uuidString: String(cString: bytes)) else { throw NativeIOError.failed }
-        var fd = open("/", O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-        guard fd >= 0 else { throw NativeIOError.system(errno) }
-        do {
-            try Self.validateParent(fd, uid: 0)
-            // /var is a system symlink on macOS; traverse its fixed canonical path.
-            for name in ["private", "var", "db"] {
-                let next = openat(fd, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-                guard next >= 0 else { throw NativeIOError.system(errno) }
-                close(fd); fd = next
-                try Self.validateParent(fd, uid: 0)
-            }
-        } catch { close(fd); throw error }
+        let fd = try TrustedStorage.openSystemParent()
         try self.init(parentFD: fd, expectedUID: 0, bootID: boot, fault: nil)
     }
     /// Test-only dependency injection. Never export paths or UIDs through IPC.
@@ -47,7 +37,7 @@ import AlwaysOnCore
                  fault: ((JournalFault) throws -> Void)?) throws {
         var dir: Int32 = -1, held: Int32 = -1
         do {
-            try Self.validateParent(parentFD, uid: expectedUID)
+            try TrustedStorage.validateParent(parentFD, uid: expectedUID)
             if mkdirat(parentFD, Self.directoryName, 0o700) != 0 && errno != EEXIST { throw NativeIOError.system(errno) }
             dir = openat(parentFD, Self.directoryName, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
             guard dir >= 0 else { throw NativeIOError.system(errno) }
@@ -68,38 +58,12 @@ import AlwaysOnCore
         guard fstat(fd, &value) == 0 else { throw NativeIOError.system(errno) }
         return value
     }
-    private static func validateParent(_ fd: Int32, uid: uid_t) throws {
-        let value = try metadata(fd)
-        guard value.st_mode & S_IFMT == S_IFDIR, value.st_uid == uid,
-              value.st_mode & 0o022 == 0 else { throw NativeIOError.unsafeStorage }
-        try validateACL(fd)
-    }
     private static func validate(_ fd: Int32, uid: uid_t, directory: Bool = false) throws {
         let value = try metadata(fd)
         guard value.st_uid == uid, value.st_mode & S_IFMT == (directory ? S_IFDIR : S_IFREG),
               value.st_mode & 0o7777 == (directory ? 0o700 : 0o600),
               directory || value.st_nlink == 1 else { throw NativeIOError.unsafeStorage }
-        try validateACL(fd)
-    }
-    private static func validateACL(_ fd: Int32) throws {
-        // acl_get_fd_np folds absent ACL and native read failure into nil. Use
-        // successful descriptor metadata enumeration plus explicit presence.
-        guard let security = filesec_init() else { throw NativeIOError.system(errno) }
-        defer { filesec_free(security) }
-        var info = stat(), present: Int32 = 0
-        guard fstatx_np(fd, &info, security) == 0,
-              filesec_query_property(security, FILESEC_ACL, &present) == 0 else { throw NativeIOError.system(errno) }
-        if present == 0 { return }
-        var optionalACL: acl_t?
-        guard filesec_get_property(security, FILESEC_ACL, &optionalACL) == 0,
-              let acl = optionalACL else { throw NativeIOError.unsafeStorage }
-        defer { acl_free(UnsafeMutableRawPointer(acl)) }
-        guard acl_valid(acl) == 0 else { throw NativeIOError.unsafeStorage }
-        var entry: acl_entry_t?
-        errno = 0
-        let result = acl_get_entry(acl, Int32(ACL_FIRST_ENTRY.rawValue), &entry)
-        // Darwin returns 0 for an entry, -1/EINVAL for an exhausted valid ACL.
-        guard result == -1, errno == EINVAL else { throw NativeIOError.unsafeStorage }
+        try TrustedStorage.validateACL(fd)
     }
     private static func sameEntry(_ parent: Int32, _ name: String, _ fd: Int32) throws {
         var entry = stat()
@@ -108,7 +72,7 @@ import AlwaysOnCore
         guard held.st_dev == entry.st_dev, held.st_ino == entry.st_ino else { throw NativeIOError.unsafeStorage }
     }
     private func revalidate() throws {
-        try Self.validateParent(parent, uid: uid)
+        try TrustedStorage.validateParent(parent, uid: uid)
         try Self.validate(directory, uid: uid, directory: true)
         try Self.sameEntry(parent, Self.directoryName, directory)
         try Self.validate(lock, uid: uid)

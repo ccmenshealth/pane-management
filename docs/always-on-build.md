@@ -599,7 +599,9 @@ No installed application or service changes occur in either build slice.
   setup events must defeat an older probe/foreground completion. Expose headless
   startup/refresh, explicit setup, activate, deactivate, remove and explicit
   approval-navigation methods. Constructor and startup never register, activate,
-  open Settings, write power or create journal storage.
+  open Settings, perform direct/native power IO or create journal storage. Startup
+  may invoke the reviewed authenticated recovery path to restore an existing
+  orphan/uncertain override; it never activates.
 - S5: SMAppService uses only daemon(plistName: fixed filename). Model status
   notRegistered/enabled/requiresApproval/notFound distinctly. Only explicit setup
   on notRegistered validates trusted app identity then registers once; enabled

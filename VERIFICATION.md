@@ -746,3 +746,69 @@ open "dist/Pane Management.app"
 While the fixture app runs, settings show **Test Snap Assist with disposable windows**. That entry point restricts both the initial placement and subsequent choices to the fixture app.
 
 Rebuilding changes the ad-hoc signature. If a privacy switch is on but the app reports no access, remove and re-add only this app in the relevant privacy pane, selecting its current bundle. Use macOS Quit & Reopen after refreshing Screen Recording. A proper signing identity is required before distribution. No security protections or signing requirements should be weakened to avoid this development limitation.
+
+
+## B3b1 headless setup and read-only extraction (2026-10-12)
+
+Builder used the inherited current model; exact metadata unavailable. Isolated
+branch `codex/always-on-setup`, based on reviewed PR #8 `326cc09`. No UI change
+or native GUI render belongs to this slice.
+
+- `AlwaysOnSetupChecks`: 104 assertions, zero failures. The exact final suite
+  compiled against an inert coordinator and failed 50/104 assertions
+  (`/tmp/setup-inert-red.log`). Restored implementation passed all 104.
+- S-R1: releasing the lifecycle slot before post-registration status completed
+  allowed competing removal/setup. The pre-fix overlay failed two assertions
+  (`/tmp/setup-regression-red.log`); retaining the slot through inspection and
+  republishing on settlement fixes both.
+- S-R2: an earlier signing error could erase a newer active client observation.
+  The focused pre-fix fixture failed one assertion (`/tmp/setup-signing-red.log`);
+  current inspection owns the result and retains Deactivate. An unverified
+  configured state retains both retry-deactivation and setup-repair remedies.
+- Coverage includes all nine strict receipt combinations, missing/existing
+  recovery directory, both bracket status failures and each changed status,
+  optional unsigned state, enabled/approval/notFound setup, identity and
+  registration-error matrix, no startup registration/activation/navigation,
+  stale proof versus new client event, registration including post-completion
+  inspection, removal preparation, real pending callback settlement, expected
+  loss, removal retry, and activation's stop action.
+- Real user-owned temporary filesystem fixtures cover absent child, existing
+  file/directory/dangling symlink, writable or wrong-owner parent policy,
+  nonempty ACL, cleared ACL, symlink parent and missing parent. The probe never
+  opens or creates its fixed child. A malformed on-disk ACL was not injected; the reused policy retains
+  rejection of invalid/failed enumeration.
+  Generic bounded reads report a stuck worker and reject repeated work while
+  its slot is held; late completion cannot publish through its consumed continuation.
+- Shared extraction preserves strict CFBoolean reads, bounded power reader,
+  trusted canonical parents, ACL policy and journal directory name. The native
+  writer/journal retain their prior semantics. App-facing modules do not depend
+  on AlwaysOnNative, AlwaysOnDaemon or audit code. Both native readers execute
+  away from MainActor; no cached absence proof is accepted.
+- Sibling audit: startup/refresh/setup, all four ServiceManagement statuses,
+  signature errors versus new observations, register success/error, preparation/
+  unregister pending/success/error, activation/stop and all read-failure forks.
+  Only the sole client prepare/final-permit flow can start native unregister.
+  Native register cannot release its slot before actual completion.
+- No actual SMAppService register/unregister, production journal construction,
+  daemon launch, power write, installed bundle replacement, permission change,
+  physical lid test or signature fallback ran. Original build5 remained PID96007.
+  Local packaging was not run because the installed app is running; CI validates
+  clean-runner packaging. Positive signed/native acceptance is blocked by missing
+  Apple-issued identity. Independent manual-security review substitutes for the
+  unavailable literal security tool; it remains pending at builder handoff.
+  CodeRabbit is unavailable under the explicit repository restriction.
+
+Local final gates passed:
+
+- `swift run --disable-sandbox --cache-path .build/cache` with SnapCoreChecks
+  (60/0), AlwaysOnChecks (34/0), AlwaysOnEngineChecks (176/0), AlwaysOnNativeChecks
+  (114/0), AlwaysOnServiceChecks (347/0), AlwaysOnDaemonChecks (118/0),
+  AlwaysOnClientChecks (155/0), and AlwaysOnSetupChecks (104/0).
+- Separate `swift build --disable-sandbox --cache-path .build/cache` and
+  `swift build -c release --disable-sandbox --cache-path .build/cache` passed.
+  Release AlwaysOnNativeChecks (114/0) and AlwaysOnSetupChecks (104/0) passed.
+- `bash -n` for all three scripts, `plutil -lint` for all four Resources plists,
+  and `git diff --check` passed. No standalone Swift linter is configured;
+  debug/release compilation typechecks. Final builds emitted no warnings.
+- Product plus test/extracted source is about 640 lines; within the cohesive
+  slice guideline. GitHub CI and pinned independent/lead review are next gates.

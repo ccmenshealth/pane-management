@@ -1,5 +1,24 @@
 # Pane Management — Current State
 
+## Bookmark — B3b1 setup candidate (2026-10-12)
+
+- `codex/always-on-setup` adds read-only native policy extraction and headless
+  setup/removal coordination. App/controller/UI wiring remains B3b2; signed
+  staging remains B3c. Installed build5 is unchanged at PID 96007.
+- Exact compiling inert coordinator overlay: 104 assertions/50 failures;
+  implemented suite: 104/0. Targeted pre-fix regressions: two failures for early
+  registration-slot release during status settlement; one failure for an old
+  signing diagnostic erasing a newer active observation. See VERIFICATION.md.
+- Current inherited model used, exact metadata unavailable. Fresh independent
+  code/manual-security and lead review remain required, as does remote CI.
+  CodeRabbit is prohibited. No service registration/removal, native writer,
+  production journal, installed bundle, grant or power mutation occurred.
+- Setup observations have increasing revision, fixed remedy and pending flag.
+  Ordinary activation can be pending while its remedy stays Deactivate; OS
+  setup/removal always offers Wait. UI must use the remedy to keep stop usable.
+  Successful removal is quiet only in-process; wake/relaunch repeats the proof
+  and an intentionally retained root directory yields conservative repair.
+
 ## Bookmark — B3b1 setup planning (2026-10-12)
 
 - `codex/always-on-setup` starts from PR #8 `326cc09ca9a35762cf8ab1a446656a1d11fe0141`.

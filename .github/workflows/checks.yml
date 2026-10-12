@@ -43,6 +43,8 @@ jobs:
         run: .build/release/AlwaysOnDaemonChecks
       - name: Run authenticated client checks
         run: .build/release/AlwaysOnClientChecks
+      - name: Run always-on setup checks
+        run: .build/release/AlwaysOnSetupChecks
       - name: Package always-on UI preview
         run: bash scripts/build-always-on-preview.sh
       - name: Package disposable test helper
