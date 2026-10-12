@@ -1,5 +1,20 @@
 # Pane Management — Current State
 
+## Bookmark — Coordinator candidate (2026-10-12)
+
+- `codex/always-on-coordinator` implements pure `AlwaysOnService` coordinator and
+  version 1 wire values, stacked on native IO PR #5. No daemon, authentication,
+  telemetry, app wiring, installation or power mutation is added in this slice.
+- Final in-memory suite: 347 assertions / 0 failures. Exact compiled inert
+  coordinator/wire overlay: 347 / 162 failures. Two targeted pre-fix runs each
+  expose eight failures; recovery states and evidence are in `VERIFICATION.md`.
+- All prior suites and local gauntlet passed. Final affected service checks and
+  separate debug/release compilation pass. Independent code/security fallback,
+  lead review and remote CI remain required at candidate handoff.
+- Build 5 remains installed/running unchanged. Next after pinned review: B2b2
+  authenticated native daemon boundary, then B3 client/setup/removal integration.
+  Signing and native acceptance remain required before installation/arming.
+
 ## Bookmark — Coordinator planning (2026-10-12)
 
 - `codex/always-on-coordinator` is an isolated branch on native IO

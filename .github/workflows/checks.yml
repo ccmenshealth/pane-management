@@ -37,6 +37,8 @@ jobs:
         run: .build/release/AlwaysOnEngineChecks
       - name: Run native recovery IO checks
         run: .build/release/AlwaysOnNativeChecks
+      - name: Run service coordinator checks
+        run: .build/release/AlwaysOnServiceChecks
       - name: Package always-on UI preview
         run: bash scripts/build-always-on-preview.sh
       - name: Package disposable test helper

@@ -363,6 +363,29 @@ evidence and exact final green evidence. Independent code/security fallback and
 lead reviews are required. No UI change means no new render gate for this slice;
 existing native acceptance remains open. Do not package over a running app.
 
+### B2b1 candidate handoff
+
+Pure coordinator and wire values implement C1–C9; 347 checks pass after a compiled
+inert overlay failed 162 assertions. Shared restoration-settlement and strict
+final-removal observation races have separate eight-failure pre-fix evidence.
+Independent code/security fallback, lead review and CI remain required; no
+native boundary or app wiring is included. The fixed six requests preserve
+connection-only token ownership and epoch/incarnation-bound removal permits.
+
+Final status uses the **same** injected `RecoveryPower` instance as the engine
+for one strict dual-false receipt; absence/mismatch/error revokes the permit and
+retains recovery-only admission. It never writes power or rebinds the guard.
+Native B2b2 must drive `start`, `monitor`, `accept` and idempotent key-specific
+`disconnected` calls, supplying trusted cached environment facts. Do not cancel
+engine tasks, accept caller identity from payloads, or configure a separate reader.
+
+Later B3 setup is optional/unavailable only after fresh triple proof:
+SMAppService notRegistered, strict public dual-false readback, and securely
+verified absence of the fixed journal directory through canonical trusted
+parents, descriptor-relative nofollow lookup and ACL validation (only ENOENT).
+Unreachable/configured helper, unsafe/existing journal or unknown read means
+setup repair/unknown warning. Setup registers/authenticates only, never activates.
+
 ### B2b2 native boundary handoff
 
 Use public reciprocal NSXPC code-signing requirements before connection/listener

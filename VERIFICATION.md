@@ -2,6 +2,64 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## B2b1 service coordinator — October 12, 2026
+
+`AlwaysOnService` fronts the real pure recovery engine with version 1 requests,
+opaque admitted connection keys, generation/epoch ownership, target-bound cached
+guards and recovery-only preparation admission. It uses no native adapter in its
+fixtures. Current inherited model used; exact model/effort metadata unavailable.
+
+The exact final suite compiled against inert coordinator/wire scaffolds with
+**347 assertions / 162 behavioral failures (exit 1)**. Implemented debug and
+release suites pass **347 / 0**. Ignored evidence is retained under
+`.build/evidence/`: `ServiceCoordinator.final-inert.swift`,
+`ServiceValues.final-inert.swift`, `run-inert.py`, `service-final-red.txt`,
+`final-gate-1.txt` through `final-gate-4.txt`.
+
+A sibling audit exposed premature guard rebinding while restoration started by
+Deactivate, status, heartbeat or monitor was suspended. Each lane crossed with
+retry/prepare failed before the shared in-flight settlement fix: **327 / 8** in
+`service-settle-red.txt`, with `ServiceCoordinator.before-settle.swift`. All
+engine operations now settle before token-loss recovery rebinds a new caller;
+critical/disconnect events remain reentrant and never cancel a writer task.
+
+The final-removal observation must be stricter than ordinary engine startup,
+which permits an absent root-domain property. The coordinator shares the exact
+same injected power port as its engine, and performs a fresh dual-false read for
+same-connection sealed status. Failure revokes the permit and retains preparing
+admission; every completion rechecks live connection, revision and epoch. The
+pre-fix absence/mismatch/error/stale-completion cases failed **347 / 8**, retained
+in `service-final-observation-red.txt` and
+`ServiceCoordinator.before-strict-final.swift`. No alternate adapter or power
+write is introduced by this final observation. The preparation permit is a
+snapshot, not exclusion of crash/restart or external mutation.
+
+| State/boundary | Offered exit and demonstrated behavior |
+| --- | --- |
+| Bootstrapping/checking | Activation refused; startup resolves off or explicit conflict/recovery. External conflict resolution plus retry can reach off. |
+| Pending baseline/enable/readback | Second activation refused; disconnect, retry, prepare, final battery, critical heat and console change prevent late token/active reply at each suspension. |
+| Active ownership | Exact connection and token required. Reconnect uses retry; late old-key invalidation cannot stop the newer lease. Status and duplicate activation never disclose the token. |
+| Restoring/recovery required | Write, read and journal failures retain recovery; retry reaches off. All four restoration entry paths retain the old guard target until the writer settles. |
+| Preparing/sealed | Activation remains closed across failures and retries. Explicit re-prepare creates a new epoch; only same-key final strict off observation repeats its permit. |
+| Interrupted/stale preparation | No permit after disconnect or newer epoch; reconnect can explicitly prepare again. Daemon incarnation changes on reconstruction. |
+| Unknown/stale guard component | No enable; oldest required sample used, nonfinite/future times refused. Serious thermal remains allowed; heartbeat expiry restores. |
+
+Existing suites passed **60 snapping scenarios, 34 controller, 176 engine and
+114 native IO assertions**, all zero failures. Separate debug/release builds,
+script syntax, source plist lint and whitespace checks passed. After the final
+C7 patch, only the affected service suite and both compilation modes were rerun.
+No standalone Swift linter exists; compilation supplies type checking. CI now
+runs the release service suite. Independent read-only code/security review and
+remote CI are pending at handoff; CodeRabbit remains prohibited by repo policy.
+
+No new UI is added, so this slice has no new render gate. Existing native Dock,
+Spaces/fullscreen, multidisplay and VoiceOver acceptance remains open. Lead's
+latest inert preview Hide Controls attempt still yielded controls-window CUA
+snapshots, so it did not prove cross-app/hide behavior. Preview was deactivated
+and quit; lead confirmed only unchanged build 5 PID 96007 remains running.
+No app packaging, signing, registration, permission or live power write occurred.
+Positive signed IPC, native telemetry and physical sleep await later slices.
+
 ## B2a native recovery IO — October 12, 2026
 
 The isolated `AlwaysOnNative` module implements protected journal and fixed power

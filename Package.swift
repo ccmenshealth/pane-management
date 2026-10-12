@@ -8,6 +8,8 @@ let package = Package(
     targets: [
         .target(name: "SnapCore"),
         .target(name: "AlwaysOnCore"),
+        .target(name: "AlwaysOnService", dependencies: ["AlwaysOnCore"]),
+        .executableTarget(name: "AlwaysOnServiceChecks", dependencies: ["AlwaysOnService", "AlwaysOnCore"], path: "Tests/AlwaysOnServiceChecks"),
         .target(name: "AlwaysOnNative", dependencies: ["AlwaysOnCore"]),
         .executableTarget(name: "AlwaysOnNativeChecks", dependencies: ["AlwaysOnNative", "AlwaysOnCore"], path: "Tests/AlwaysOnNativeChecks"),
         .executableTarget(name: "AlwaysOnEngineChecks", dependencies: ["AlwaysOnCore"], path: "Tests/AlwaysOnEngineChecks"),
