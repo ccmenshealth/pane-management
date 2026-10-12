@@ -1,5 +1,22 @@
 # Pane Management — Current State
 
+## Bookmark — B3c signed staging candidate (2026-10-12)
+
+- Code pin 3ced098 adds isolated Developer ID staging with explicit identity/team/
+  existing notary profile, exact signature requirements, notarization/stapling,
+  assessment and post-stapling hashes. Existing stable packager stays unchanged.
+- Seventeen synthetic checks pass; exact final inert overlay yields 35 assertion
+  failures, and four focused pre-fix checks reproduce lead findings. Debug/release
+  builds, full debug matrix 60/76/176/114/355/118/181/141 and lint pass.
+- Actual read-only preflight passed on the clean code pin; no signed artifact or
+  Apple submission was attempted. Missing Developer ID remains the positive-run
+  blocker. Native acceptance and first arming stay separately gated.
+- Current inherited model; exact metadata unavailable. Next: draft PR above
+  integration PR #10, remote CI and fresh independent/manual-security plus lead
+  review. All PRs remain unmerged. CodeRabbit prohibited.
+- Original build 5 remains PID 96007, unchanged. No install/helper/power/journal/
+  privacy change, no local stable packaging and no preview launch occurred.
+
 ## Bookmark — B3c signed staging planning (2026-10-12)
 
 - codex/always-on-staging starts from integration PR10 head495f663. Independent

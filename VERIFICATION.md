@@ -1,3 +1,51 @@
+## B3c isolated signed staging candidate — 2026-10-12
+
+Code pin `3ced0980ceb21773b95d87a29508da03f9b61f3b` adds only the signed staging
+workflow, synthetic checks, CI syntax/check steps and documentation. Existing
+stable-path packaging is unchanged. Current inherited model used; exact model
+and effort metadata are unavailable. Independent code/manual-security, lead
+review and final remote CI remain required; CodeRabbit is prohibited.
+
+- `python3 scripts/test_signed_staging.py`: 17 tests pass. These use fully
+  injected command results and disposable directories; a subprocess guard
+  prevents accidental native fallback. Failure at each of 31 command positions
+  cleans partial output and permits a subsequent successful synthetic run.
+- Exact final runnable inert overlay: 17 tests / 35 assertion failures. Targeted
+  pre-fix overlay: four tests / three assertion failures plus the reproduced
+  non-object notarization exception. Fixed tool mapping, argument abbreviation,
+  notary object validation and operation-specific diagnostics are covered.
+- Evidence and reproducer: ignored `.build/b3c-evidence/overlays.py`,
+  `final-inert-red/`, `targeted-red/`, corresponding `.log` files, and
+  `final-green.log`. Run the reproducer from the repository root; it copies the
+  exact final tests into isolated overlay directories and never alters source.
+- Separate Python compile, Bash syntax, plist lint and `git diff --check` pass.
+  Separate Swift debug/release builds pass. All eight debug suites pass:
+  SnapCore 60, AlwaysOn 76, Engine 176, Native 114, Service 355, Daemon 118,
+  Client 181 and Setup 141; no failures. Individual gate logs are retained there.
+- Actual read-only `--preflight` passed on clean code pin 3ced098. It validated
+  fixed app/helper metadata, source and tool availability without identity lookup,
+  artifact creation, signing or Apple submission (`native-preflight.log`).
+
+| Failure / state | Exit and evidence |
+| --- | --- |
+| Missing/invalid arguments or identity, dirty source, metadata drift | Stop before build; correct the named prerequisite and retry. Negative fixtures verify no build. |
+| Signature/team/runtime/timestamp/entitlement rejection | No publication; repair signing configuration and retry. Each metadata refusal and command failure is injected. |
+| Notary rejection or malformed result; staple/assessment failure | No publication; inspect that named operation and retry. Only Accepted with canonical UUID proceeds. |
+| Existing destination or publication race | Preserve the existing directory; rerun for a new UUID candidate. Collision/race fixtures verify preservation. |
+| Command or publication filesystem failure | Remove owned partial output/destination; subsequent synthetic attempt succeeds. |
+| Forced process death | A private `.partial-*` can remain; it is never a published candidate. An Apple submission may continue remotely; check its status before resubmitting. No kill/power drill was run. |
+| Published candidate | App, post-stapling ZIP and manifest exist only after all gates. This does not install or arm the helper. |
+
+Sibling audit covers both helper/app signatures before and after stapling,
+normal and raced publication, command and filesystem cleanup, and all malformed
+argument/notary forks. Security-sensitive inputs use argument arrays, fixed tool
+paths and explicit identity/team; no credentials or profile are written to the
+manifest or failure diagnostics. Native positive signing/timestamp/notary/staple/
+Gatekeeper operations were **not run**: no suitable Apple Developer identity is
+available. Their synthetic control flow is not proof of positive native acceptance.
+No stable-path local package, install, service operation, power write, production
+journal or grant change occurred. Original build 5 remains running at PID 96007.
+
 ## Native daemon boundary candidate (2026-10-12)
 
 ## B3a authenticated client candidate — 2026-10-12
