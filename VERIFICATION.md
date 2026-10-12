@@ -24,7 +24,9 @@ constraints; the separate native content measurement owns the bounded frame.
   Full text and both actions were visible; AX exposed a normal container, with
   no scrollbar. Escape did not dismiss; Deactivate and Retry worked; Repair setup
   in Settings opened controls. Triangle, stripes and opaque backing were legible.
-  Independent delta review and CI remain pending. Small-display geometry is only
+  Independent read-only delta and lead reviews clear at `2e4e861`; clean before/
+  after, no actionable findings. CI `38304407317` passed. Preview quit normally;
+  process check found only original build5 PID96007. Small-display geometry is only
   offscreen automated evidence; no live power, Spaces or global stacking claim.
 - Local evidence: `.build/warning-stripes-evidence/geometry-before.log`,
   `geometry-experiment.log`, `layout-red.log`, `layout-green.log`, release logs and

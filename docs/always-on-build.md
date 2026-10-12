@@ -1027,4 +1027,8 @@ active/activation/restoring 1040×658 physical pixels; recovery 1040×738, full
 text/buttons, no scrollbar. Escape does not dismiss; Deactivate, Retry and
 Settings navigation work. Offscreen small-frame geometry is checked, physical
 small-screen/Spaces/global stacking and live power remain unverified. Fresh
-independent delta review and CI pending; no merge or arming.
+independent read-only delta and lead reviews clear at final `2e4e861`; worktree
+clean before/after, no actionable findings. CI `38304407317` passed. Inherited
+current model, exact metadata unavailable; security review N/A presentation-only,
+CodeRabbit prohibited. Preview quit normally; no merge or arming. Later closure
+changes are Markdown only, checked under the repository bookkeeping exception.

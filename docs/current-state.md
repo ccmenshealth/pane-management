@@ -17,8 +17,11 @@
 - Debug/release compilation, shell/diff lint and inert preview packaging pass.
   Lead native QA passed the exact final preview: compact active/restoring states,
   expanded recovery with all text/actions and no scrollbar, Deactivate/Retry/
-  Settings navigation and Escape behavior. Product pin `692192f`; next independent
-  delta review and CI. No merge or arming.
+  Settings navigation and Escape behavior. Product pin `692192f`; final independent
+  delta and lead reviews clear at `2e4e861`, clean before/after. CI `38304407317`
+  passed. Current model inherited; exact metadata unavailable. Preview quit and
+  only original build5 PID96007 remains. No merge or arming. Local-signing work
+  continues separately in PR13 and its harmless-probe successor.
 
 ## Bookmark — warning stripes cosmetic slice (2026-10-12)
 
