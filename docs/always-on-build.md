@@ -200,8 +200,35 @@ review and tests belong to B2/B3.
   16 targeted pre-fix failures and final inert 176/102 versus implemented 176/0.
   Independent and lead delta reviews clear the source fix; final-head CI
   `38281961153` passed. Review worktree remained clean. Native IO build may start.
-  Other lead findings and targeted red evidence
+  The original review finding was at RecoveryEngine.swift:90/:145/:153/:190;
+  cold status/activate/monitor/retry/prepare and unowned recheck siblings are covered.
+  Original-head CI `38281301606` also passed. Other lead findings and red evidence
   are recorded in VERIFICATION.md. No live operation, install or merge occurred.
+
+### B2a candidate handoff
+
+`AlwaysOnNative` now implements the P1–P7 adapters without daemon/app wiring.
+Native fixture checks are included in CI. Production construction fixes the
+journal root, expected root UID and pmset arguments; fixture injection remains
+in-process only and must never become IPC input. Use one journal/power adapter
+pair for the daemon lifetime. No helper or native activation has been installed.
+
+Early lead review identified a post-reap group signal (PID reuse hazard),
+unbounded readback, and acceptance of a late read before a delayed timer callback.
+The candidate reserves child identity with `waitid(WNOWAIT)` through group cleanup
+and final reap, uses a bounded single-flight read worker, and checks monotonic
+elapsed time on both read and process success paths. Unknown child-wait ownership
+holds the writer slot indefinitely; it does not guess that a writer has stopped.
+Formal independent/lead/security review remains a gate, not implied by this pass.
+
+B2b must keep telemetry/watchdog collection separate from synchronous journal IO,
+retain unknown/error read state, and map failed recovery to the existing retry UI.
+A timed-out native read may still run but cannot queue another read or publish a
+late result. A normal timeout/cancel terminates and reaps the sole fixed command
+writer; kernel-stuck writers/disk calls remain outside recovery guarantees.
+Readback proves persistent preference and root-domain receipt, not physical sleep.
+Protected storage and trusted parents also reject nonempty extended ACLs;
+114 native checks pass after a full inert 114/94 red and focused ACL 114/9 red.
 
 ### B2a locked native IO contract
 
@@ -255,15 +282,6 @@ P5 source evidence: Apple IOKitUser tag `IOKitUser-100231.120.3`,
 `PowerManagement-1846.120.8.0.1`, `pmset/pmset.m` stores CFBoolean values.
 These internal source names guide public CFPreferences reads; do not import
 private IOKit functions or headers into the product.
-
-- Engine PR #4, `4a99728180f364d6ee384a2b8ec6120ef7994b95`: independent
-  review found only R1 (P2), false off during the first ownership read
-  (`RecoveryEngine.swift:90`, `:145`, `:153`, `:190` at that head). Lead agreed.
-  Fix: explicit checking initial state and checking before unresolved ownership
-  reads. Cold status/activate/monitor/retry/prepare and unowned recheck siblings
-  are covered; 16 focused assertions failed before the fix, then all 176 passed.
-  Original-head CI run `38281301606` passed. Corrected-head CI and independent
-  delta/lead/security acceptance remain pending. No live IO or installation.
 
 - UI PR #3, `1923274f40256ea0be5060c48b922b6c680b11e9`: independent fresh
   read-only review and lead source review found no blocking code issue. Exact-head

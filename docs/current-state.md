@@ -1,5 +1,21 @@
 # Pane Management — Current State
 
+## Bookmark — Native IO candidate (2026-10-12)
+
+- `codex/always-on-native-io`, stacked on engine PR #4, implements protected
+  journal storage, fixed command execution, strict public-API readback and bounded
+  single-flight reads. It is not wired into the app and installs no helper.
+- `AlwaysOnNativeChecks` passes 114 assertions; exact final compiled inert
+  scaffold produces 114 assertions / 94 failures. Existing suites pass 60/0,
+  34/0 and 176/0. Evidence and native limitations are in `VERIFICATION.md`.
+- Lead's early process-ID reuse and unbounded/late-read findings were corrected
+  before pinning. Independent, lead and native filesystem/process security review
+  remain required; CodeRabbit is unavailable under the repository exclusion.
+- Production journal path remains absent. Build 5 remains running at its original
+  path as PID 96007. No pmset mutation, registration, permission change, installed
+  bundle replacement or UI automation occurred. Next: pinned-head review and CI,
+  then B2b only after acceptance. Installation/arming remains separately gated.
+
 ## Bookmark — Native IO planning (2026-10-12)
 
 - `codex/always-on-native-io` starts from engine PR #4 fix `28eeffe` in its own

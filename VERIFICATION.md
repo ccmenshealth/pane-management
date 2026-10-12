@@ -2,6 +2,101 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## B2a native recovery IO — October 12, 2026
+
+The isolated `AlwaysOnNative` module implements protected journal and fixed power
+adapters. It adds no daemon, XPC, app wiring, registration or installation. Native
+checks only use temporary user-owned storage, harmless child executables and
+injected power transport. No power mutation (including false) was executed.
+Current inherited model used; exact model/effort metadata unavailable.
+
+The exact final suite compiled against a scaffolding adapter with **114 assertions,
+94 behavioral failures, exit 1**. The implemented suite passes **114 assertions,
+zero failures** in debug and release. The scaffold provides only harmless fixture file setup so checks
+reach unsafe-file and corruption cases; it has no recovery or security behavior.
+Retained ignored evidence: `.build/evidence/NativeIO.final-inert.swift`,
+`native-final-red.txt`, `run-inert.py`, and `native-green.txt`. The initial inert
+attempt produced 46/38 but skipped later filesystem checks after its absent
+fixture file; the final full-suite overlay supersedes that incomplete evidence.
+
+Real disposable filesystem checks cover all phases across restart and old boot
+IDs; held-lock contention; parent/record/directory/lock modes and owner validation;
+symlinks, hardlinks, directory/FIFO records and replaced directory/lock identity;
+strict schema, Boolean baseline, UUID/phase/UID/boot and duplicate-key corruption;
+before/after commit failures, clear failures and absence; removal of temporary
+records and the entire fixture root. Unsafe metadata throws, rather than being
+classified as corrupt. The production path `/var/db/local.snapbridge.alwayson`
+was observed absent after the checks. Positive root execution remains untested.
+
+ACL hardening has an additional pre-fix run: **114 assertions / 9 failures**,
+retained in `native-acl-red.txt` beside `NativeRecoveryJournal.before-acl.swift`.
+Real temporary ACLs on the record, directory and parent are rejected by load,
+save and clear, then removed. Metadata validation also covers lock ACLs through
+the shared validator. SDK declarations and Darwin man pages were inspected;
+Apple's [ACL wrapper source](https://github.com/apple-oss-distributions/Libc/blob/main/posix1e/acl_file.c)
+shows why nil alone cannot distinguish absent ACL from failure. The adapter uses
+successful public `fstatx_np` plus explicit `filesec_query_property` presence,
+then validates any returned ACL and rejects nonempty entries; the
+[property implementation](https://github.com/apple-oss-distributions/Libc/blob/main/gen/filesec.c)
+confirms this separation. Unknown/read-error cases fail closed.
+
+Real child fixtures cover success, nonzero exit, output larger than the cap,
+exact sanitized environment through `/usr/bin/env`, CoreFoundation's runtime-added
+text-encoding key, ignored TERM followed by KILL, timeout and cancellation,
+`kill(pid, 0) == -1 / ESRCH` after reap, no marker write 650 ms after return, and
+successful reuse after termination. A queued second command also cannot complete
+until the first TERM-resistant child is reaped. The runner reserves child identity with
+`waitid(WNOWAIT)` until group cleanup and `waitpid` completes; it sends no signals
+after reap. Production only executes fixed `/usr/bin/pmset disablesleep 1/0`;
+fixture executable/arguments are not an IPC surface. Process code ran off the
+main executor. Actual pmset execution and privileged recovery remain unverified.
+
+Strict readback tests reject numeric NSNumber 0/1, strings, nulls and collections
+as Booleans, preserving successful absence as nil. Injected transport covers
+matching on/off, delayed agreement, mismatch, errors and a write that applies
+before throwing. A blocked native read returns an error on its deadline; further
+reads fail promptly until that worker ends, and its late result is discarded.
+A deterministic monotonic-clock jump proves a late success cannot beat a delayed
+timer callback. Cancellation after a read starts is bounded by this read timeout.
+
+Recoverability/native boundary matrix:
+
+| Boundary | Result and exit |
+| --- | --- |
+| Valid intent/active/restoring after restart, including old boot | Return owned record; engine restores, never resumes activation |
+| Off record | Engine requires fresh explicit dual-off, then durable cleanup only |
+| Malformed validated payload | Corrupt; engine exposes retry cleanup only after dual-off |
+| Unsafe owner/link/type/mode or replaced storage/lock | Throw; setup repair required before retry; never overwrite unsafe target |
+| Save/clear failure before or after commit | May have applied; engine retains recovery and retries from durable state |
+| Command timeout/cancel/nonzero/output cap | Writer settled and reaped before error; engine can serially restore |
+| Read failure, absence after write or mismatch | Error; engine retains recovery and exposes retry |
+| Stalled native read | Deadline error, no queued reads/late result; subsequent restore may write but cannot claim verified off until fresh read succeeds |
+| Kernel-stuck writer or lost child-wait ownership | Keep writer slot occupied; no success/second writer; outside bounded-recovery guarantee |
+| Disk/root syscall stall | Synchronous journal may stall service; separate watchdog scheduling cannot guarantee recovery progress |
+
+Sibling audit: load/save/clear all validate directory and lock identity; existing
+record validation is shared. Both power directions use the same fixed writer and
+strict dual readback; initial reads also use the bounded worker. Process and read
+completion both check actual monotonic deadlines. Lead early findings on PID reuse,
+unbounded reads and delayed callbacks were fixed before the review candidate.
+
+Local commands are the separate `swift run --disable-sandbox --cache-path
+.build/cache` invocations for SnapCoreChecks **60/0**, AlwaysOnChecks **34/0**,
+AlwaysOnEngineChecks **176/0**, and AlwaysOnNativeChecks **114/0**. Separate debug
+and release build/typecheck passed; every `scripts/*.sh`
+syntax check, all three source plists and whitespace checks passed. The read-only
+host public-API probe returned explicit preference=false and rootDomain=false;
+this is read evidence only, not a command or physical-sleep test.
+The native suite is in CI; clean CI also packages the app and fixtures. Local
+main-app packaging was skipped to preserve running build 5, observed at PID 96007
+and its original executable path. No UI tools, bundle replacement or permissions
+were used. This module has no UI change requiring a new render.
+
+Independent, lead and native filesystem/process security review remain required.
+CodeRabbit is unavailable under the explicit repository exclusion. No merge or
+arming is authorized by simulation results. Root installation, actual power
+writes, physical sleep/emergency timing and B2b/B3 lifecycle remain separate gates.
+
 ## B1 pure recovery engine — October 12, 2026
 
 `RecoveryEngine` adds fixed typed service operations with injected journal,
