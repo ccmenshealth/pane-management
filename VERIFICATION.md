@@ -2,6 +2,54 @@
 
 September 14, 2026. Pane Management was originally developed as SnapBridge.
 
+## Dock presence candidate — October 12, 2026
+
+Build 6 adds running Dock presence and a retained custom Dock menu with Settings
+and pause/resume snapping. Source audit covers the launch policy and bundle
+metadata together; launch with missing Accessibility or `--settings`, application
+menu, menu-bar menu, Dock menu, and Dock reopen all retain the existing Settings
+handler. Reopen still refuses to cover Assist, layout, or group choosers.
+Dock and menu-bar menus rebuild their labels from the same `Preferences.enabled`
+used by the Settings toggle; the controller's existing cancellation and hotkey
+registration paths are unchanged. Each menu owns separate item instances and the
+delegate retains the Dock menu for its lifetime.
+
+Local checks in the isolated candidate worktree:
+
+- `swift run --disable-sandbox --cache-path .build/cache SnapCoreChecks`:
+  **60 scenarios completed; 0 failures**.
+- `swift build --disable-sandbox --cache-path .build/cache`: passed, including
+  the AppKit target (separate Swift typecheck/debug-build gate).
+- `swift build -c release --disable-sandbox --cache-path .build/cache`: passed.
+- `bash -n scripts/build-app.sh scripts/build-fixture.sh`,
+  `plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist`, and
+  `git diff --check`: passed.
+- `bash scripts/build-fixture.sh`, helper `codesign --verify --deep --strict`,
+  and packaged-helper plist lint: passed. The helper was not launched.
+- `bash scripts/build-app.sh`: release build passed, then packaging exited 1
+  with “Quit Pane Management before packaging; the running app has not been
+  changed.” PID 797 remains the primary installed build 5. Candidate app bundle
+  signature verification is pending because no candidate app bundle was created.
+
+No automated tests were added: this slice changes AppKit activation/menu wiring,
+which the pure SnapCore executable does not exercise. Existing regression checks
+are required; no fail-first claim is made. Native acceptance is a distinct gate.
+
+Native checks pending after reviewed-candidate installation: visibly confirm the
+Dock icon and menu-bar icon; open the actual Dock context menu; pause from Dock
+and resume from menu bar (then reverse), checking Settings reflects each state;
+close Settings and confirm the process/icons remain; Dock-click to reopen;
+verify Quit exits and reopening restores access. Preserve the chooser guard and
+check it with disposable fixtures if the installed permissions permit that test.
+No private window screenshots may be published. The primary build 5 remains
+running and has not been replaced. Packaging scripts will not be changed to
+bypass their running-process guard.
+
+CodeRabbit is unavailable by explicit repository restriction and was not
+requested. Security review is not applicable: no new data access, persistence,
+IPC, network behavior, permission flow, or privileged operation is introduced.
+This candidate does not implement or validate closed-lid operation.
+
 ## Build 5 follow-up acceptance and review-policy preparation
 
 A clean isolated checkout of the review-cadence branch built in release mode

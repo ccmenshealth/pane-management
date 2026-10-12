@@ -26,7 +26,7 @@ If upgrading from SnapBridge, quit the old app before opening Pane Management. T
 2. Optionally use **Enable Previews** to check ScreenCaptureKit access and, if needed, allow Screen Recording. Without it, Snap Assist still works with app icons and window titles. The button reports the actual API result instead of always opening Settings. If macOS denies the running build, **Check Again**, the current bundle path, Settings/Finder links, and a quit action appear. If the permission switch is already on, quit and reopen the selected app; after a rebuild, a stale entry may need removal and re-adding. Quitting clears session-only groups.
 3. In **Desktop & Dock → Windows**, turn off native drag-to-edge tiling, drag-to-menu-bar filling, Option-drag tiling, and drag-to-top Mission Control when those switches are present. Pause other window managers while testing. Pane Management does not change those settings automatically.
 4. To start automatically after signing in, add the built app under **System Settings → General → Login Items & Extensions → Open at Login**. Keep the bundle at a consistent path and avoid starting another snapper alongside it. This is a per-Mac setting, not enabled automatically for other users.
-5. Close Settings. The two-pane icon in the menu bar offers settings, pause/resume, snap groups, and quit.
+5. Close Settings. Pane Management stays in the Dock and menu bar while running. Click its Dock icon to reopen Settings; right-click it for Settings and pause/resume snapping. The two-pane menu-bar icon also offers those controls, snap groups, and quit. Both menus share the Settings window's snapping preference.
 
 ## Controls
 
@@ -91,7 +91,7 @@ Two-column snapping automatically accommodates a window that refuses the request
 - `Windows.swift`: public Accessibility access, window identity/eligibility, frame updates, visible-window filtering, optional thumbnails.
 - `Overlays.swift`: nonactivating AppKit layout, placement, Assist, and divider panels.
 - `Controller.swift`: drag lifecycle, placement verification, keyboard shortcuts, snap groups, and runtime settings.
-- `App.swift`: menu bar and setup UI.
+- `App.swift`: Dock menu, menu bar, and setup UI.
 
 Window coordinates use logical points in the Quartz convention: primary display top-left origin. AppKit panel frames are converted with the primary display's height, including monitors with negative coordinates. Layout boundaries are rounded together so thirds do not leave one-pixel seams.
 

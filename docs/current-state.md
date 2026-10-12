@@ -1,5 +1,29 @@
 # Pane Management — Current State
 
+## Bookmark — Dock presence slice under review (2026-10-12)
+
+- Slice 1 of [the locked plan](closed-lid-plan.md) is implemented on
+  `codex/dock-presence` in the isolated `PaneManagement-worktrees/dock-presence`
+  checkout, based on `3ce28b8ce72d392c7885640d22b1b7e2e7a03b37`.
+- Candidate build 6 uses regular activation, appears in the Dock while running,
+  and supplies Settings and pause/resume in its Dock menu. The existing menu-bar
+  icon and chooser reopen exclusions are retained. Both menus and Settings use
+  the same snapping preference. No closed-lid control or power backend is added.
+- Native subagent builder is running the user-authorized current model; exact
+  model/effort metadata is unavailable in the builder session. Lead and a separate
+  read-only reviewer must review the pinned candidate before installation.
+- Local checks and remaining acceptance are recorded in `VERIFICATION.md`.
+  Packaging the app and native UI acceptance await a lead-coordinated quit of
+  build 5. The installed bundle at the primary checkout is unchanged.
+- Next actions: push a draft PR, perform independent and lead review, then
+  package and run the native Dock/menu/recovery checks at the
+  stable installed path. Do not call this slice gate-green before those checks.
+- CodeRabbit is unavailable under the repository exclusion. Security review is
+  not applicable to the Dock/menu-only runtime change; no access or data flow is
+  added. Closed-lid feasibility review is complete; that separate slice is blocked
+  pending the user's scope decision because no caller-owned mechanism met the
+  exact lid-only behavior and recovery requirements. No sleep setting was changed.
+
 ## Bookmark — Review cadence merged (2026-09-14)
 
 - [PR #1](https://github.com/ccmenshealth/pane-management/pull/1) is merged into

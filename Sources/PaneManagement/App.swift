@@ -8,7 +8,7 @@ enum PaneManagementApp {
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
-        app.setActivationPolicy(.accessory)
+        app.setActivationPolicy(.regular)
         withExtendedLifetime(delegate) { app.run() }
     }
 }
@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     lazy var controller = SnapController(preferences: preferences)
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
+    private let dockMenu = NSMenu()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let identifier = Bundle.main.bundleIdentifier ?? "local.snapbridge.app"
@@ -27,8 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let mainMenu = NSMenu()
         let appItem = NSMenuItem(); mainMenu.addItem(appItem)
         let appMenu = NSMenu(); appItem.submenu = appMenu
-        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
-        settingsItem.target = self; appMenu.addItem(settingsItem)
+        appMenu.addItem(settingsMenuItem())
         appMenu.addItem(withTitle: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         NSApp.mainMenu = mainMenu
         if let icon = AppArtwork.applicationIcon { NSApp.applicationIconImage = icon }
@@ -39,18 +39,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem = item
         let menu = NSMenu(); menu.delegate = self; item.menu = menu
         rebuildMenu(menu)
+        dockMenu.delegate = self
         controller.start()
         PreviewAccess.shared.check(userInitiated: false)
         if !preferences.accessibility || CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
-    func menuWillOpen(_ menu: NSMenu) { rebuildMenu(menu) }
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        rebuildDockMenu()
+        return dockMenu
+    }
+    func menuWillOpen(_ menu: NSMenu) {
+        if menu === dockMenu { rebuildDockMenu() }
+        else { rebuildMenu(menu) }
+    }
+    private func rebuildDockMenu() {
+        dockMenu.removeAllItems()
+        dockMenu.addItem(snappingMenuItem())
+        dockMenu.addItem(.separator())
+        dockMenu.addItem(settingsMenuItem())
+    }
+    private func snappingMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: preferences.enabled ? "Pause snapping" : "Resume snapping", action: #selector(toggle), keyEquivalent: "")
+        item.target = self
+        return item
+    }
+    private func settingsMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        item.target = self
+        return item
+    }
     private func rebuildMenu(_ menu: NSMenu) {
         menu.removeAllItems()
         let title = NSMenuItem(title: "Pane Management", action: nil, keyEquivalent: ""); title.isEnabled = false
         menu.addItem(title)
-        let enabled = NSMenuItem(title: preferences.enabled ? "Pause snapping" : "Resume snapping", action: #selector(toggle), keyEquivalent: "")
-        enabled.target = self; menu.addItem(enabled)
+        menu.addItem(snappingMenuItem())
         menu.addItem(.separator())
         let layouts = NSMenuItem(title: "Choose layout   ⌃⌥Z", action: #selector(showLayouts), keyEquivalent: "")
         layouts.target = self; menu.addItem(layouts)
@@ -66,8 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             parent.submenu = groups; menu.addItem(parent)
         }
         menu.addItem(.separator())
-        let settings = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
-        settings.target = self; menu.addItem(settings)
+        menu.addItem(settingsMenuItem())
         let quit = NSMenuItem(title: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quit)
     }
@@ -95,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // Reopening an already-running menu-bar app must not cover an active
+        // Reopening the already-running app must not cover an active
         // chooser with Settings or steal its keyboard focus.
         if controller.assistant.isVisible || controller.palette.isVisible || controller.groupPicker.isVisible { return false }
         showSettings(); return true
