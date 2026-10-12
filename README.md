@@ -214,3 +214,56 @@ The warning supports usable displays at least 320 × 300 logical points with
 scrolling content; that minimum does not establish that the full Settings footer
 fits alongside it. Cross-Space/fullscreen, multi-display, VoiceOver and physical
 sleep behavior require their own acceptance checks. See `VERIFICATION.md`.
+
+## Signed staging (separate from installation)
+
+`scripts/build-signed-staging.sh` prepares a new candidate under
+`dist/signed-staging/<commit>-<UTC>-<UUID>/artifacts/`. It never replaces or starts
+the running app, registers a helper, or changes power settings. The existing
+ad-hoc development packager is unchanged.
+
+On clean committed source, this **zsh** command checks layout and tool availability
+without signing, reading Keychain identities, submitting to Apple, or creating an
+artifact:
+
+```zsh
+bash scripts/build-signed-staging.sh --preflight
+```
+
+A positive run requires an Apple **Developer ID Application** certificate and its
+private key, the matching Team ID, and a previously configured Keychain notary
+profile. No suitable identity is currently available; positive signing and native
+acceptance remain blocked. There is no automatic identity selection or ad-hoc
+fallback. After those prerequisites and separate authorization for submission,
+use **zsh** with explicit values:
+
+```zsh
+bash scripts/build-signed-staging.sh \
+  --identity YOUR_40_HEX_CERTIFICATE_FINGERPRINT \
+  --team-id YOUR_TEAM_ID \
+  --notary-profile YOUR_EXISTING_KEYCHAIN_PROFILE
+```
+
+The workflow signs the helper then app with hardened runtime and secure timestamp,
+checks Apple's Developer ID requirements and exact identities, rejects debugging
+entitlements, requires an Accepted notarization result, staples and validates the
+ticket, and checks Gatekeeper. Only then does it publish the app, a fresh ZIP and
+a nonsecret manifest with source commit, submission ID and SHA256 hashes.
+
+Argument, source or identity failures stop before building: correct the reported
+prerequisite and retry. A signing, notarization, stapling or assessment failure
+publishes nothing; correct that named operation and retry with a new candidate.
+Handled failures clean up their own partial output and preserve existing output.
+A forcibly killed process can leave a private `.partial-*` directory; it is never
+a published candidate. An interrupted submission may still finish at Apple; check
+its status with your existing notary profile before submitting again. Staging
+success proves neither installation nor physical closed-lid/critical-event behavior.
+Installation, approval, native acceptance and first arming remain separate gates.
+
+Synthetic checks inject every external command, forbid native subprocess fallback,
+and require no signing credentials. In **zsh**:
+
+```zsh
+python3 scripts/test_signed_staging.py
+python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py
+```

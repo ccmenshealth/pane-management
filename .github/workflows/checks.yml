@@ -24,9 +24,12 @@ jobs:
           persist-credentials: false
       - name: Validate source metadata
         run: |
-          bash -n scripts/build-app.sh scripts/build-fixture.sh scripts/build-always-on-preview.sh
+          bash -n scripts/*.sh
+          python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py
           plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist Resources/AlwaysOnPreviewInfo.plist Resources/local.snapbridge.alwayson.service.plist
           git diff --check
+      - name: Run isolated signed staging checks (synthetic commands only)
+        run: python3 scripts/test_signed_staging.py
       - name: Build application with supplied artwork
         run: bash scripts/build-app.sh
       - name: Run regression checks
