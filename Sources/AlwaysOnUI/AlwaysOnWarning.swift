@@ -126,37 +126,56 @@ private struct WarningStripes: Shape {
     }
 }
 
-private struct WarningView: View {
+private struct WarningContent: View {
     @ObservedObject var controller: AlwaysOnController
     let preview: Bool
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
+        VStack(spacing: 16) {
             ZStack {
                 WarningTriangle().fill(Color(red: 0.84, green: 0.015, blue: 0.035))
                 Text("!").font(.system(size: 58, weight: .black)).foregroundStyle(.white).offset(y: 9)
             }.frame(width: 96, height: 84).accessibilityLabel("Warning")
             VStack(spacing: 16) {
-            Text(controller.state.heading).font(.system(size: 25, weight: .bold))
-                .multilineTextAlignment(.center).accessibilityAddTraits(.isHeader)
-            ScrollView {
+                Text(controller.state.heading).font(.system(size: 25, weight: .bold))
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
                 Text(controller.explanation).font(.system(size: 15))
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            }.frame(height: 76)
-            Button { controller.perform(controller.action) } label: {
-                Text(controller.actionTitle).font(.system(size: 19, weight: .bold))
-                    .frame(maxWidth: .infinity).padding(.vertical, 9)
-            }.keyboardShortcut(.defaultAction)
-                .accessibilityHint("Performs the displayed always-on recovery action")
-                .buttonStyle(.borderedProminent).tint(Color(red: 0.84, green: 0.015, blue: 0.035))
-                .disabled(!controller.actionEnabled)
-            if let title = controller.secondaryTitle {
-                Button(title == "Open Login Items" ? "Approval options in Settings" : title) { controller.perform(.openSettings) }
-            }
-            if preview { Text("PREVIEW ONLY · No power settings change").font(.caption.bold()).foregroundStyle(.secondary) }
+                Button { controller.perform(controller.action) } label: {
+                    Text(controller.actionTitle).font(.system(size: 19, weight: .bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity).padding(.vertical, 9)
+                }.keyboardShortcut(.defaultAction)
+                    .accessibilityHint("Performs the displayed always-on recovery action")
+                    .buttonStyle(.borderedProminent).tint(Color(red: 0.84, green: 0.015, blue: 0.035))
+                    .disabled(!controller.actionEnabled)
+                if let title = controller.secondaryTitle {
+                    Button(title == "Open Login Items" ? "Approval options in Settings" : title) { controller.perform(.openSettings) }
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if preview {
+                    Text("PREVIEW ONLY · No power settings change").font(.caption.bold()).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .background(RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .windowBackgroundColor)).padding(-8))
-            }.padding(26).frame(maxWidth: .infinity)
+        }.padding(26).frame(maxWidth: .infinity)
+    }
+}
+
+private struct WarningView: View {
+    @ObservedObject var controller: AlwaysOnController
+    let preview: Bool
+    let overflow: Bool
+    var body: some View {
+        Group {
+            if overflow {
+                ScrollView(.vertical, showsIndicators: false) {
+                    WarningContent(controller: controller, preview: preview)
+                }
+            } else {
+                WarningContent(controller: controller, preview: preview)
+            }
         }
         .background {
             ZStack {
@@ -190,8 +209,8 @@ private final class WarningPanel: NSPanel {
 
     public init(controller: AlwaysOnController, preview: Bool = false) {
         self.controller = controller; self.preview = preview
-        stateSubscription = controller.$state.sink { [weak self] _ in
-            // Published emits before the property changes; defer reconciliation.
+        stateSubscription = controller.objectWillChange.sink { [weak self] _ in
+            // Include action/secondary copy changes; defer until published values settle.
             Task { @MainActor [weak self] in self?.reconcile() }
         }
         for name in [NSApplication.didChangeScreenParametersNotification, NSApplication.didBecomeActiveNotification] {
@@ -228,11 +247,20 @@ private final class WarningPanel: NSPanel {
                 panel.becomesKeyOnlyIfNeeded = false; panel.isMovable = false; panel.isReleasedWhenClosed = false
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.animationBehavior = .none
-                panel.contentView = NSHostingView(rootView: WarningView(controller: controller, preview: preview))
                 panels[key] = panel
             }
             let visible = screen.visibleFrame
-            let size = NSSize(width: min(520, visible.width - 24), height: min(390, visible.height - 24))
+            let width = min(520, visible.width - 24)
+            // Measure the actual shared content at this display's available width.
+            // The measuring view has no scroll container or fixed vertical proposal.
+            let measurement = NSHostingView(rootView: WarningContent(controller: controller, preview: preview)
+                .frame(width: width).fixedSize(horizontal: false, vertical: true))
+            let contentHeight = ceil(measurement.fittingSize.height)
+            let maximumHeight = visible.height - 24
+            let root = WarningView(controller: controller, preview: preview, overflow: contentHeight > maximumHeight)
+            if let hosting = panel.contentView as? NSHostingView<WarningView> { hosting.rootView = root }
+            else { panel.contentView = NSHostingView(rootView: root) }
+            let size = NSSize(width: width, height: min(contentHeight, maximumHeight))
             panel.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height), display: true)
             panel.orderFrontRegardless() // Never makeKey or activate: typing stays with the current app.
         }

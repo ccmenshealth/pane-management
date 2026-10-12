@@ -1,3 +1,32 @@
+## Content-sized warning revision — 2026-10-12
+
+W6 supersedes the fixed warning height after the user saw a scrollbar in recovery.
+The warning now measures its shared content with native hosting-view fitting size
+at each display's available width, uses that height and recenters. Both the 76pt
+body scroller and normal outer scroller are removed. Published action/secondary
+text changes also trigger measurement. Text and buttons allow vertical wrapping.
+If intrinsic content exceeds the screen's usable height minus 24pt, only then a
+hidden-indicator scroll container keeps overflow reachable within screen bounds.
+
+- Separate debug/release builds passed (2.80s / 8.13s), AlwaysOnChecks 76/0,
+  shell syntax for every script and diff lint passed. Preview packaging (1.97s)
+  and strict ad-hoc signature verification passed. Logs retained under ignored
+  `.build/warning-stripes-evidence/`; no stable app packaging or launch.
+- Preview executable SHA256:
+  `cc856f2c2ca132631359a75487befff836819a6504dca2342afe08fad99151e2`.
+  Lead's pre-fix native recovery screenshot shows the unwanted scrollbar. Final
+  native fitting/actions and independent delta review plus CI are pending.
+- No new implementation-mirroring test; existing 76 behavior assertions and
+  native before/after verification cover this presentation change. No new state
+  or recovery route. Small-screen/oversized fallback is source-reviewed but has
+  not been physically exercised; no fixture API was added merely to simulate it.
+- Initial striped candidate `79f4fe6` cleared independent/lead review and CI
+  `38303341482`. Native active/activating/restoring/recovery/removal-pending,
+  Deactivate and Escape behavior was checked by lead before this sizing revision.
+- Security review not applicable to presentation-only changes; CodeRabbit
+  prohibited. No merge/install/arming. Local signing now authorized separately;
+  this revision makes no auth, Keychain, helper, power or controller changes.
+
 ## Warning stripes candidate — 2026-10-12
 
 The shared warning adds native 45-degree black/yellow bands at 10% opacity,

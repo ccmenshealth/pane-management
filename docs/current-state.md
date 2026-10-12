@@ -10,8 +10,10 @@
   Preview is stopped. Builder owns this UI-only revision, same isolated PR #12.
 - Local signing is now user-authorized as a separate slice; this builder does not
   change certificates, authentication, installation, power or controller behavior.
-- Next: implement W6, repeat named build/regression/lint/preview gates, native QA
-  and independent delta review plus CI. No merge or arming.
+- W6 uses native content fitting size, includes action/secondary updates, and limits
+  hidden-indicator scrolling to screen overflow. Debug/release, 76 UI assertions,
+  shell/diff lint and inert preview packaging pass. Next: native QA, independent
+  delta review and CI. No merge or arming.
 
 ## Bookmark — warning stripes cosmetic slice (2026-10-12)
 
