@@ -1,5 +1,18 @@
 # Pane Management — Current State
 
+## Bookmark — content-sized warning revision (2026-10-12)
+
+- User requested no scroll bar and a warning that fits its content. W6 supersedes
+  fixed warning geometry in W2: intrinsic content sizing, centered within usable
+  screen bounds; hidden-indicator scrolling only for content too large to fit.
+- Prior stripe candidate `79f4fe6` cleared independent/lead review; lead native QA
+  observed active/pending/recovery actions and the unwanted recovery scrollbar.
+  Preview is stopped. Builder owns this UI-only revision, same isolated PR #12.
+- Local signing is now user-authorized as a separate slice; this builder does not
+  change certificates, authentication, installation, power or controller behavior.
+- Next: implement W6, repeat named build/regression/lint/preview gates, native QA
+  and independent delta review plus CI. No merge or arming.
+
 ## Bookmark — warning stripes cosmetic slice (2026-10-12)
 
 - User requested faint diagonal black/yellow warning stripes. Isolated branch

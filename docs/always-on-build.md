@@ -1000,3 +1000,12 @@ privileged fallbacks are not authorized. No additional feature slice is pending.
   preview packaging, independent and lead review plus CI. No merge/install/arming.
   CodeRabbit prohibited; auth/storage/security behavior unchanged. Sibling audit:
   one shared warning renders every state; menu, Dock and Settings actions untouched.
+
+- W6 (user update): Warning height follows native content fitting size rather than
+  fixed body/window heights. Remove normal nested/outer scrolling; fit full heading,
+  explanation, buttons and preview label. Recompute on every presentation change,
+  including action/secondary text. Keep centered and clamp to screen usable bounds
+  with margins; exceptionally oversized content uses hidden-indicator scrolling to
+  keep actions reachable. No fixed per-state heights or controller behavior change.
+  Lead verifies normal native fixtures; small-screen fallback remains unproven if
+  unavailable without changing the fixture API. No new visual-mirroring test.
