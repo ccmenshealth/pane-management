@@ -1,5 +1,16 @@
 # Pane Management — Current State
 
+## Bookmark — Coordinator planning (2026-10-12)
+
+- `codex/always-on-coordinator` is an isolated planning branch on native IO
+  PR #5 head `f547075`; B2a independent/security review and CI are pending.
+  Do not start its builder until the lead clears those gates.
+- B2b1 coordinator and wire contracts C1–C9 are locked in `always-on-build.md`;
+  B2b2 then adds native authentication/telemetry/daemon composition, followed by
+  B3 app client/setup/removal and packaging. No installation/arming yet.
+- Build5 remains running unchanged. Matching Apple-issued signing is still
+  needed for positive signed acceptance and installation; coding/tests continue.
+
 ## Bookmark — Native IO candidate (2026-10-12)
 
 - `codex/always-on-native-io`, stacked on engine PR #4, implements protected

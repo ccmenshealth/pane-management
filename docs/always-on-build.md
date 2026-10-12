@@ -276,6 +276,111 @@ Protected storage and trusted parents also reject nonempty extended ACLs;
   clean up without touching production paths. Native positive root installation,
   actual pmset mutation and physical sleep remain unverified until the arming drill.
 
+### B2b1 locked service coordinator contract
+
+B2b is split into a pure coordinator/wire-value slice and then the native
+authentication/telemetry/daemon boundary. B2b1 starts only after B2a pinned code
+and security review clear. Branch `codex/always-on-coordinator` is stacked on
+native IO PR #5. No native adapter is invoked by its fixtures.
+
+- C1: Transport-neutral version 1 values expose exactly status, activate,
+  heartbeat(token), deactivate(token), retryRestore, and prepareForUpdateOrRemoval.
+  Status never returns the internal lease/token. Only a genuinely new successful
+  activation returns its token; duplicate/already-active results carry no token.
+  No caller identity, command, path, preference key or timeout enters the wire.
+  Malformed/version-mismatched requests must fail without state mutation.
+- C2: A single MainActor coordinator fronts the engine. Immutable ConnectionKey
+  contains a random ID and monotonic generation; captured ConsoleSession comes
+  from the later trusted admission boundary. Inject current-session validation
+  and telemetry ports for tests. Accepting a connection or reading status never
+  changes the guard target. Start bootstrapping and prohibit activation until
+  startup resolves exactly off; recovery/conflict retains status/retry exits.
+- C3: Keep independent admission and ownership states. Admission is bootstrapping,
+  open, preparing(epoch,key), or sealed(epoch,key). Ownership is none,
+  pending(epoch,key,session,baseline-or-activating), active(epoch,key,lease), or
+  restoring(epoch,key,lease?). Allocate an operation epoch and reserve ownership
+  synchronously BEFORE the first baseline status await. A second activation is
+  rejected while reserved. Do not hold an async mutex across awaits that prevents
+  stop/critical/disconnect events from entering the coordinator.
+- C4: After baseline await, recheck exact epoch/key/stage, open admission, live
+  connection, current console and exactly off. Bind the guard to that session and
+  advance to activating without another await before engine.activate. Every
+  completion checks its original epoch/key/admission before publishing or clearing.
+  The engine may return an existing active lease on refusal; never adopt it or
+  treat it as new activation. Stale completion clears only its own reservation.
+- C5: The coordinator-owned guard binding has epoch and target session. Compose
+  its snapshot from separately cached telemetry and session-validity facts; the
+  timestamp is the oldest required successful sample. Unknown/stale components
+  remain unknown/nil. Retain the target through active/restoring; clear only a
+  matching epoch. Connection acceptance/status cannot select a different target.
+  Critical/session-change monitor events remain reentrant during power awaits.
+- C6: Heartbeat/deactivate require the bound exact live ConnectionKey and token;
+  reconstruct the lease from service ownership. Reconnect with identical UID/ASID
+  gets a new key and cannot inherit a token; retryRestore is the token-loss exit.
+  Both interruption and invalidation are idempotent disconnect events by key.
+  Ignore late invalidation of an old key after a newer activation. Baseline
+  invalidation cancels the reservation; activating invalidation marks restoring
+  and latches engine.disconnected. Never cancel the in-flight engine Task or
+  release ownership before its writer/restoration settles.
+- C7: Prepare synchronously closes admission before ANY await. Cancel pending
+  activation, retain its target while settling restoration, then bind the
+  preparing authenticated caller and invoke engine.prepare. On success seal
+  admission and return a permit containing daemon incarnation UUID and epoch,
+  bound to the same live connection. A final status recheck returns that permit
+  only to that connection while sealed and verified off. B3 must compare it before
+  unregistering; interruption/restart invalidates it and requires new preparation.
+  This is a snapshot, not atomic exclusion of crash/restart/external mutation.
+- C8: Failed preparation stays recovery-only/preparing; failed unregister stays
+  sealed. Status, retry and re-prepare remain available; activate stays rejected.
+  Retry must never silently reopen admission. No cancel-removal operation is
+  added: finish/retry removal, or an explicit later service restart, is the exit.
+  Re-prepare creates a fresh epoch/permit after the previous operation settles;
+  concurrent preparation cannot overwrite an in-flight reservation.
+- C9: Recoverability fixtures cover every suspension fork: baseline reservation,
+  activation stages, disconnect/critical stops, prepare races, stale completions,
+  same-session reconnect and late old invalidation. Assert no token leakage or
+  active reply after a stop. Prove failed recovery can retry to off and that
+  checking/unknown never maps to off. Use the real pure engine with injected
+  journal/power/clock/guard adapters where practical; fakes must match its refusal
+  and reentrant semantics. No live power, filesystem journal or process invocation.
+
+B2b1 required commands: all existing SnapCoreChecks, AlwaysOnChecks,
+AlwaysOnEngineChecks and AlwaysOnNativeChecks, plus AlwaysOnServiceChecks, each
+via `swift run --disable-sandbox --cache-path .build/cache`; separate debug and
+release `swift build` commands; script `bash -n`, resource `plutil -lint`, and
+`git diff --check`. Add the new suite to CI. Keep compiling inert-scaffold red
+evidence and exact final green evidence. Independent code/security fallback and
+lead reviews are required. No UI change means no new render gate for this slice;
+existing native acceptance remains open. Do not package over a running app.
+
+### B2b2 native boundary handoff
+
+Use public reciprocal NSXPC code-signing requirements before connection/listener
+activation. Derive Team ID only after self validation against Apple generic anchor
+and the fixed own identifier, then validate again with that Team ID. Peer requires
+the same Team ID, Apple anchor and fixed peer identifier. Missing/ad-hoc/unrelated
+signatures fail closed; no caller-configurable team or PID lookup authentication.
+Missing signing blocks positive signed acceptance/installation, not code or tests.
+
+Capture NSXPC effective UID and audit session ID. Validate through public
+SCDynamicStoreCopyConsoleUser and audit_get_sinfo_addr, with UID double-read around
+audit query: returned ASID must match; audit user equals effective/non-root console
+UID; require authenticated/graphic/console flags and reject remote/default IDs.
+There is no atomic public UID-to-unique-ASID mapping; notifications and polling
+reduce the race but do not remove it. No claimed identity from client payload.
+
+Collect battery, thermal and console facts on a queue separate from engine/journal
+IO; documented notifications plus polling below the five-second freshness limit.
+Final battery and Critical thermal stop; serious thermal and arbitrary20% do not.
+Registration/enumeration/type/scheduling errors are unknown. None/Nominal can hide
+internal OS telemetry failure, and disk/kernel stalls remain documented limits.
+Startup restores unresolved records before accepting activation; never resume.
+Native daemon composes one protected journal/power pair and the B2b1 coordinator,
+fixed six-operation DTO bridge, exact-key invalidation, and generation-safe guards.
+No app registration or live activation in this slice. B3 owns the bounded client,
+heartbeat, setup/removal UI and final app wiring. Packaging must refuse replacement
+while app OR helper runs; no legacy/ad-hoc privileged fallback. Preserve build5.
+
 P5 source evidence: Apple IOKitUser tag `IOKitUser-100231.120.3`,
 `pwr_mgt.subproj/IOPMEnergyPrefs.c` (IOPMCopySystemPowerSettings) and
 `IOPMLibPrivate.h` (constant strings); PowerManagement tag
