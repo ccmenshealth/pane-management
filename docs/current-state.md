@@ -1,5 +1,19 @@
 # Pane Management — Current State
 
+## Bookmark — B3b1 setup planning (2026-10-12)
+
+- `codex/always-on-setup` starts from PR #8 `326cc09ca9a35762cf8ab1a446656a1d11fe0141`.
+  Fresh read-only independent code/manual-security and lead source reviews clear;
+  K-R1 readiness, K-R2 unregister settlement and K-R3 queued stop fixed. CI
+  `38293214921` passed. Reviewed worktree remained clean at the pinned head;
+  current inherited model, exact metadata unavailable.
+- S1–S9 lock headless setup/absence proof and read-only native extraction. B3b2
+  follows with controller/menu/warning/Settings/app integration; B3c handles
+  signed staging. Builder may implement B3b1 only. No real service or power mutation.
+- Original build5 remains running, unchanged. Positive signed IPC/install is
+  blocked by missing Apple Developer identity; native UI/physical acceptance and
+  first arming remain separate. No merges yet; CodeRabbit prohibited.
+
 ## Bookmark — B3a client candidate (2026-10-12)
 
 - Isolated `codex/always-on-client` extracts shared IPC/signing and adds an
