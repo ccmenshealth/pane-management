@@ -18,7 +18,7 @@ import AlwaysOnIPC
     func connect(lost: @escaping @MainActor () -> Void) throws -> ClientChannel
 }
 public enum ClientFailure: Error { case unavailable, timeout, invalidReply, connectionLost, removal }
-public enum ClientState: Equatable, Sendable { case off, active, unknown(String) }
+public enum ClientState: Equatable, Sendable { case off, active, removalRequired, unknown(String) }
 public struct ClientObservation: Equatable, Sendable {
     public let revision: UInt64
     public let state: ClientState

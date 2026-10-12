@@ -54,9 +54,10 @@ public struct ServiceReply: Equatable, Codable, Sendable {
     public let reason: String?
     public let activationToken: UUID?
     public let preparationPermit: PreparationPermit?
+    public let requiresRemoval: Bool
     public init(state: ServiceState, outcome: ServiceOutcome = .observed, reason: String? = nil,
-                activationToken: UUID? = nil, preparationPermit: PreparationPermit? = nil) {
+                activationToken: UUID? = nil, preparationPermit: PreparationPermit? = nil, requiresRemoval: Bool = false) {
         self.version = 1; self.state = state; self.outcome = outcome; self.reason = reason
-        self.activationToken = activationToken; self.preparationPermit = preparationPermit
+        self.activationToken = activationToken; self.preparationPermit = preparationPermit; self.requiresRemoval = requiresRemoval
     }
 }

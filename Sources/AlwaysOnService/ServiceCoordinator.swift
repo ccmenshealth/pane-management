@@ -77,7 +77,9 @@ import Foundation
     }
     private func reply(_ outcome: ServiceOutcome = .observed, token: UUID? = nil, permit: PreparationPermit? = nil) -> ServiceReply {
         let (state, reason) = visible()
-        return .init(state: state, outcome: outcome, reason: reason, activationToken: token, preparationPermit: permit)
+        let requiresRemoval: Bool
+        switch admission { case .preparing, .sealed: requiresRemoval = true; default: requiresRemoval = false }
+        return .init(state: state, outcome: outcome, reason: reason, activationToken: token, preparationPermit: permit, requiresRemoval: requiresRemoval)
     }
     private func clear(_ epoch: UInt64) {
         guard ownership?.epoch == epoch else { return }

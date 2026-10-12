@@ -5,14 +5,23 @@
 - `codex/always-on-setup` adds read-only native policy extraction and headless
   setup/removal coordination. App/controller/UI wiring remains B3b2; signed
   staging remains B3c. Installed build5 is unchanged at PID 96007.
-- Exact compiling inert coordinator overlay: 104 assertions/50 failures;
-  implemented suite: 104/0. Targeted pre-fix regressions: two failures for early
+- Exact compiling inert coordinator overlay: 122 assertions/59 failures;
+  implemented suite: 122/0. Targeted pre-fix regressions: two failures for early
   registration-slot release during status settlement; one failure for an old
-  signing diagnostic erasing a newer active observation. See VERIFICATION.md.
+  signing diagnostic erasing a newer active observation; one for stale quiet
+  state during wake revalidation. See VERIFICATION.md.
 - Current inherited model used, exact metadata unavailable. Fresh independent
   code/manual-security and lead review remain required, as does remote CI.
   CodeRabbit is prohibited. No service registration/removal, native writer,
   production journal, installed bundle, grant or power mutation occurred.
+- S-R4 now exposes daemon admission closure with a required wire Boolean and
+  explicit removalRequired state. After failed unregister, a new app/client
+  discovers verified off with activation unavailable and a Finish helper removal
+  remedy; it does not enter a futile Activate loop. Real coordinator/client
+  loopback and targeted pre-fix overlays cover this across reconnect.
+- First CI38294630489 failed an unchanged finite-yield UI fixture. The exact
+  local cause was not reproduced in 100 runs. Fixture siblings now await bounded
+  state/continuation completion; the next CI run must validate the correction.
 - Setup observations have increasing revision, fixed remedy and pending flag.
   Ordinary activation can be pending while its remedy stays Deactivate; OS
   setup/removal always offers Wait. UI must use the remedy to keep stop usable.

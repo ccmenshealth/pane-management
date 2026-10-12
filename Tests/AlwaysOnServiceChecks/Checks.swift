@@ -313,6 +313,24 @@ private enum Fault: Error { case injected }
             check(await r.activate().outcome == .rejected, "failed prepare retry no reopen")
             check(await r.send(.prepareForUpdateOrRemoval).preparationPermit != nil, "failed prepare explicit reprepare")
         }
+        do {
+            let r = Rig(); await r.ready()
+            check(!(await r.send(.status)).requiresRemoval, "open admission advertises usable off")
+            let prepared = await r.send(.prepareForUpdateOrRemoval)
+            check(prepared.requiresRemoval && prepared.preparationPermit != nil, "prepared flags closed admission")
+            let final = await r.send(.status)
+            check(final.requiresRemoval && final.preparationPermit == prepared.preparationPermit, "strict final status preserves flag and permit")
+            let next = r.service.accept(owner)!
+            let otherStatus = await r.send(.status, key: next)
+            check(otherStatus.requiresRemoval && otherStatus.state == .off && otherStatus.preparationPermit == nil, "new connection sees closure without inheriting permit")
+            let rejected = await r.send(.activate, key: next)
+            check(rejected.requiresRemoval && rejected.outcome == .rejected, "closed rejection advertises closure without authority")
+            await r.service.disconnected(r.key)
+            check((await r.send(.status, key: next)).requiresRemoval, "disconnect does not erase removal exit")
+            check((await r.send(.retryRestore, key: next)).requiresRemoval, "retry restore retains removal exit")
+            let again = await r.send(.prepareForUpdateOrRemoval, key: next)
+            check(again.requiresRemoval && again.preparationPermit != prepared.preparationPermit, "reprepare remints flagged permit")
+        }
         print("AlwaysOnServiceChecks: \(count) assertions, \(failures) failures")
         if failures > 0 { exit(1) }
     }

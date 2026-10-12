@@ -19,7 +19,7 @@ let package = Package(
         .executableTarget(name: "AlwaysOnServiceChecks", dependencies: ["AlwaysOnService", "AlwaysOnCore"], path: "Tests/AlwaysOnServiceChecks"),
         .target(name: "AlwaysOnReadOnly", dependencies: ["AlwaysOnCore"]),
         .target(name: "AlwaysOnSetup", dependencies: ["AlwaysOnReadOnly", "AlwaysOnClient", "AlwaysOnIPC", "AlwaysOnCore"]),
-        .executableTarget(name: "AlwaysOnSetupChecks", dependencies: ["AlwaysOnSetup", "AlwaysOnReadOnly", "AlwaysOnCore", "AlwaysOnClient"], path: "Tests/AlwaysOnSetupChecks"),
+        .executableTarget(name: "AlwaysOnSetupChecks", dependencies: ["AlwaysOnSetup", "AlwaysOnReadOnly", "AlwaysOnCore", "AlwaysOnClient", "AlwaysOnIPC", "AlwaysOnService"], path: "Tests/AlwaysOnSetupChecks"),
         .target(name: "AlwaysOnNative", dependencies: ["AlwaysOnCore", "AlwaysOnReadOnly"]),
         .executableTarget(name: "AlwaysOnNativeChecks", dependencies: ["AlwaysOnNative", "AlwaysOnCore"], path: "Tests/AlwaysOnNativeChecks"),
         .executableTarget(name: "AlwaysOnEngineChecks", dependencies: ["AlwaysOnCore"], path: "Tests/AlwaysOnEngineChecks"),

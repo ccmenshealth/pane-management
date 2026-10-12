@@ -25,6 +25,7 @@ import AlwaysOnClient
         switch client.state {
         case .off: publish(.off, .activate)
         case .active: publish(.active, .deactivate)
+        case .removalRequired: publish(.removalRequired, .finishRemoval)
         case .unknown(let reason): publish(.unknown(reason), .retryDeactivationAndRepair)
         }
     }
@@ -36,6 +37,9 @@ import AlwaysOnClient
     }
     private func inspect() async {
         epoch &+= 1; let id = epoch; approval = false
+        // An active warning remains actionable while its status is rechecked.
+        // Safe off/unavailable snapshots expire as soon as a fresh proof starts.
+        if observation.state != .active { publish(.unknown("Checking normal sleep and helper setup."), .wait) }
         do {
             let status = try await service.status()
             guard id == epoch else { return }

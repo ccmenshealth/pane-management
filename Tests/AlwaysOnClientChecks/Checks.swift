@@ -49,8 +49,8 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             let t = Transport(), s = Scheduler(); var held: (@MainActor (Result<Void, Error>) -> Void)?
             let p = PreparationPermit(incarnation: UUID(), epoch: 1)
             t.make = { let h = Channel(); var prepared = false; h.handler = { r, done in
-                if r.operation == .prepareForUpdateOrRemoval { prepared = true; done(.success(try! BoundaryPolicy.encode(.init(state: .off, outcome: .prepared, preparationPermit: p)))) }
-                else { done(.success(try! BoundaryPolicy.encode(.init(state: .off, preparationPermit: prepared ? p : nil)))) }
+                if r.operation == .prepareForUpdateOrRemoval { prepared = true; done(.success(try! BoundaryPolicy.encode(.init(state: .off, outcome: .prepared, preparationPermit: p, requiresRemoval: true)))) }
+                else { done(.success(try! BoundaryPolicy.encode(.init(state: .off, preparationPermit: prepared ? p : nil, requiresRemoval: prepared)))) }
             }; return h }
             let c = AlwaysOnClient(transport: t, scheduler: s)
             let task = Task { await c.remove { held = $0 } }; await pump(); s.advance(5); await pump()
@@ -99,13 +99,53 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
         for op in ServiceOperation.allCases {
             check(rejected(bytes(.init(state: .off, activationToken: UUID())), op), "no leaked token \(op)")
             check(rejected(bytes(.init(state: .active, outcome: .activated, activationToken: UUID())), op) == (op != .activate), "fresh activation only \(op)")
-            check(rejected(bytes(.init(state: .off, outcome: .prepared, preparationPermit: permit)), op) == (op != .prepareForUpdateOrRemoval), "prepared operation \(op)")
-            check(rejected(bytes(.init(state: .off, preparationPermit: permit)), op) == (op != .status), "sealed status only \(op)")
-            check(rejected(bytes(.init(state: .active, preparationPermit: permit)), op), "permit must off \(op)")
+            check(rejected(bytes(.init(state: .off, outcome: .prepared, preparationPermit: permit, requiresRemoval: true)), op) == (op != .prepareForUpdateOrRemoval), "prepared operation \(op)")
+            check(rejected(bytes(.init(state: .off, preparationPermit: permit, requiresRemoval: true)), op) == (op != .status), "sealed status only \(op)")
+            check(rejected(bytes(.init(state: .active, preparationPermit: permit, requiresRemoval: true)), op), "permit must off \(op)")
             check(rejected(bytes(.init(state: .active, outcome: .activated)), op), "activation needs token \(op)")
             check(rejected(bytes(.init(state: .off, outcome: .prepared)), op), "preparation needs permit \(op)")
         }
-        var permitJSON = String(data: bytes(.init(state: .off, preparationPermit: permit)), encoding: .utf8)!
+        let canonical = String(data: bytes(good), encoding: .utf8)!
+        for malformed in ["1", "\"true\"", "null"] {
+            check(rejected(Data(canonical.replacingOccurrences(of: "\"requiresRemoval\":false", with: "\"requiresRemoval\":" + malformed).utf8)), "requiresRemoval strict Boolean \(malformed)")
+        }
+        check(rejected(Data(canonical.replacingOccurrences(of: "\"requiresRemoval\":false,", with: "").utf8)), "requiresRemoval cannot be omitted")
+        check(rejected(bytes(.init(state: .active, outcome: .activated, activationToken: UUID(), requiresRemoval: true)), .activate), "activated forbids removal flag")
+        check(rejected(bytes(.init(state: .off, outcome: .prepared, preparationPermit: permit)), .prepareForUpdateOrRemoval), "prepared requires removal flag")
+        check(rejected(bytes(.init(state: .off, preparationPermit: permit))), "final permit requires removal flag")
+        for outcome in [ServiceOutcome.rejected, .invalidRequest] {
+            let t = Transport(), s = Scheduler()
+            t.make = { let h = Channel(); h.handler = { _, done in done(.success(bytes(.init(state: .off, outcome: outcome, requiresRemoval: true)))) }; return h }
+            let client = AlwaysOnClient(transport: t, scheduler: s)
+            check(isUnknown(await client.status().state), "rejected removal metadata cannot assert safe state")
+        }
+        do {
+            let t = Transport(), s = Scheduler()
+            t.make = { let h = Channel(); h.handler = { r, done in
+                let stopping = r.operation == .deactivate
+                done(.success(bytes(.init(state: r.operation == .activate ? .active : .off,
+                    outcome: r.operation == .activate ? .activated : .observed,
+                    activationToken: r.operation == .activate ? UUID() : nil, requiresRemoval: stopping))))
+            }; return h }
+            let client = AlwaysOnClient(transport: t, scheduler: s)
+            _ = await client.activate()
+            check(await client.deactivate().state == .removalRequired, "owned stop propagates removal state")
+        }
+        do {
+            let t = Transport(), s = Scheduler(); var closed = false
+            t.make = { let h = Channel(); h.handler = { r, done in
+                if r.operation == .heartbeat { closed = true }
+                done(.success(bytes(.init(state: r.operation == .activate || r.operation == .heartbeat ? .active : .off,
+                    outcome: r.operation == .activate ? .activated : .observed,
+                    activationToken: r.operation == .activate ? UUID() : nil, requiresRemoval: closed))))
+            }; return h }
+            let client = AlwaysOnClient(transport: t, scheduler: s); _ = await client.activate(); s.advance(10)
+            let deadline = ProcessInfo.processInfo.systemUptime + 2
+            while !closed && ProcessInfo.processInfo.systemUptime < deadline { await Task.yield() }
+            let afterHeartbeat = await client.status()
+            check(closed && afterHeartbeat.state == .removalRequired, "heartbeat closed admission recovers to removal state")
+        }
+        var permitJSON = String(data: bytes(.init(state: .off, preparationPermit: permit, requiresRemoval: true)), encoding: .utf8)!
         check(rejected(Data(permitJSON.replacingOccurrences(of: permit.incarnation.uuidString, with: permit.incarnation.uuidString.lowercased()).utf8)), "canonical permit UUID")
         permitJSON = permitJSON.replacingOccurrences(of: "\"epoch\":9", with: "\"epoch\":9,\"extra\":1")
         check(rejected(Data(permitJSON.utf8)), "nested permit exact fields")
@@ -231,11 +271,11 @@ func isUnknown(_ state: ClientState) -> Bool { if case .unknown = state { return
             let t = Transport(), s = Scheduler(); var registeredCalls = 0, rounds = 0
             t.make = { let h = Channel(); var prepared = false
                 h.handler = { r, done in
-                    if r.operation == .prepareForUpdateOrRemoval { prepared = true; rounds += 1; done(.success(bytes(.init(state: .off, outcome: .prepared, preparationPermit: permit)))); return }
+                    if r.operation == .prepareForUpdateOrRemoval { prepared = true; rounds += 1; done(.success(bytes(.init(state: .off, outcome: .prepared, preparationPermit: permit, requiresRemoval: true)))); return }
                     if prepared {
                         if failure == "loss" { h.lose() }
                         let p = failure == "permit" ? PreparationPermit(incarnation: permit.incarnation, epoch: 10) : failure == "incarnation" ? PreparationPermit(incarnation: UUID(), epoch: 9) : permit
-                        done(.success(bytes(.init(state: .off, outcome: failure == "finalRejected" ? .rejected : .observed, preparationPermit: failure == "finalRejected" ? nil : p))))
+                        done(.success(bytes(.init(state: .off, outcome: failure == "finalRejected" ? .rejected : .observed, preparationPermit: failure == "finalRejected" ? nil : p, requiresRemoval: true))))
                     } else { done(.success(bytes(good))) }
                 }; return h
             }

@@ -140,6 +140,18 @@ private enum Failure: Error { case fixture }
         stale.client.event(.unknown("new loss")); let revision = stale.setup.observation.revision
         stale.proof.gate?.resume(); await probe.value
         check(stale.setup.observation.state == .unknown("new loss") && stale.setup.observation.revision == revision, "new client event defeats old proof")
+        let wake = Harness(); await wake.setup.startup(); wake.proof.holdPower = true
+        let wakeTask = Task { await wake.setup.refresh() }; await spin { wake.proof.gate != nil }
+        check(!wake.setup.observation.quitSafe, "wake revalidation never exposes old quiet proof")
+        wake.proof.gate?.resume(); await wakeTask.value
+        check(wake.setup.observation.quitSafe, "fresh completed wake proof permits quiet state")
+        let activeRefresh = Harness(); activeRefresh.service.values = [.enabled]; activeRefresh.client.state = .active
+        await activeRefresh.setup.startup(); activeRefresh.service.holdReadNumber = 2
+        let activeRefreshTask = Task { await activeRefresh.setup.refresh() }; await spin { activeRefresh.service.readGate != nil }
+        check(activeRefresh.setup.observation.state == .active && activeRefresh.setup.observation.remedy == .deactivate, "active warning and stop survive refresh")
+        await activeRefresh.setup.deactivate(); check(activeRefresh.client.stops == 1, "refresh permits stop")
+        activeRefresh.service.readGate?.resume(); await activeRefreshTask.value
+        check(activeRefresh.setup.observation.state == .off, "old refresh cannot erase completed stop")
         let reg = Harness(); reg.service.holdRegister = true
         let setup = Task { await reg.setup.setup() }; await spin { reg.service.registerGate != nil }
         check(reg.setup.observation.lifecyclePending && !reg.setup.observation.quitSafe, "pending register retains lane")
@@ -197,6 +209,7 @@ private enum Failure: Error { case fixture }
         check(activation.client.stops == 1, "activation admits queued stop to reviewed client")
         activation.client.activationGate?.resume(); await actTask.value
         check(activation.setup.observation.state == .off, "late activation cannot erase queued stop result")
+        await removalLoopback(check)
         await files()
         await bounded()
         print("AlwaysOnSetupChecks: \(count) assertions, \(failures) failures")

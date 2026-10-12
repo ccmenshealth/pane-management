@@ -47,13 +47,13 @@ public extension BoundaryPolicy {
         let r = try JSONDecoder().decode(ServiceReply.self, from: data)
         guard r.version == 1, try encode(r) == data else { throw BoundaryError.invalidMessage }
         if r.outcome == .activated {
-            guard operation == .activate, r.state == .active, r.activationToken != nil, r.preparationPermit == nil else { throw BoundaryError.invalidMessage }
+            guard operation == .activate, r.state == .active, r.activationToken != nil, r.preparationPermit == nil, !r.requiresRemoval else { throw BoundaryError.invalidMessage }
         } else if r.activationToken != nil { throw BoundaryError.invalidMessage }
         if r.outcome == .prepared {
-            guard operation == .prepareForUpdateOrRemoval, r.state == .off, r.preparationPermit != nil else { throw BoundaryError.invalidMessage }
+            guard operation == .prepareForUpdateOrRemoval, r.state == .off, r.preparationPermit != nil, r.requiresRemoval else { throw BoundaryError.invalidMessage }
         }
         if r.preparationPermit != nil {
-            guard r.state == .off, (r.outcome == .prepared || (r.outcome == .observed && operation == .status)) else { throw BoundaryError.invalidMessage }
+            guard r.state == .off, r.requiresRemoval, (r.outcome == .prepared || (r.outcome == .observed && operation == .status)) else { throw BoundaryError.invalidMessage }
         }
         return r
     }

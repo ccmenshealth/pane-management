@@ -756,13 +756,13 @@ or native GUI render belongs to this slice.
 
 - `AlwaysOnSetupChecks`: 104 assertions, zero failures. The exact final suite
   compiled against an inert coordinator and failed 50/104 assertions
-  (`/tmp/setup-inert-red.log`). Restored implementation passed all 104.
+  (`.build/b3b1-evidence/setup-inert-red.log`). Restored implementation passed all 104.
 - S-R1: releasing the lifecycle slot before post-registration status completed
   allowed competing removal/setup. The pre-fix overlay failed two assertions
-  (`/tmp/setup-regression-red.log`); retaining the slot through inspection and
+  (`.build/b3b1-evidence/setup-regression-red.log`); retaining the slot through inspection and
   republishing on settlement fixes both.
 - S-R2: an earlier signing error could erase a newer active client observation.
-  The focused pre-fix fixture failed one assertion (`/tmp/setup-signing-red.log`);
+  The focused pre-fix fixture failed one assertion (`.build/b3b1-evidence/setup-signing-red.log`);
   current inspection owns the result and retains Deactivate. An unverified
   configured state retains both retry-deactivation and setup-repair remedies.
 - Coverage includes all nine strict receipt combinations, missing/existing
@@ -812,3 +812,81 @@ Local final gates passed:
   debug/release compilation typechecks. Final builds emitted no warnings.
 - Product plus test/extracted source is about 640 lines; within the cohesive
   slice guideline. GitHub CI and pinned independent/lead review are next gates.
+
+
+### B3b1 candidate correction before final review
+
+- S-R3: waking/rechecking previously left an old quiet off/unavailable snapshot
+  visible until a fresh proof finished. A held-proof pre-fix fixture failed once
+  (`.build/b3b1-evidence/setup-wake-red.log`). Revalidation now immediately revokes that snapshot;
+  an active warning retains Deactivate, and a newer stop defeats old revalidation.
+  Expanded setup suite passes 111/0 debug/release; exact final inert overlay fails
+  56/111. Separate debug/release builds passed again for this delta.
+- First remote run `38294630489` failed the unchanged AlwaysOnChecks assertion
+  “still active readback cannot claim off.” One hundred unchanged local release
+  repetitions passed. CI's failure is real red evidence; its local cause was not
+  reproduced or proven. The fixture visibly used a fixed 30 Task.yield calls as
+  a completion assumption. All sibling fixture paths now wait for bounded actual
+  terminal state or held-continuation readiness, preserving existing assertions
+  and adding diagnostic timeouts. Debug/release both pass 34/0; the next remote
+  run must validate this test-only correction. No production controller change.
+
+
+### S-R4: removal-required admission survives reconnect
+
+A failed unregister leaves the daemon preparing/sealed while its engine can be
+verified off. The old reply omitted that admission distinction; status, retry and
+a fresh client misleadingly returned usable off. Added required canonical Boolean
+`requiresRemoval` to the paired pre-release v1 schema. Missing/wrong-type values
+fail decoding; prepared/permit replies require true and activated replies forbid
+it. Rejected replies cannot establish safe off. The service derives the flag
+from actual admission state on every reply, never from caller metadata.
+
+Client status, retry, owned stop, heartbeat recovery and reconnect propagate
+verified flagged off to `removalRequired`; activation refuses before sending.
+Final removal deliberately uses verifiedOff plus the flag/permit, not usableOff.
+Setup exposes quiet/quit-safe `removalRequired` only when settled, with a fixed
+Finish helper removal remedy for future Settings wiring. Uncertain/pending
+operations still require the warning. A fresh daemon incarnation may reopen
+following startup recovery; there is no new persistent marker or privileged IO.
+
+- Real in-process ServiceCoordinator → canonical codec → AlwaysOnClient →
+  SetupCoordinator loop reproduced five pre-fix failures after failed unregister.
+  It now covers same/new client rediscovery, retry, activation refusal, quiet
+  finish-removal, valid final permit/unregister and new-daemon reopening.
+- Expanded exact pre-fix behavioral overlay compiled: ServiceChecks 355/7 failures,
+  ClientChecks 166/5, SetupChecks 122/5. Logs are
+  `.build/b3b1-evidence/setup-sr4-red-AlwaysOn{Service,Client,Setup}Checks.log`.
+- Final inert setup overlay compiled with 122 assertions/59 failures. Corrected
+  setup: 122/0; service: 355/0; client: 166/0. Prior evidence counts above describe
+  earlier candidate stages, not final coverage.
+- Sibling audit includes every client off publication, both off predicates,
+  service status/retry/prepare/final read/disconnect, prepared/activated/permit
+  codec combinations and rejected metadata. Updated synthetic permit fixtures
+  now mirror the real daemon's flag; real loopback guards against drift.
+- Final source/test additions are 828 lines versus reviewed base, including the
+  78-line loopback; the modest 28-line overage preserves one cohesive recoverability
+  correction. Fresh independent code/manual-security plus lead review and CI
+  remain required for the new pin. No install, helper/power mutation or UI render.
+
+- Initial expanded local matrix encountered a stale incremental DaemonChecks
+  object referencing the old ServiceReply initializer after the schema changed.
+  The captured linker failure is `.build/b3b1-evidence/setup-incremental-link-failure.log`.
+  A worktree-local `swift package clean` removed compiler outputs only; all red
+  evidence under `.build/b3b1-evidence/setup-*.log` was preserved. The full clean matrix is the
+  required final gate; no compatibility shim or source workaround was added.
+
+- Durable local handoff evidence is retained in ignored `.build/b3b1-evidence/`:
+  red/green summaries, actual compiler/assertion logs, the inert source, the three
+  pre-removal behavior sources and `reproduce.py` overlay recipe. This directory
+  is not a tracked artifact and must be preserved when cleaning compiler outputs.
+
+
+Final clean local gates after S-R3/S-R4 and the fixture correction passed:
+SnapCoreChecks60/0, AlwaysOnChecks34/0, Engine176/0, Native114/0,
+Service355/0, Daemon118/0, Client166/0, Setup122/0. Separate clean debug and
+release builds passed, followed by release UI/Native/Service/Daemon/Client/Setup
+suites with those same counts. Shell/plist/diff lint passed; no final compiler
+warnings. Exact commands remain the named S9 matrix. Evidence summaries and logs
+are in `.build/b3b1-evidence/final-green-summary.txt` and sibling files. Remote CI
+and pinned independent/lead/security review remain open at this builder handoff.

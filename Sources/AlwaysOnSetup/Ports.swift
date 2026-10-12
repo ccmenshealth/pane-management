@@ -40,12 +40,12 @@ public enum SetupServiceStatus: Sendable { case notRegistered, enabled, requires
         await client.remove(unregister: unregister)
     }
 }
-public enum SetupState: Equatable, Sendable { case unavailable(String), off, active, setupRequired(String), unknown(String) }
-public enum SetupRemedy: Equatable, Sendable { case setUp, activate, deactivate, openLoginItems, checkAgain, retryDeactivationAndRepair, retryRemoval, wait }
+public enum SetupState: Equatable, Sendable { case unavailable(String), off, active, removalRequired, setupRequired(String), unknown(String) }
+public enum SetupRemedy: Equatable, Sendable { case setUp, activate, deactivate, finishRemoval, openLoginItems, checkAgain, retryDeactivationAndRepair, retryRemoval, wait }
 public struct SetupObservation: Equatable, Sendable {
     public let revision: UInt64
     public let state: SetupState
     public let remedy: SetupRemedy
     public let lifecyclePending: Bool
-    public var quitSafe: Bool { if lifecyclePending { return false }; switch state { case .off, .unavailable: return true; default: return false } }
+    public var quitSafe: Bool { if lifecyclePending { return false }; switch state { case .off, .unavailable, .removalRequired: return true; default: return false } }
 }

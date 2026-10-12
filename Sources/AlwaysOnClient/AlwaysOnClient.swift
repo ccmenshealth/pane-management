@@ -80,7 +80,11 @@ import AlwaysOnIPC
             guard scheduler.now < deadline else { throw ClientFailure.timeout }
         }
     }
-    private func off(_ reply: ServiceReply) -> Bool { reply.state == .off && reply.outcome == .observed }
+    private func verifiedOff(_ reply: ServiceReply) -> Bool { reply.state == .off && reply.outcome == .observed }
+    private func usableOff(_ reply: ServiceReply) -> Bool { verifiedOff(reply) && !reply.requiresRemoval }
+    private func publishOff(_ reply: ServiceReply) -> ClientObservation {
+        publish(reply.requiresRemoval ? .removalRequired : .off)
+    }
     /// One fresh connection and one restore per recovery attempt. A user retry
     /// starts another attempt; no recursive retry or mutation replay occurs.
     private func recover() async -> ClientObservation {
@@ -90,8 +94,8 @@ import AlwaysOnIPC
         do {
             _ = try await ready()
             let result = try await rpc(.retryRestore)
-            guard off(result) else { throw ClientFailure.invalidReply }
-            return publish(.off)
+            guard verifiedOff(result) else { throw ClientFailure.invalidReply }
+            return publishOff(result)
         } catch {
             discard(); return publish(.unknown("Normal sleep is not verified. Retry deactivation or repair helper setup."))
         }
@@ -100,8 +104,8 @@ import AlwaysOnIPC
         await enter(); defer { leave() }
         do {
             let reply = try await ready()
-            if off(reply) { token = nil; renewal?.cancel(); return publish(.off) }
-            if reply.state == .active, reply.outcome == .observed, token != nil { return publish(.active) }
+            if verifiedOff(reply) { token = nil; renewal?.cancel(); return publishOff(reply) }
+            if reply.state == .active, reply.outcome == .observed, !reply.requiresRemoval, token != nil { return publish(.active) }
             return await recover() // Never adopt another connection's global active state.
         } catch { return await recover() }
     }
@@ -112,7 +116,8 @@ import AlwaysOnIPC
         stopRequested = false
         do {
             let before = try await ready()
-            guard off(before), !stopRequested else { return await recover() }
+            if verifiedOff(before), before.requiresRemoval { return publishOff(before) }
+            guard usableOff(before), !stopRequested else { return await recover() }
             let result = try await rpc(.activate)
             guard result.state == .active, result.outcome == .activated, let fresh = result.activationToken else { return await recover() }
             token = fresh
@@ -131,8 +136,8 @@ import AlwaysOnIPC
         do {
             let result = try await rpc(.deactivate, token: token)
             self.token = nil
-            guard off(result) else { return await recover() }
-            return publish(.off)
+            guard verifiedOff(result) else { return await recover() }
+            return publishOff(result)
         } catch { return await recover() }
     }
     private func armRenewal() {
@@ -143,7 +148,7 @@ import AlwaysOnIPC
                 guard self.generation == id, let token = self.token, !self.stopRequested else { return }
                 do {
                     let reply = try await self.rpc(.heartbeat, token: token)
-                    guard reply.outcome == .observed, reply.state == .active else { throw ClientFailure.invalidReply }
+                    guard reply.outcome == .observed, reply.state == .active, !reply.requiresRemoval else { throw ClientFailure.invalidReply }
                     self.armRenewal(); _ = self.publish(.active)
                 } catch { _ = await self.recover() }
             }
@@ -159,10 +164,10 @@ import AlwaysOnIPC
         do {
             _ = try await ready()
             let prepared = try await rpc(.prepareForUpdateOrRemoval)
-            guard prepared.state == .off, prepared.outcome == .prepared, let permit = prepared.preparationPermit else { throw ClientFailure.removal }
+            guard prepared.state == .off, prepared.outcome == .prepared, prepared.requiresRemoval, let permit = prepared.preparationPermit else { throw ClientFailure.removal }
             let id = generation
             let final = try await rpc(.status)
-            guard off(final), final.preparationPermit == permit, generation == id, channel?.isOpen == true else { throw ClientFailure.removal }
+            guard verifiedOff(final), final.requiresRemoval, final.preparationPermit == permit, generation == id, channel?.isOpen == true else { throw ClientFailure.removal }
             removing = true
             _ = publish(.unknown("Removing helper. Wait for completion before changing setup."))
             try await unregisterBounded(unregister, generation: id)
