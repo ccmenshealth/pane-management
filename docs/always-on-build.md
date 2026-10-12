@@ -643,6 +643,43 @@ No installed application or service changes occur in either build slice.
   registration/arming. Prefer a cohesive ~800-line slice; modest extraction/test
   overage must be reported, not hidden. Signing/native acceptance remain open.
 
+##### S-R4 — preserve the removal exit across reconnect (locked 2026-10-12)
+
+Lead and read-only architecture review confirmed that a failed unregister leaves
+daemon admission preparing/sealed while the engine reports off. The old wire
+lost that distinction, so a new client or wake refresh offered Activate, which
+could never succeed until removal completed. An app-only latch would lose the
+exit on restart and is rejected.
+
+- Add required canonical Boolean `requiresRemoval` to the pre-release v1 reply.
+  Coordinator derives it from preparing/sealed admission on replies. It is status
+  metadata, not authority. Rejected/invalid replies never establish safe off.
+  Prepared replies and every permit require true; activated replies forbid it.
+  Decoder must reject a missing/malformed/contradictory field. This paired
+  pre-release app/helper schema change ships together; no installed helper exists.
+- Distinguish verifiedOff (off + observed) from usableOff (verifiedOff and false
+  requiresRemoval). Final removal check needs verifiedOff plus true flag and the
+  same permit; do not break the valid sealed confirmation path by reusing a
+  usableOff predicate there. Prepare remains available in this state.
+- Add explicit ClientState/SetupState removalRequired. All positive off paths
+  (status, recovery, deactivation, reconnect/new client) propagate the flag into
+  that state. Activation refuses locally before sending when readiness requires
+  removal; it must not loop activate/recover/off. No token adoption or auto-rearm.
+- A settled authenticated removalRequired state means normal sleep verified off
+  but activation unavailable. It is quiet and quit-safe when no operation is
+  pending; Settings offers Finish helper removal. It never exposes Activate.
+  Non-off/ambiguous results keep recovery warnings. Actual pending removal stays
+  quit-unsafe and excludes lifecycle competition. Completing removal resets this
+  state only through the already reviewed callback-based flow.
+- A new app/connection against the same daemon rediscovers the state. A new daemon
+  incarnation may reopen after startup recovery, as already locked; no durable
+  marker or new privileged cleanup is added. Audit status/retry/prepare/final read/
+  disconnect and every client off publication sibling. Reproduce the original
+  failure with a compiling pre-fix overlay; add coordinator, codec, client and
+  setup fixtures including an in-process real-coordinator/client loop where
+  practical. Run affected suites, full regression gates and one delta independent
+  code/manual-security review before repinning acceptance.
+
 #### B3 fresh setup state
 
 An optional never-configured launch may report unavailable without an alarm only
