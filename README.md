@@ -193,3 +193,10 @@ AlwaysOnNativeChecks` for disposable filesystem and harmless process tests.
 The suite never writes power settings or creates production journal storage.
 Authentication, app integration, installation and the separate arming drill
 remain pending.
+
+
+The B3a client remains isolated from application setup/UI. Run
+`swift run --disable-sandbox --cache-path .build/cache AlwaysOnClientChecks`
+for injected transport, reply-validation and recovery/lifecycle checks. It does
+not register or run a helper. Native connection setup fails closed without the
+matching Apple-issued app identity; positive signed acceptance remains pending.

@@ -1,5 +1,22 @@
 # Pane Management — Current State
 
+## Bookmark — B3a client candidate (2026-10-12)
+
+- Isolated `codex/always-on-client` extracts shared IPC/signing and adds an
+  authenticated, serialized app client; app/setup wiring remains B3b. No helper
+  was run, registered or removed and installed build 5 remains PID 96007.
+- Client checks: 155/0. Initial compiling scaffold 6/6 failures; exact final
+  inert observation/decoder overlay 155/73 failures. Targeted pre-fix overlay
+  reproduced five failures for readiness budget, pending unregister settlement
+  and queued activation losing a later stop. Corrected behavior is documented
+  in `VERIFICATION.md`; bounded reporting never claims unregister settlement.
+- Current inherited model used; exact metadata unavailable. Local regression
+  suites, separate debug/release compilation, release client checks and lint passed.
+  CI and fresh independent/security plus lead review remain required. No CodeRabbit by repo restriction.
+- `ClientObservation.removalPending` stays true until the actual OS unregister
+  completion. B3b must block registration while true and marshal OS callbacks
+  to MainActor. Missing signing still blocks positive signed/native acceptance.
+
 ## Bookmark — B3a client planning (2026-10-12)
 
 - Isolated `codex/always-on-client` starts from daemon PR #7 head

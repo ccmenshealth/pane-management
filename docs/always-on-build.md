@@ -546,7 +546,10 @@ not these implementations. Current inherited model overrides old skill pins.
   permit, then immediate same-connection status with the identical permit and
   strict off. Before calling an injected unregister closure, synchronously check
   that connection generation/fence is still valid. Failure aborts unregister and
-  leaves recovery/reprepare available. Never reuse permits across attempts or
+  leaves recovery/reprepare available. A five-second unregister reporting deadline
+  does not prove settlement: retain the lifecycle lane until actual OS completion,
+  publish removalPending, and block B3b registration too. Marshal its callback to
+  MainActor; reconcile late success/error. Never reuse permits across attempts or
   reconnection. Actual SMAppService call and UI belong to B3b. No pgrep inference.
 - K8: AlwaysOnClientChecks covers strict wire shapes, negative native signing,
   readiness success/timeout, exactly-once and delayed callback deadlines, both

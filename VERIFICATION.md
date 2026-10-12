@@ -1,5 +1,62 @@
 ## Native daemon boundary candidate (2026-10-12)
 
+## B3a authenticated client candidate — 2026-10-12
+
+New `AlwaysOnIPC` owns only fixed wire types, canonical codecs, signing and XPC
+protocol. Daemon audit/telemetry/listener/native power ports remain separate;
+existing daemon/service callers retain source compatibility via re-exports.
+`AlwaysOnClient` uses an injected transport and monotonic scheduler. Its native
+adapter validates the calling binary before constructing a privileged NSXPC
+connection, then installs the reciprocal requirement before activation.
+
+Behavioral evidence (unprivileged injected fixtures): initial compiling scaffold
+6 assertions / 6 failures; final suite 155 / 0; exact final inert observation and
+unchecked-decoder overlay 155 / 73 failures. A targeted compiling pre-fix overlay
+produced five failures for the total readiness deadline, timed-out unregister
+retaining its lifecycle slot, queued mutation exclusion, late unregister success,
+and a queued activation erasing a later stop. Logs retained locally under
+`.build/b3a-evidence/{initial-red,final-inert-red,targeted-red,final-green}.log`.
+The inert overlay leaves the transport harness alive so final race tests settle;
+it suppresses authoritative observations and reply validation, not compilation.
+
+The fixture covers canonical size/shape/UUID/permit checks, operation authority,
+rejected cached off, actual negative self-signing, status-only readiness, deadline
+callbacks before timer delivery, duplicate/stale completion, orphan restoration,
+late activation stop, token heartbeat, both injected loss routes from off/active,
+malformed status/activation/heartbeat/deactivation, bounded recovery failure/retry,
+and permit mismatch/incarnation/rejection/loss/unregister failure/fresh reprepare.
+Both native loss handlers share a synchronous lock fence in source; positive
+signed IPC and real native callback delivery remain unverified without identity.
+
+| State | B3b operator action / covered recovery |
+| --- | --- |
+| Initial unknown / configured helper unavailable | Retry deactivation or repair setup; one bounded reconnect attempt |
+| Confirmed off | Explicit activation or setup/removal; loss immediately becomes unknown |
+| Activation pending | Deactivate latches before and during queued work; late success restores |
+| Active | Deactivate; heartbeat/loss/non-active reply drops memory authority and restores |
+| Restore failed | Persistent unknown; a human retry starts a fresh bounded attempt |
+| Removal preparing / final recheck fails | Retry removal; no unregister without the same live permit |
+| OS unregister pending beyond five seconds | Show pending and block setup/mutations; retain lane until actual completion |
+| OS unregister completes | Late success reconciles off; error permits fresh prepare/retry |
+
+A stuck OS unregister cannot be safely cancelled or treated as complete. The
+five-second timer reports uncertainty, but the in-process lifecycle slot stays
+occupied; B3b must preserve this guard for registration too. Its completion must
+be marshalled onto MainActor. Expected connection loss during unregister does not
+replace the operation's actual completion result. No persistent session tokens,
+caller-selected commands/identity/timeouts, logs of tokens or privileged fallback.
+
+All prior checks passed: SnapCore 60, controller 34, engine 176, native IO 114,
+coordinator 347, daemon 118. Separate debug/release builds, release client 155/0,
+and script/plist/diff lint passed; Swift compilation is the typecheck gate (no
+standalone Swift linter). New client checks added to CI. No UI change or native
+render claim. Security review applies to authentication/tokens/IPC; the literal
+tool is unavailable, so a fresh read-only manual review remains required.
+CodeRabbit is prohibited. Installed build 5, app path and privacy grants remain
+unchanged; no root helper, journal, power mutation, registration or unregister was
+executed. Actual signed/installed/physical acceptance remains blocked/pending.
+
+
 B2b2 adds `PaneAlwaysOn`, the fixed SMAppService daemon plist, reciprocal signing
 requirement support and server enforcement, kernel UID/audit-session policy,
 bounded six-operation ingress, native cached telemetry, and nested helper signing.

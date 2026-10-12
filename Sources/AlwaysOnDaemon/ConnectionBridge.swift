@@ -2,9 +2,8 @@ import Foundation
 import AlwaysOnCore
 import AlwaysOnService
 
-@objc public protocol AlwaysOnXPC {
-    func request(_ payload: Data, reply: @escaping (Data) -> Void)
-}
+import AlwaysOnIPC
+
 /// Thread-safe ingress bound, also closes the race before MainActor admission.
 public final class ConnectionFence: @unchecked Sendable {
     private let lock = NSLock()
