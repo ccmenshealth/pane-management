@@ -1,7 +1,34 @@
-## Lid-close display check — 2026-10-13
-
-
 ## Startup helper delay reconciliation — build evidence (2026-10-13)
+
+### Review follow-up — queued retry fence
+
+Independent code/manual security review of `4880b8c` requested changes for one P2:
+`SetupCoordinator.swift:63–66` queued an untracked generic refresh after clearing
+its timer. Manual recovery/activation/setup/removal could finish before that Task
+ran; the obsolete Task could then enter ordinary status (including its existing
+mutating recovery path) and replace the settled observation.
+
+Runtime fix `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce` captures the startup epoch and
+checks both epoch and unresolved startup at timer callback and queued Task entry.
+The first guard also prevents a stale callback from clearing a newer timer.
+No dispatcher abstraction or other product path changed.
+
+Deterministic regression fires the fake timer synchronously without draining the
+actor, completes each manual operation on its valid immediate-completion path,
+then drains the queued Task. On untouched `4880b8c` production, it compiled and
+reported **237 assertions, 8 runtime failures** (ordinary status replay and state
+overwrite for all four manual paths). Fixed debug/release setup suites each pass
+**237/0**. It also proves an intervening fresh probe's newer timer survives and
+runs once. No sleeps or production scheduling hooks are used.
+
+Separate debug/release builds, shell syntax, six plist files and whitespace lint
+passed after the fix. Unchanged suites retain the earlier all-nine/both-config
+results below; the affected setup suite was rerun in both configurations. Race red,
+green and build logs are preserved as `.build/startup-recovery-evidence/pane-queued-retry-*.log`;
+initial pre-fix evidence is preserved separately. Initial CI38439449506 passed;
+updated CI and independent/lead delta review are pending. No staging or installation.
+
+### Initial implementation evidence
 
 Lead observed app attempts ending 10:04:38.503 Pacific after a 10:03:24 reboot,
 helper listener beginning 10:05:48.916, and no fresh client request until manual
@@ -60,9 +87,11 @@ client 181, setup 218, signing 114, all zero failures. `bash -n scripts/*.sh`
 passed. Logs are retained locally in ignored `.build/startup-recovery-evidence`.
 Warning UI source is unchanged;
 existing 84 UI assertions run in both configurations. No new native render, reboot,
-installation or production power drill is claimed by this builder. Independent
-code/manual security review and lead review are pending; literal security-review
-is unavailable and CodeRabbit is excluded by Steve. Installed build is unchanged.
+installation or production power drill is claimed by this builder. Current review
+status is in the follow-up ledger above; literal security-review is unavailable
+and CodeRabbit is excluded by Steve. Installed build is unchanged.
+
+## Lid-close display check — 2026-10-13
 
 Steve explicitly approved a brief Always On test on a hard surface, ending OFF.
 The read-only sampler was running before activation and before requesting closure.

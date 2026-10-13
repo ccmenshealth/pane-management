@@ -25,6 +25,14 @@ connection attempts ended at 10:04:38.503; helper listener started at 10:05:48.9
 No fresh client request arrived until manual Retry at 10:11:30.834 succeeded.
 The helper initialization delay's underlying cause is not established.
 
+Startup review ledger: independent code/manual security review at `4880b8c`
+REQUEST CHANGES, SR1/P2 (`SetupCoordinator.swift:63–66`): fired timer's queued Task
+could enter ordinary refresh after manual supersession. Owner: startup builder.
+Fix runtime `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce`: captured-epoch/unresolved checks
+at callback and Task entry. Compiled deterministic pre-fix 237/8; fixed debug/release
+237/0. Delta review pending. Lead documentation nit (orphan lid-evidence heading)
+also corrected. Current model/effort inherited; exact labels unavailable.
+
 ## Decisions locked October 12, 2026
 
 The user explicitly instructed "Let's build it anyway" after the documented

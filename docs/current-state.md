@@ -14,8 +14,12 @@ Builder inherited the current model/effort; exact runtime labels unavailable.
 Final regression overlay on untouched `0687316` production compiled: 218 assertions,
 11 failures. Fixed setup suite: 218/0. Separate debug/release builds, all nine
 suites in both configurations and lint passed; exact evidence is at top VERIFICATION.md.
-Independent code/manual security and lead review, CI, separate signed staging and
-Steve's explicit installation approval remain pending. CodeRabbit remains excluded.
+[PR21](https://github.com/ccmenshealth/pane-management/pull/21) initial head `4880b8c`
+passed CI38439449506. Independent code/manual security review requested one P2
+queued-retry fence. Runtime fix `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce` reproduces
+237/8 on pre-fix runtime and passes 237/0 in debug/release, with both separate
+builds and lint green. Independent/lead delta review, updated CI, separate signed
+staging and Steve's installation approval remain pending. CodeRabbit stays excluded.
 No installed bundle, app/helper lifecycle, permissions or live power state changed.
 Installed source remains `9f133fe` at the stable primary `dist/Pane Management.app`.
 
