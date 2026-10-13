@@ -1,6 +1,6 @@
 # Pane Management — Current State
 
-## Bookmark — console-session recovery fix awaiting review (2026-10-13)
+## Bookmark — console-session recovery fix reviewed; installation pending (2026-10-13)
 
 Isolated branch `codex/console-session-recovery` fixes a stuck recovery warning:
 a valid current console session reported audit flags `0x2030`, but N3 demanded
@@ -14,10 +14,16 @@ Builder inherited the current model/effort (exact runtime label unavailable).
 Compiled pre-fix production with the new regressions: 266 assertions, 37 failures;
 fixed debug/release daemon suites: 266/0. All nine suites passed in both
 configurations, with separate debug/release builds, metadata lint and synthetic
-staging checks. Remote checks and independent code/manual security review pending.
-No live power write, install, registration or permission change by this builder.
-Next: finish release/CI, obtain independent and lead review; only then stage a
-signed candidate on lead request. Installation needs Steve's explicit approval.
+staging checks. [PR18](https://github.com/ccmenshealth/pane-management/pull/18)
+runtime head `509687c16a6c2cd57363dff2253928f53b2275f3` passed independent code/manual
+security review and lead review with no findings. CI38401709446 passed in 1m32s.
+Reviewer inherited current model/effort; exact runtime metadata unavailable.
+
+This closure changes Markdown only; final-head CI and lead delta review remain.
+Lead authorized separate local signed staging after these review gates. Next:
+stage the candidate, record its manifest in the PR handoff, then obtain Steve's
+explicit installation approval and verify installed recovery. No install,
+registration, permission or live power change is part of staging.
 
 
 ## Bookmark — release merged and installed; Always On OFF (2026-10-12)

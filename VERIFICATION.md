@@ -31,15 +31,28 @@ Separate debug and release builds passed. All nine suites passed in both configu
 Setup 178; zero failures. Diff/shell/Python/plist lint passed. Synthetic staging
 suites passed: Developer ID 17, probe 11, local production 13. After strengthening the invalid-ID controls, the exact final test overlay
 again failed 266/37 on base production; both builds and daemon suites were rerun.
-Remote checks pending. No UI change: new browser/native visual rendering is not applicable;
+[CI38401709446](https://github.com/ccmenshealth/pane-management/actions/runs/38401709446/job/115310709103)
+passed in 1m32s on runtime head `509687c16a6c2cd57363dff2253928f53b2275f3`. No UI change: new browser/native visual rendering is not applicable;
 installed recovery acceptance requires a separately approved update.
 
 Sibling audit: native session collection has one production `auditValid` caller;
 all six service operations share admission and revalidation. No alternate auth-bit
-predicate was found in production. Independent code/manual security review and
-lead review are pending. Literal security-review tool is unavailable; CodeRabbit
-remains unavailable under the user's repository exclusion. No signing, installation,
-registration, launch, permission or live power change in this build.
+predicate was found in production. Independent reviewer
+`/root/console_session_recovery_reviewer` passed code/manual security review of
+`509687c16a6c2cd57363dff2253928f53b2275f3` with no findings; lead review passed the
+same head, including all six operations, ownership and removal. Lead verified the
+reviewed worktree clean. Reviewer inherited current model/effort; exact runtime
+metadata unavailable. The preserved identity policy proves an existing GUI audit
+session matching the current console UID; it does not independently prove the
+foreground ASID or an unlocked screen. No new stronger guarantee is claimed.
+
+Literal security-review tool is unavailable; independent manual security review
+is the fallback. CodeRabbit remains unavailable under the user's repository
+exclusion. This closure is Markdown only; final CI and lead delta review remain.
+Lead authorized staging with the existing dedicated local certificate after the
+review passes. Staging is a separate artifact, not installation: installed native
+recovery remains pending Steve's explicit update approval. No registration, launch,
+permission or live power change is included.
 
 ## Observed merge and release closeout — 2026-10-12
 

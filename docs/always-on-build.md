@@ -421,6 +421,16 @@ flag can use the existing Retry deactivation action to verify normal sleep. Fail
 power restoration still stays recovery-required until a successful retry. Existing
 invalid/stale identity safeguards must continue to restore an owned override.
 
+Incident review ledger: PR18 runtime head `509687c16a6c2cd57363dff2253928f53b2275f3`
+passed independent code/manual security review by
+`/root/console_session_recovery_reviewer` and lead review, with no findings.
+Reviewer inherited the current model/effort (exact runtime metadata unavailable);
+lead verified worktree clean. CI38401709446 passed in 1m32s. Preserved identity
+scope is existing GUI audit session + current console UID, not an independent
+foreground-ASID/unlocked-screen assertion. Markdown closure needs lead delta review
+and final CI; separate signed staging is authorized, installed acceptance is pending
+Steve's explicit update approval. No runtime change follows the reviewed head.
+
 #### N1–N8 implementation lock
 
 - N1: B2b2 on `codex/always-on-daemon` adds the supported native boundary only
