@@ -1,3 +1,34 @@
+## Observed merge and release closeout — 2026-10-12
+
+- [PR16](https://github.com/ccmenshealth/pane-management/pull/16) squash-merged at
+  2026-10-13T04:59:43Z (October12 21:59:43 Pacific) as
+  `db8fbbb1b64f0d3324ce168d3bf009a59a4073fb`.
+- Merged tree `4d13f57fc26ee315a21516bdb7ff6795f157dd66` exactly equals reviewed
+  head `7138ee92897cf7f39934759d45b7ae23470ecca3`; lead tree diff exited0.
+  [Post-merge main CI38349154813/job115137348864](https://github.com/ccmenshealth/pane-management/actions/runs/38349154813/job/115137348864)
+  passed in1m48s on the exact merged commit.
+- Lead closed PRs2–15 as superseded after green main CI, without deleting branches
+  or posting comments. Open-PR list was empty before this separate documentation
+  closeout PR. Per-slice review history remains preserved.
+- Primary main fast-forwarded clean; no installed bundle replacement. Installed
+  signed source remains `ddba40d66222b360d52124a09bffe87d5bd11629`, final setup
+  runtime/review `762ed6600c4495d1352ebfd5be480119426ddbeb`. Executable hashes remain
+  app `403ccdf93075829887f16c93bd7704b21efcd09e7d9a5debe3159980f509e7e3` and
+  helper `80ff1843e22f59571f6cc6bfe57d6cdf63fca546d7ee7647fe19f1e9ae0a9d6f`.
+- Lead's final CLI readbacks: pmset SleepDisabled0, IOPMrootDomain SleepDisabledNo,
+  AppleClamshellStateNo. Requested acceptance passed as detailed below, explicitly
+  distinguishing human reports from CUA/CLI and the lid-sampler handoff gap.
+- Helper-crash/reboot, physical critical thermal/battery stress, prolonged backpack
+  use and VoiceOver remain unproven. No extrapolation to legacy snapping behavior
+  or guarantee of emergency sleep/temperature protection. All old worktrees,
+  signed candidates and rollback backups are retained.
+
+This fresh-main closeout changes only this record and the current bookmark. No
+runtime/test/build/signing/install/native/merge action by its builder. Diff lint
+and remote CI are its checks; new fail-first/security review is not applicable to
+this evidence-only delta. CodeRabbit remains prohibited. This record does not
+claim the separate documentation closeout PR itself has already merged.
+
 ## Final requested visual acceptance PASS; final OFF verified — 2026-10-12
 
 Steve answered **“all works”** to the requested check: activate through the Dock

@@ -1,6 +1,26 @@
 # Pane Management — Current State
 
-## Bookmark — requested acceptance passed; OFF; merge pending (2026-10-12)
+## Bookmark — release merged and installed; Always On OFF (2026-10-12)
+
+[PR16](https://github.com/ccmenshealth/pane-management/pull/16) squash-merged to
+main as db8fbbb1b64f0d3324ce168d3bf009a59a4073fb at 21:59:43 Pacific. Its tree
+exactly equals reviewed head7138ee92897cf7f39934759d45b7ae23470ecca3. Main
+[CI38349154813](https://github.com/ccmenshealth/pane-management/actions/runs/38349154813)
+passed. Lead closed PRs2–15 as superseded, preserving branches/review history.
+Primary main fast-forwarded clean; installed app was not rebuilt or replaced.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629 and final setup
+review/runtime762ed660 remain unchanged; exact hashes/evidence in VERIFICATION.
+Lead's final readbacks confirmed dual OFF and lid open. Requested native/manual
+and user-reported Always On/Dock/warning acceptance passed. Helper-crash/reboot,
+physical critical-event stress, prolonged backpack use and VoiceOver remain
+unproven; no legacy snapping or emergency-protection guarantee is inferred.
+
+Feature release is complete; this separate fresh-main PR only records closeout.
+All prior worktrees, signed artifacts and rollback backups are preserved. No
+runtime, signing, installation or native action is part of this docs-only change.
+
+## Historical bookmark — requested acceptance passed before merge (2026-10-12)
 
 Steve reported “all works” for Dock activation, warning above Pane Settings/across
 desktops/fullscreen, and menu-bar deactivation. This is USER-REPORTED acceptance,
