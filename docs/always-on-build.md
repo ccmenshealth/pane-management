@@ -1162,3 +1162,52 @@ command failures offer retry after correcting the named operation; publication
 conflict preserves the existing candidate and retry selects a new UUID; handled
 failures remove owned partial output; forced termination can leave unpublished
 .partial directories but no installed state. Tests exercise each exit and retry.
+### Warning stripes — locked W1–W5 (2026-10-12)
+
+- W1: Faint black/yellow diagonal stripes at approximately 10% opacity behind the
+  warning box; opaque text/control backing keeps content readable. The red triangle
+  remains the focal point.
+- W2: Native code shapes in the shared warning view, decorative/accessibility-hidden
+  and non-hit-testing. Preserve dimensions, window behavior, actions and all states.
+- W3: Cosmetic slice only, from stacked base `bed5681`; no signing, power, helper,
+  installation, permission or enrollment changes. Local signing remains a separate
+  follow-up, unproven on this Mac.
+- W4: Existing UI regressions and native preview before/after active, pending and
+  retry/long-copy states; small layout if feasible. No tests that merely mirror
+  visual implementation. No new state; all existing recovery exits stay unchanged.
+- W5: Separate debug/release compilation, AlwaysOnChecks, shell syntax, diff lint,
+  preview packaging, independent and lead review plus CI. No merge/install/arming.
+  CodeRabbit prohibited; auth/storage/security behavior unchanged. Sibling audit:
+  one shared warning renders every state; menu, Dock and Settings actions untouched.
+
+- W6 (user update): Warning height follows native content fitting size rather than
+  fixed body/window heights. Remove normal nested/outer scrolling; fit full heading,
+  explanation, buttons and preview label. Recompute on every presentation change,
+  including action/secondary text. Keep centered and clamp to screen usable bounds
+  with margins; exceptionally oversized content uses hidden-indicator scrolling to
+  keep actions reachable. No fixed per-state heights or controller behavior change.
+  Lead verifies normal native fixtures; small-screen fallback remains unproven if
+  unavailable without changing the fixture API. No new visual-mirroring test.
+
+#### W-R1 native sizing regression
+
+Lead native rendering at `5db1aba` failed: blank warning at 520×3483 logical points.
+Offscreen native reproduction measured 329pt content, assigned 520×329, then
+AppKit's hosting constraints expanded the panel to 3483pt after run-loop settlement.
+A narrow offscreen layout SPI shares production layout with existing checks; no
+window is ordered front. Before the fix, 84 assertions yield four failures:
+active bounds/content fit/centering and recovery bounds (8064pt actual height).
+Fix the hosting view's automatic size constraints while keeping explicit native
+content measurement. Lead must repeat native rendering after the fix.
+
+W-R1 product fix `692192f`: debug/release 84/84 pass. Lead CUA final preview SHA
+`dad1ffd86cec4043e0974fd80db157d690a37531bd19abda62ba4cc675e197fe` passed:
+active/activation/restoring 1040×658 physical pixels; recovery 1040×738, full
+text/buttons, no scrollbar. Escape does not dismiss; Deactivate, Retry and
+Settings navigation work. Offscreen small-frame geometry is checked, physical
+small-screen/Spaces/global stacking and live power remain unverified. Fresh
+independent read-only delta and lead reviews clear at final `2e4e861`; worktree
+clean before/after, no actionable findings. CI `38304407317` passed. Inherited
+current model, exact metadata unavailable; security review N/A presentation-only,
+CodeRabbit prohibited. Preview quit normally; no merge or arming. Later closure
+changes are Markdown only, checked under the repository bookkeeping exception.

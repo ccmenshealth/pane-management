@@ -218,6 +218,103 @@ No Team ID, Apple anchor, certificate-name trust or ad-hoc fallback is used.
   lifecycle call, root journal or power write. Synthetic checks establish policy
   ordering, not native local certificate/service acceptance. Existing build 5 and
   paid staging script are untouched; local packaging/probe is a separate slice.
+## W-R1 native sizing correction — 2026-10-12
+
+Native QA rejected `5db1aba`: the warning rendered blank at 520×3483 logical
+points despite measuring 329pt of content. An offscreen native reproduction
+confirmed that default NSHostingView size constraints expanded the panel after
+`setFrame` returned. The visible hosting view now disables automatic sizing
+constraints; the separate native content measurement owns the bounded frame.
+
+- New native geometry checks use a narrow `LayoutChecks` SPI to invoke the exact
+  production layout on an offscreen panel. They never order it front or invoke
+  power/setup actions. They let AppKit's run loop settle before assertions.
+- Actual pre-fix behavior with access/refactor-only test shim: **84 assertions,
+  four failures**. Active settled at 3483pt and recovery at 8064pt, violating
+  content fit, bounds and centering. The unchanged implementation compiled.
+- Fixed debug/release checks: **84 assertions, zero failures**. Active is 329pt,
+  long recovery 445pt; a synthetic 320×300 usable frame clamps to 296×276,
+  and returning to active shrinks to the original centered frame. This verifies
+  offscreen native geometry, not physical small-display scrolling or rendering.
+- Separate debug/release compilation, shell syntax for each script and diff lint
+  passed. Preview packaging and strict ad-hoc signature passed. Current executable
+  SHA256 `dad1ffd86cec4043e0974fd80db157d690a37531bd19abda62ba4cc675e197fe`.
+  Lead CUA rendering/actions passed on this exact preview: activation/active/
+  restoring rendered at 1040×658 physical pixels; recovery expanded to 1040×738.
+  Full text and both actions were visible; AX exposed a normal container, with
+  no scrollbar. Escape did not dismiss; Deactivate and Retry worked; Repair setup
+  in Settings opened controls. Triangle, stripes and opaque backing were legible.
+  Independent read-only delta and lead reviews clear at `2e4e861`; clean before/
+  after, no actionable findings. CI `38304407317` passed. Preview quit normally;
+  process check found only original build5 PID96007. Small-display geometry is only
+  offscreen automated evidence; no live power, Spaces or global stacking claim.
+- Local evidence: `.build/warning-stripes-evidence/geometry-before.log`,
+  `geometry-experiment.log`, `layout-red.log`, `layout-green.log`, release logs and
+  `layout-prefixed-test-shim.patch`. To reproduce red, apply that access-only patch
+  to `5db1aba`, build debug and run AlwaysOnChecks. No screenshot data is published.
+- Coordinated fixture-only missing-signing copy now says app/helper must use the
+  same certificate, matching the separate local-signing implementation. This
+  branch makes no production signing/authentication change or privileged action.
+
+## Content-sized warning revision — 2026-10-12
+
+W6 supersedes the fixed warning height after the user saw a scrollbar in recovery.
+The warning now measures its shared content with native hosting-view fitting size
+at each display's available width, uses that height and recenters. Both the 76pt
+body scroller and normal outer scroller are removed. Published action/secondary
+text changes also trigger measurement. Text and buttons allow vertical wrapping.
+If intrinsic content exceeds the screen's usable height minus 24pt, only then a
+hidden-indicator scroll container keeps overflow reachable within screen bounds.
+
+- Separate debug/release builds passed (2.80s / 8.13s), AlwaysOnChecks 76/0,
+  shell syntax for every script and diff lint passed. Preview packaging (1.97s)
+  and strict ad-hoc signature verification passed. Logs retained under ignored
+  `.build/warning-stripes-evidence/`; no stable app packaging or launch.
+- Preview executable SHA256:
+  `cc856f2c2ca132631359a75487befff836819a6504dca2342afe08fad99151e2`.
+  Lead's pre-fix native recovery screenshot shows the unwanted scrollbar. Final
+  native fitting/actions and independent delta review plus CI are pending.
+- No new implementation-mirroring test; existing 76 behavior assertions and
+  native before/after verification cover this presentation change. No new state
+  or recovery route. Small-screen/oversized fallback is source-reviewed but has
+  not been physically exercised; no fixture API was added merely to simulate it.
+- Initial striped candidate `79f4fe6` cleared independent/lead review and CI
+  `38303341482`. Native active/activating/restoring/recovery/removal-pending,
+  Deactivate and Escape behavior was checked by lead before this sizing revision.
+- Security review not applicable to presentation-only changes; CodeRabbit
+  prohibited. No merge/install/arming. Local signing now authorized separately;
+  this revision makes no auth, Keychain, helper, power or controller changes.
+
+## Warning stripes candidate — 2026-10-12
+
+The shared warning adds native 45-degree black/yellow bands at 10% opacity,
+with opaque backing behind text and controls. Window dimensions, scrolling,
+red triangle, action labels/routing and controller recovery states are unchanged.
+The pattern is accessibility-hidden and ignores pointer events. No new state,
+permission, signing or privileged operation is introduced.
+
+- Separate `swift build -c debug` and `swift build -c release` passed (49.22s and
+  51.16s). `.build/debug/AlwaysOnChecks`: 76 assertions, zero failures.
+- `bash -n scripts/*.sh`, individual `bash -n` on every script and
+  `git diff --check` passed. Preview packaging passed; strict ad-hoc preview
+  signature verification passed. Stable app packaging was not run locally.
+- Native inert preview: `dist/Always-on Preview.app`, executable SHA256
+  `6d310dc4c060944055d09736ee8248a47a7af1596b5f9f40051aed9b4454dff3`.
+  Lead captured the baseline active warning before this change; final native
+  active/pending/retry rendering and action checks are pending at this candidate.
+  Small-screen, cross-Space/fullscreen and physical behavior remain unverified.
+- No new automated test mirrors the decorative implementation; existing behavior
+  regressions plus real native rendering are the gates. Logs retained locally in
+  ignored `.build/warning-stripes-evidence/`. Screenshots are not published.
+- Sibling audit: every warning state uses this same view; Dock/menu/Settings
+  behavior is untouched. Existing visible recovery exits remain Deactivate,
+  Retry deactivation, Check again, explicit Settings or waiting for settlement.
+- Current model inherited, exact model/effort metadata unavailable. Independent
+  and lead final review plus remote CI remain pending. Security review is not
+  applicable to this purely decorative slice; CodeRabbit remains prohibited.
+- User rejected paid signing. Local certificate feasibility is a separate open
+  investigation, not implemented or proven here. Existing app stays unchanged;
+  no helper registration, Keychain, journal, power, installation or arming action.
 
 ## B3c isolated signed staging candidate — 2026-10-12
 

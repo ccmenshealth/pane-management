@@ -119,6 +119,42 @@ Independent review, lead review and CI remain required. Original build5 preserve
   Next: isolated harmless ping probe/local staging under codex/local-signing-probe,
   based on this reviewed product pin. Actual certificate creation, approval and
   native acceptance remain unperformed; no paid membership is being pursued.
+## Bookmark — content-sized warning revision (2026-10-12)
+
+- User requested no scroll bar and a warning that fits its content. W6 supersedes
+  fixed warning geometry in W2: intrinsic content sizing, centered within usable
+  screen bounds; hidden-indicator scrolling only for content too large to fit.
+- Prior stripe candidate `79f4fe6` cleared independent/lead review; lead native QA
+  observed active/pending/recovery actions and the unwanted recovery scrollbar.
+  Preview is stopped. Builder owns this UI-only revision, same isolated PR #12.
+- Local signing is now user-authorized as a separate slice; this builder does not
+  change certificates, authentication, installation, power or controller behavior.
+- W-R1: native QA rejected `5db1aba` after hosting constraints expanded a 329pt
+  measured warning to 3483pt. Offscreen regression failed four assertions first;
+  disabling automatic hosting size constraints passes 84/84 debug/release checks.
+  Native measured/bounded geometry remains the source of window height.
+- Debug/release compilation, shell/diff lint and inert preview packaging pass.
+  Lead native QA passed the exact final preview: compact active/restoring states,
+  expanded recovery with all text/actions and no scrollbar, Deactivate/Retry/
+  Settings navigation and Escape behavior. Product pin `692192f`; final independent
+  delta and lead reviews clear at `2e4e861`, clean before/after. CI `38304407317`
+  passed. Current model inherited; exact metadata unavailable. Preview quit and
+  only original build5 PID96007 remains. No merge or arming. Local-signing work
+  continues separately in PR13 and its harmless-probe successor.
+
+## Bookmark — warning stripes cosmetic slice (2026-10-12)
+
+- User requested faint diagonal black/yellow warning stripes. Isolated branch
+  `codex/warning-stripes` starts from reviewed stacked base `bed5681` intentionally;
+  primary main and running build 5 stay unchanged. W1–W5 below lock this slice.
+- Preserve window geometry, recovery actions and controller behavior. Only native
+  decorative rendering changes; no new state or privileged operation.
+- User rejected paid membership. Dedicated local signing is a separate unproven
+  option to investigate, not part of this cosmetic slice; no certificate, Keychain,
+  helper, installation or power changes are authorized here. No merge or arming.
+- Current model inherited; exact runtime model/effort metadata is unavailable.
+  Debug/release builds, 76 UI assertions, shell/diff lint and inert preview packaging
+  passed. Next: native render/actions and independent/lead review plus CI. CodeRabbit prohibited; security review not applicable to cosmetics.
 
 ## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
 

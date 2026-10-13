@@ -110,36 +110,82 @@ private struct WarningTriangle: Shape {
     }
 }
 
-private struct WarningView: View {
+/// Alternating 45-degree bands; clipped by the warning's existing rounded outline.
+private struct WarningStripes: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            let band: CGFloat = 24
+            for x in stride(from: rect.minX - rect.height, through: rect.maxX, by: band * 2) {
+                path.move(to: CGPoint(x: x, y: rect.minY))
+                path.addLine(to: CGPoint(x: x + band, y: rect.minY))
+                path.addLine(to: CGPoint(x: x + band + rect.height, y: rect.maxY))
+                path.addLine(to: CGPoint(x: x + rect.height, y: rect.maxY))
+                path.closeSubpath()
+            }
+        }
+    }
+}
+
+private struct WarningContent: View {
     @ObservedObject var controller: AlwaysOnController
     let preview: Bool
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
+        VStack(spacing: 16) {
             ZStack {
                 WarningTriangle().fill(Color(red: 0.84, green: 0.015, blue: 0.035))
                 Text("!").font(.system(size: 58, weight: .black)).foregroundStyle(.white).offset(y: 9)
             }.frame(width: 96, height: 84).accessibilityLabel("Warning")
-            Text(controller.state.heading).font(.system(size: 25, weight: .bold))
-                .multilineTextAlignment(.center).accessibilityAddTraits(.isHeader)
-            ScrollView {
+            VStack(spacing: 16) {
+                Text(controller.state.heading).font(.system(size: 25, weight: .bold))
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
                 Text(controller.explanation).font(.system(size: 15))
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            }.frame(height: 76)
-            Button { controller.perform(controller.action) } label: {
-                Text(controller.actionTitle).font(.system(size: 19, weight: .bold))
-                    .frame(maxWidth: .infinity).padding(.vertical, 9)
-            }.keyboardShortcut(.defaultAction)
-                .accessibilityHint("Performs the displayed always-on recovery action")
-                .buttonStyle(.borderedProminent).tint(Color(red: 0.84, green: 0.015, blue: 0.035))
-                .disabled(!controller.actionEnabled)
-            if let title = controller.secondaryTitle {
-                Button(title == "Open Login Items" ? "Approval options in Settings" : title) { controller.perform(.openSettings) }
+                Button { controller.perform(controller.action) } label: {
+                    Text(controller.actionTitle).font(.system(size: 19, weight: .bold))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity).padding(.vertical, 9)
+                }.keyboardShortcut(.defaultAction)
+                    .accessibilityHint("Performs the displayed always-on recovery action")
+                    .buttonStyle(.borderedProminent).tint(Color(red: 0.84, green: 0.015, blue: 0.035))
+                    .disabled(!controller.actionEnabled)
+                if let title = controller.secondaryTitle {
+                    Button(title == "Open Login Items" ? "Approval options in Settings" : title) { controller.perform(.openSettings) }
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if preview {
+                    Text("PREVIEW ONLY · No power settings change").font(.caption.bold()).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            if preview { Text("PREVIEW ONLY · No power settings change").font(.caption.bold()).foregroundStyle(.secondary) }
-            }.padding(26).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color(nsColor: .windowBackgroundColor)).padding(-8))
+        }.padding(26).frame(maxWidth: .infinity)
+    }
+}
+
+private struct WarningView: View {
+    @ObservedObject var controller: AlwaysOnController
+    let preview: Bool
+    let overflow: Bool
+    var body: some View {
+        Group {
+            if overflow {
+                ScrollView(.vertical, showsIndicators: false) {
+                    WarningContent(controller: controller, preview: preview)
+                }
+            } else {
+                WarningContent(controller: controller, preview: preview)
+            }
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background {
+            ZStack {
+                Color(nsColor: .windowBackgroundColor)
+                ZStack {
+                    Color.yellow
+                    WarningStripes().fill(.black)
+                }.opacity(0.10)
+            }.accessibilityHidden(true).allowsHitTesting(false)
+        }
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red, lineWidth: 5))
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
@@ -163,8 +209,8 @@ private final class WarningPanel: NSPanel {
 
     public init(controller: AlwaysOnController, preview: Bool = false) {
         self.controller = controller; self.preview = preview
-        stateSubscription = controller.$state.sink { [weak self] _ in
-            // Published emits before the property changes; defer reconciliation.
+        stateSubscription = controller.objectWillChange.sink { [weak self] _ in
+            // Include action/secondary copy changes; defer until published values settle.
             Task { @MainActor [weak self] in self?.reconcile() }
         }
         for name in [NSApplication.didChangeScreenParametersNotification, NSApplication.didBecomeActiveNotification] {
@@ -201,14 +247,41 @@ private final class WarningPanel: NSPanel {
                 panel.becomesKeyOnlyIfNeeded = false; panel.isMovable = false; panel.isReleasedWhenClosed = false
                 panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
                 panel.animationBehavior = .none
-                panel.contentView = NSHostingView(rootView: WarningView(controller: controller, preview: preview))
                 panels[key] = panel
             }
-            let visible = screen.visibleFrame
-            let size = NSSize(width: min(520, visible.width - 24), height: min(390, visible.height - 24))
-            panel.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height), display: true)
+            Self.layout(panel, controller: controller, preview: preview, visible: screen.visibleFrame)
             panel.orderFrontRegardless() // Never makeKey or activate: typing stays with the current app.
         }
         for key in Array(panels.keys) where !present.contains(key) { panels.removeValue(forKey: key)?.orderOut(nil) }
     }
+    private static func layout(_ panel: NSPanel, controller: AlwaysOnController, preview: Bool, visible: NSRect) {
+        let width = min(520, visible.width - 24)
+        // Measure the actual shared content at this display's available width.
+        // The measuring view has no scroll container or fixed vertical proposal.
+        let measurement = NSHostingView(rootView: WarningContent(controller: controller, preview: preview)
+            .frame(width: width).fixedSize(horizontal: false, vertical: true))
+        let contentHeight = ceil(measurement.fittingSize.height)
+        let maximumHeight = visible.height - 24
+        let root = WarningView(controller: controller, preview: preview, overflow: contentHeight > maximumHeight)
+        let hosting: NSHostingView<WarningView>
+        if let existing = panel.contentView as? NSHostingView<WarningView> {
+            hosting = existing; hosting.rootView = root
+        } else { hosting = NSHostingView(rootView: root) }
+        // Explicit fitting above owns the window size. Hosting's default min/max
+        // constraints otherwise expand this borderless window after setFrame.
+        hosting.sizingOptions = []
+        if panel.contentView !== hosting { panel.contentView = hosting }
+        let size = NSSize(width: width, height: min(contentHeight, maximumHeight))
+        panel.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height), display: true)
+    }
+
+    /// Exercises the production layout without displaying a window or touching power.
+    @_spi(LayoutChecks) public static func layoutOffscreenPanel(
+        controller: AlwaysOnController, preview: Bool, visibleFrame: NSRect, reusing panel: NSPanel? = nil
+    ) -> NSPanel {
+        let panel = panel ?? WarningPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        layout(panel, controller: controller, preview: preview, visible: visibleFrame)
+        return panel
+    }
+
 }
