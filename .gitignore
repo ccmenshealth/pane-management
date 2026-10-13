@@ -11,3 +11,5 @@ xcuserdata/
 *.key
 *.mobileprovision
 *.log
+
+__pycache__/

@@ -1,5 +1,736 @@
 # Pane Management — Current State
 
+## Bookmark — requested acceptance passed; OFF; merge pending (2026-10-12)
+
+Steve reported “all works” for Dock activation, warning above Pane Settings/across
+desktops/fullscreen, and menu-bar deactivation. This is USER-REPORTED acceptance,
+distinct from CUA. Lead subsequently confirmed dual OFF/lid open via CLI and
+native Settings OFF/manual activation with permission checkmarks recognized.
+AppPID8366/helperPID8607 unchanged. Final state is verified OFF. Full evidence and
+prior controlled activation/lid/app-recovery/removal drills are in VERIFICATION.
+
+Requested Always On/Dock/warning acceptance gates pass. Helper-crash/reboot,
+physical critical thermal/battery protection, prolonged backpack use and VoiceOver
+remain unproven; these results say nothing about unasked legacy snapping actions.
+No auto-arm or guarantee of emergency sleep protection.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629, final setup
+runtime/review762ed660, stable app path/signatures/hashes unchanged. PR16 is
+retargeted to main with the integrated release description. Merge remains PENDING
+final docs CI and lead check: squash PR16 once, then close PRs2–15 as superseded
+preserving their review history. No merge/closure has occurred. This commit is
+Markdown only; prior integrated CI38348582654 passed, final checks pending.
+
+## Historical bookmark — recovery drills passed, visual check was pending (2026-10-12)
+
+User authorized continuing recovery drills/release closure. Lead verified app-hang
+restoration (last sampled ON20.704s, first OFF21.742s; stayed OFF to resume41.565s),
+app-crash restoration (first OFF1.063s; stayed OFF11.517s), native helper removal
+and explicit reinstall with existing approval. Full timing/PID/readback evidence
+at top VERIFICATION.md. Last lead-verified reinstall state was authenticated OFF,
+appPID8366/helperPID8607, dual OFF/lid open. Protected root:wheel0700 directory
+remains after removal; no deletion claim. Permissions stayed recognized.
+
+Pending human action: Dock activation, warning above Settings/Spaces/fullscreen,
+then menu-bar deactivation. Do not claim this passed or assume final OFF after
+user activity without confirmation. Helper-crash, reboot, physical critical
+thermal/battery stress and prolonged backpack use remain untested. No auto-arm.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629, runtime/review
+762ed660, strict/deep signatures and installed hashes unchanged. All merges remain
+pending. Once applicable gates pass, lead will review the integrated diff,
+retarget PR16 to main, check final CI, squash once and close PRs2–15 as superseded
+while preserving review history. No runtime rewrite required. This closure is
+Markdown only; prior docs CI38347362302 passed, latest checks pending.
+
+## Historical bookmark — brief closed-lid test passed (2026-10-12)
+
+User authorized the brief closed-lid hard-surface drill. Lead sampled 62 closed
+rows over 62.441519 seconds in the second monitor segment, maximum gap 1.027101
+seconds, all with the override ON: the ≥30-second observed execution target passed.
+A 31.969995737-second handoff gap separates the two monitors; the full closed
+interval was NOT continuously sampled. Exact times/counts and local evidence
+location are at top VERIFICATION.md. No Sleep/Wake/DarkWake event was found in
+the sampled drill interval. On reopen, lead Deactivated and verified UI OFF, dual
+false sleep-disabled receipts and lid-open state. No override was left on.
+
+USER-REPORTED acceptance: Steve confirmed normal screen/input after reopening and
+the Dock right-click Activate action. CUA could not inspect the Dock; a Dock
+activation click was not tested. Prior native setup/authentication, permissions,
+warning presentation, explicit warning Deactivate and safe quit/reopen passed.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629, runtime/review
+762ed660, stable app path and hashes unchanged. All feature PRs remain unmerged.
+This closure is Markdown only; prior docs CI38346358836 passed, latest CI pending.
+Backpack use, long duration, critical/crash/removal recovery, global Spaces and
+VoiceOver remain unproven. No temperature/emergency protection guarantee and no
+further activation authorized. Finish/current state remains OFF.
+
+## Historical bookmark — first open-lid activation/Deactivate passed (2026-10-12)
+
+User explicitly approved the brief drill out of the backpack, on an open hard
+surface, lid open, finish OFF. Lead activated the unchanged installed app, observed
+native active state and both SleepDisabled receipts true, then clicked the actual
+warning Deactivate. Warning disappeared; Settings returned to manual-activation
+off state and both receipts false. No override remains on. AppPID95172 and
+roothelperPID93989 unchanged. Full evidence is at top VERIFICATION.md.
+
+The actual active warning showed red border/red triangle/white exclamation, faded
+black/yellow stripes, fitting text and Deactivate, no scrollbar. CUA window image
+1040×600 pixels is not a logical-point or screen-size measurement; no screenshot
+was saved/published. Accessibility and ScreenCaptureKit recognition remain proven.
+
+Signed source ddba40d66222b360d52124a09bffe87d5bd11629; runtime/review762ed660, PR16;
+stable installed path and hashes unchanged. All feature PRs unmerged. This closure
+is Markdown only; prior docs CI38346017881 passed, latest CI will be checked.
+
+Physical lid, critical-event, crash and removal drills remain unauthorized and
+unperformed. Dock/right-click remains unverified (CUA unavailable), as do global
+Spaces/stacking, VoiceOver and backpack use. No further activation is authorized
+by this handoff. Never auto-arm or claim guaranteed macOS emergency protection.
+
+## Historical bookmark — installation acceptance before activation approval (2026-10-12)
+
+Lead completed user-authorized install and native helper approval at the original
+stable `/Users/ccmh/Developer/PaneManagement/dist/Pane Management.app` path.
+Signed source ddba40d66222b360d52124a09bffe87d5bd11629, runtime/review762ed660,
+PR16; installed hashes and full native evidence are at top VERIFICATION.md.
+Native Set Up→approval→authenticated off passed. Normal Quit/reopen and system
+Quit & Reopen stayed off. Final appPID95172, roothelperPID93989; pmsetSleepDisabled0
+and IOPMrootDomainSleepDisabledNo. Protected root:wheel0700 journal directory
+exists from daemon startup. No activation or sleep override occurred.
+
+User-approved scoped permission refresh is complete: native Settings recognized
+Accessibility and verified ScreenCaptureKit access. Setup warning is actionable
+and fits; actual Dock/right-click remains physically unverified (CUA unavailable).
+Main clean, original build5 backup preserved. Candidate/source unchanged by this
+Markdown-only closure; all feature PRs remain unmerged. Prior docs CI38343298496
+passed; final closure CI will be checked.
+
+Current user approval is install/helper OFF only. First activation is NOT
+authorized. Next: ask Steve to confirm laptop out of backpack, on an open hard
+surface, lid open for brief Activate → inspect warning/dual true receipts →
+warning Deactivate → UI off/dual false receipts, finish OFF. No physical lid,
+critical-event or crash drill is included. Failed activation goes to recovery;
+no blind retries or force quit while uncertain. Critical recovery, removal and
+physical testing remain separately gated. Never auto-arm or claim guaranteed OS
+emergency protection. Builder has no native action authority for these drills.
+
+## Bookmark — patched local candidate ready for native setup (2026-10-12)
+
+PR16 runtime/review762ed660; signed source ddba40d66222b360d52124a09bffe87d5bd11629.
+Final pre-signing CI38342796841 passed. Authorized local staging and independent
+read-only signature/identity/runtime/entitlement/hash/content checks passed with
+no prompt/error. Exact candidate path/hashes at top VERIFICATION.md. Native
+replacement/setup remains lead-owned under user authorization with Always On OFF;
+builder did not install/launch/register/change permissions or power. This closure
+is Markdown only. No merge or first activation occurred.
+
+## Bookmark — fresh notFound repair reviewed (2026-10-12)
+
+Draft PR16 runtime/review pin762ed6600c4495d1352ebfd5be480119426ddbeb cleared
+fresh independent read-only code/manual-security and lead code/security review
+without findings; tree clean. Exact final pre-fix red27/178 and restored178/0,
+requested debug/release gates and diff lint passed. Initial red28 included one
+incorrect unsigned-fixture expectation, corrected before final red/gates. Current
+model inherited, exact metadata unavailable. CodeRabbit prohibited; literal
+security-review unavailable, independent manual fallback used.
+
+This closure changes docs only. Runtime CI38342598768 was pending at closure;
+latest docs-head CI must pass before isolated local staging. Lead authorizes only
+staging with the dedicated certificate after green CI, not install/launch/helper
+action/power/permission changes or arming by builder. Lead owns native acceptance.
+Installed prior signed candidate is stopped; no app/helper/power override active.
+
+## Bookmark — installed setup blocked on fresh notFound (2026-10-12)
+
+User authorized installing the update/helper with Always On OFF. Lead installed
+the exact signed source d12f18a candidate at the original stable app path after
+quitting build5; old app preserved under dist/backups/build5-a10745c6-eb1d-4db3-82ac-429f8289255a.
+The installed candidate has valid signatures and expected executable/plist contents.
+macOS reports notFound before registration; Check again and Repair did not advance.
+No production registration, power change or activation occurred. Lead refreshed
+only this app's Accessibility entry with user authentication; recognition after
+patched restart and native Dock visual acceptance remain open. Lead stopped exact
+PID78184 after confirming no helper process/service/journal and both public sleep
+disabled readings false. No app/helper currently runs. Builder cannot change
+installed state. The actual striped warning rendered without a scrollbar.
+
+Isolated codex/setup-notfound-repair starts from reviewed integration c2f7782
+(explicit stacked-base exception). N1–N6 are locked before code. Current model
+inherited; exact model/effort metadata unavailable. The minimal fix passes debug/release builds and requested suites: Setup178/0,
+Client181/0, UI84/0, Daemon149/0 debug; Setup178/0 and UI84/0 release. Exact final
+tests failed27/178 against actual pre-fix coordinator, then passed178/0 restored.
+Diff lint passed. Next: fresh independent code/manual-security and lead review,
+remote CI, then separately authorized restaging/native repair.
+
+## Bookmark — production local candidate signed, not installed (2026-10-12)
+
+Native staging from clean source d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd passed
+with the dedicated certificate after clear reviews and CI38334359619. Both
+production signatures, fixed IDs, exact leaf pins, hardened runtime, no
+entitlements and expected bundle contents passed. Candidate path/hashes are at
+the top of VERIFICATION.md. Runtime/review pin remains ed480e2.
+
+No prompt, install, launch, helper registration, power/trust/ACL change or arming.
+Original build5 PID96007/hash unchanged; production job/process/journal absent.
+Next is separately authorized native installation/approval and production
+acceptance; physical/lid/critical recovery and first activation remain gated.
+This native-evidence closure is docs only; draft PR15 remains unmerged.
+
+## Bookmark — local production staging reviewed (2026-10-12)
+
+Draft PR15 runtime/review pin ed480e204e5b8503c7be3cd9f768f9d28beabd02, base
+b70efed, cleared fresh independent read-only code/manual-security and lead
+reviews with no findings and clean tree. Runtime CI38333954926 passed. All named
+local builds, suites, synthetic checks and lint passed; see VERIFICATION.md.
+CodeRabbit prohibited; literal security review unavailable, manual fallback used.
+Current model inherited; exact metadata unavailable. This closure is docs only.
+
+Read-only preflight passed at the runtime pin, signed:false. After this docs-head
+CI passes, the lead authorized staging only with the dedicated local certificate.
+Stop for any signing prompt/blocker. No production signing has yet occurred; no
+install, launch, register, power, trust/keychain ACL change or arming is authorized
+by this slice. Original build5 remains unchanged. Native production installation,
+physical acceptance and first activation remain separate gates.
+
+## Bookmark — local production staging planning (2026-10-12)
+
+Isolated codex/local-signed-release starts from probe closureb70efed. R1–R7
+are locked before implementation. Native harmless acceptance passed; production
+local packaging/integration is next. No real production signing, install or arming.
+Independent review, lead review and CI remain required. Original build5 preserved.
+
+
+## Bookmark — native local-signing probe PASS; removed (2026-10-12)
+
+- User-authorized diagnostic rerun used the identical signed source12baca95
+  candidate at the same `/Users/ccmh/Applications/Local Signing Probe.app` path.
+  No rebuild, signing/auth change, privileged trace, Terminal or password needed.
+  Register reached enabled; launchctl18:37:47 Pacific showed root daemonPID8385
+  running with execs1/trampolined1. Four GUI positive nonce pings succeeded.
+- Wrong-ID same-cert, ad-hoc client and wrong expected helper pin were each
+  rejected between successful positive pings. Scoped logs explicitly record the
+  daemon's code-signature rejection twice and client's wrong-pin rejection once.
+  Exact PID/timestamp mapping is in VERIFICATION.md. Harmless native acceptance
+  PASSED on this Mac with the dedicated local certificate.
+- Remove plus explicit Check status confirmed not registered; Quit completed.
+  Final launchctl job, root daemon8385 and probe GUI/daemon processes absent.
+  Finder moved only the installed probe copy to Trash; signed candidate retained.
+  Original build5PID96007/hash unchanged. No power or production helper action.
+- Earlier BTM startup delays remain unexplained transient failures; they did not
+  demonstrate certificate rejection. Product/review pin9458b946 and signed source
+  12baca95 unchanged. This update is Markdown only. Next integration/local product
+  packaging can use this evidence; production installation, real warning/Dock/lid
+  recovery acceptance and first always-on activation remain separate gates.
+
+## Bookmark — approved native probe inconclusive; removed safely (2026-10-12)
+
+- User explicitly authorized “run and remove test helper” and personally approved
+  the Login Items administrator sheet. Exact signed source12baca95 candidate was
+  copied to `/Users/ccmh/Applications/Local Signing Probe.app` and reverified.
+  Registration reached enabled, but no positive nonce echo succeeded.
+- First attempt: two bounded Ping timeouts; launchd held root xpcproxyPID85425
+  with execs0/trampolined0. One bounded retry reached enabled without another
+  approval prompt; after three minutes, third Ping timed out with xpcproxyPID86598
+  still pre-exec. Negative fixtures were NOT RUN because positive control failed.
+- Scoped logs show delayed BTM fetchItemWithUUID before executable launch, not a
+  demonstrated certificate rejection. Correct bundle path, executable permissions
+  and system-library dependencies were checked. Signature staging remains proven;
+  native root launch/authenticated communication remains inconclusive.
+- Native Remove and explicit Check status confirmed not registered after both
+  attempts. Final launchctl job and both xpcproxy PIDs absent; probe GUI quit and
+  probe app/daemon processes absent. Finder moved only the installed probe copy to
+  Trash; filesystem confirms original installed path absent. Signed candidate
+  remains. Build5PID96007, its original SHA256 and clean primary main preserved.
+- No power, production helper, global trust or unrelated certificate changes.
+  Product/review pin9458b946 unchanged; this evidence is Markdown only. Next is
+  targeted root-launch diagnosis (for example a human-approved privileged sample
+  of stalled xpcproxy), not another authentication workaround or production arming.
+  An ordinary sample was denied and sudo-n required a password; no privileged
+  sample was obtained. No further drill runs are planned in this handoff.
+
+## Bookmark — native local signing succeeded; service drill awaits confirmation (2026-10-12)
+
+- User created the dedicated **Pane Management Local Signing** credential and
+  reported completion. Reviewed probe staging succeeded from clean source
+  `12baca95bd552dc0926bc784af4bb85586a7e657` using only its public certificate fingerprint
+  `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F`. No blocking Keychain prompt observed.
+- Candidate: `dist/signing-probe/12baca95bd552dc0926bc784af4bb85586a7e657-aca17390-5763-4862-9cc2-f5433c98984d/artifacts`.
+  Its manifest records source/fingerprint and five executable SHA256 hashes;
+  exact hashes are in VERIFICATION.md. Helper/app/negative fixture signature,
+  fixed identifier, hardened-runtime and no-entitlement checks passed. No trust
+  change, paid account, unrelated identity or source workaround was used.
+- Product/review pin remains `9458b946982589b0b25a5f8e9e26d755018ceff3`;
+  subsequent commits are Markdown only. Prior docs CI38306212290 passed.
+  All feature PRs remain draft/unmerged and production build5 is unchanged.
+- No signed candidate or root helper was installed/launched/registered, and no
+  power operation occurred. Actual SMAppService acceptance remains unproven.
+  Next: user confirmation for the ping-only administrator-level service
+  installation/run/positive-negative/removal drill. This grants new privileged
+  service access; it is separate from signing and from production arming.
+
+## Bookmark — harmless local signing probe reviewed (2026-10-12)
+
+- Draft [PR #14](https://github.com/ccmenshealth/pane-management/pull/14) runtime
+  and reviewed pin: `9458b946982589b0b25a5f8e9e26d755018ceff3`, based on auth docs closure
+  `37dad17`. This closure commit changes Markdown only; keep its head separate
+  from the runtime/review pin. All feature PRs remain unmerged and uninstalled.
+- Fresh independent read-only code/manual-security and lead code/security reviews
+  clear, no actionable findings; worktree clean before/after. CI `38305835875`
+  passed. Current model inherited; exact metadata unavailable. CodeRabbit
+  prohibited; literal security-review unavailable, independent manual fallback.
+- Swift114/0 debug/release, daemon149/0, client181/0, setup141/0; staging11/0
+  including28 failure positions; shell/Python/plist/diff checks passed. Inert red
+  67/114 Swift and14 Python assertions; actual pre-P-R2 trust cases failed.
+  Clean-source read-only preflight passed at the reviewed pin, signed:false.
+- Lead CUA launched only unsigned missing-identity preview, clicked Check status,
+  observed readable no-scroll content and actionable missing-certificate copy,
+  then Quit. Process absence confirmed; only installed build5 PID96007 remained.
+  No Register/Ping/Remove/Login Items, certificate, signing, helper, power or
+  installed-bundle operation occurred. Exact preview hash is in VERIFICATION.md.
+- Native local signing/SMAppService acceptance remains unproven. Next user handoff:
+  create dedicated **Pane Management Local Signing** credential in Keychain
+  Access Certificate Assistant. No paid account, unrelated certificate or trust
+  change. Then separately approved staging and harmless administrator-approved
+  registration/positive-negative/removal drill; production arming remains gated.
+
+## Bookmark — local certificate authentication slice (2026-10-12)
+
+- User selected local signing. L1–L6 in `docs/always-on-build.md` supersede the
+  earlier Apple-only runtime identity lock. This slice changes authentication
+  policy only; positive local signing and service acceptance remain unverified.
+- Isolated `codex/local-signing-auth` starts at `bed5681`; current inherited
+  model/effort metadata unavailable. Builder owns only this worktree; warning UI
+  changes are separate. No merge, install, native certificate/keychain operation,
+  helper execution, power change or arming. Existing build 5 is preserved.
+- Candidate implementation passes separate debug/release builds, daemon149/0,
+  client181/0, setup141/0 and controller76/0; shell/diff lint passed. Actual pre-fix
+  source with API-only compatibility shims fails32/149 boundary assertions.
+- Draft PR13 at `d6742fa` cleared fresh independent code/manual-security and lead
+  reviews, clean before/after with no actionable findings. CI `38304383789` passed.
+  No literal security-review tool available; independent manual fallback used.
+  Next: isolated harmless ping probe/local staging under codex/local-signing-probe,
+  based on this reviewed product pin. Actual certificate creation, approval and
+  native acceptance remain unperformed; no paid membership is being pursued.
+## Bookmark — content-sized warning revision (2026-10-12)
+
+- User requested no scroll bar and a warning that fits its content. W6 supersedes
+  fixed warning geometry in W2: intrinsic content sizing, centered within usable
+  screen bounds; hidden-indicator scrolling only for content too large to fit.
+- Prior stripe candidate `79f4fe6` cleared independent/lead review; lead native QA
+  observed active/pending/recovery actions and the unwanted recovery scrollbar.
+  Preview is stopped. Builder owns this UI-only revision, same isolated PR #12.
+- Local signing is now user-authorized as a separate slice; this builder does not
+  change certificates, authentication, installation, power or controller behavior.
+- W-R1: native QA rejected `5db1aba` after hosting constraints expanded a 329pt
+  measured warning to 3483pt. Offscreen regression failed four assertions first;
+  disabling automatic hosting size constraints passes 84/84 debug/release checks.
+  Native measured/bounded geometry remains the source of window height.
+- Debug/release compilation, shell/diff lint and inert preview packaging pass.
+  Lead native QA passed the exact final preview: compact active/restoring states,
+  expanded recovery with all text/actions and no scrollbar, Deactivate/Retry/
+  Settings navigation and Escape behavior. Product pin `692192f`; final independent
+  delta and lead reviews clear at `2e4e861`, clean before/after. CI `38304407317`
+  passed. Current model inherited; exact metadata unavailable. Preview quit and
+  only original build5 PID96007 remains. No merge or arming. Local-signing work
+  continues separately in PR13 and its harmless-probe successor.
+
+## Bookmark — warning stripes cosmetic slice (2026-10-12)
+
+- User requested faint diagonal black/yellow warning stripes. Isolated branch
+  `codex/warning-stripes` starts from reviewed stacked base `bed5681` intentionally;
+  primary main and running build 5 stay unchanged. W1–W5 below lock this slice.
+- Preserve window geometry, recovery actions and controller behavior. Only native
+  decorative rendering changes; no new state or privileged operation.
+- User rejected paid membership. Dedicated local signing is a separate unproven
+  option to investigate, not part of this cosmetic slice; no certificate, Keychain,
+  helper, installation or power changes are authorized here. No merge or arming.
+- Current model inherited; exact runtime model/effort metadata is unavailable.
+  Debug/release builds, 76 UI assertions, shell/diff lint and inert preview packaging
+  passed. Next: native render/actions and independent/lead review plus CI. CodeRabbit prohibited; security review not applicable to cosmetics.
+
+## Bookmark — feasible build complete; signing/native acceptance blocked (2026-10-12)
+
+- Draft PRs #2–#11 contain the Dock, warning, power recovery, authenticated
+  helper/client, setup integration and signed staging implementation. All remain
+  unmerged and uninstalled. No feature was armed.
+- Final PR #11 reviewed pin: `048e6c174e27ebdf5383459baf334ee7f4846112`;
+  product pin: `3ced0980ceb21773b95d87a29508da03f9b61f3b`. Fresh independent
+  read-only code/manual-security and lead reviews clear, no actionable findings;
+  reviewed worktree clean before/after. CI `38300113172` passed. Current model
+  inherited; exact model/effort metadata unavailable. CodeRabbit prohibited.
+- All feasible build, automated verification and inert native preview work is
+  complete. Final changes after the reviewed pin are handoff Markdown only.
+  Positive native signing, installation, Dock/global warning behavior and
+  physical lid/recovery acceptance remain unverified; synthetic tests do not
+  establish those results or guarantee critical battery/thermal protection.
+- User has no Apple Developer account. Chosen helper design needs a Developer ID
+  Application certificate and an existing notarization profile before a signed
+  candidate can be produced. No enrollment, purchase, unrelated certificate or
+  alternate privileged fallback is authorized. Next: resolve that prerequisite,
+  then separately authorize signed staging, installation/approval and native
+  acceptance/recovery drills; first activation remains a separate gated slice.
+- Final read-only preservation check: primary `main` clean at `3ce28b8`, original
+  build 5 still PID `96007`, executable SHA256
+  `3367ecbfc6d95a54bde086348d4c67988c8be8089042ba30a4c853f6634e978a`.
+  No preview/helper process or root helper journal exists. Installed bundle,
+  privacy grants and power configuration were not changed by these build slices.
+
+## Bookmark — B3c signed staging candidate (2026-10-12)
+
+- Code pin 3ced098 adds isolated Developer ID staging with explicit identity/team/
+  existing notary profile, exact signature requirements, notarization/stapling,
+  assessment and post-stapling hashes. Existing stable packager stays unchanged.
+- Seventeen synthetic checks pass; exact final inert overlay yields 35 assertion
+  failures, and four focused pre-fix checks reproduce lead findings. Debug/release
+  builds, full debug matrix 60/76/176/114/355/118/181/141 and lint pass.
+- Actual read-only preflight passed on the clean code pin; no signed artifact or
+  Apple submission was attempted. Missing Developer ID remains the positive-run
+  blocker. Native acceptance and first arming stay separately gated.
+- Current inherited model; exact metadata unavailable. Next: draft PR above
+  integration PR #10, remote CI and fresh independent/manual-security plus lead
+  review. All PRs remain unmerged. CodeRabbit prohibited.
+- Original build 5 remains PID 96007, unchanged. No install/helper/power/journal/
+  privacy change, no local stable packaging and no preview launch occurred.
+
+## Bookmark — B3c signed staging planning (2026-10-12)
+
+- codex/always-on-staging starts from integration PR10 head495f663. Independent
+  read-only code/manual-security and lead review clear, worktree clean, CI38298900984
+  green. Native inert11-state rendering/actions verified; global/native physical
+  acceptance remains open. Final preview quit; only original build5PID96007 runs.
+- V1–V8 lock isolated signed staging and synthetic validation. No Developer ID
+  exists; builder completes code/tests/preflight, never actual signing/submission.
+- This is final feasible build slice before signing/native acceptance handoff.
+  AllPRs remain draft/unmerged; no installed bundle/helper/power/journal/grant change.
+- Current model inherited; CodeRabbit prohibited. Next: isolated staging builder,
+  fresh independent/manual-security plus lead review and CI, then concrete handoff.
+
+## Bookmark — B3b2 integration candidate (2026-10-12)
+
+- Isolated codex/always-on-integration wires authenticated setup/client state into
+  the shared UI. Placeholder backend is removed. Wake/focus coalesces, preserves
+  owned active sessions and never autoactivates; quit waits for actual settlement.
+- Settings-only explicit repair closes the retained-journal/missing-registration
+  exit. Helper actions use a compact pinned footer; inert preview models it.
+  Client App Nap activity permits system/display sleep and balances independent
+  operation/token holds. Tests inject inert activity ports throughout.
+- Debug suites60/76/176/114/355/118/181/141 and affected release76/181/141 pass;
+  separate debug/release builds and lint pass. Inert/pre-fix failures64/76,
+  10/181,1/141 and coalescing1/76 are retained in `.build/b3b2-evidence`.
+- Lead observed all11 native inert fixture states, fixed footer action routing,
+  activation/deactivation and normal quit fromoff. Window-only renders do not
+  establish globalstacking/occlusion or other native acceptance. Final CI and
+  fresh independent code/manual-security plus lead review pending. No CodeRabbit. Current model inherited;
+  exact model/effort metadata unavailable. Scope modestly exceeds800changedlines
+  for coupled controller replacement, U9 scheduling and required recovery exit.
+- Build5 remains running unchanged at PID96007. No helper/power/journal/grant or
+  installed-bundle changes. Missing Apple Developer identity blocks signed native
+  acceptance/install; native/physical acceptance and first arming remain separate.
+- Next: pin/push draft PR above setup PR9,
+  independent review plus lead/CI gates, then B3c signed staging. No merge/arming.
+
+## Bookmark — B3b2 integration planning (2026-10-12)
+
+- Isolated codex/always-on-integration fast-forwarded to reviewed setup PR #9
+  head83598e7. Independent delta plus lead code/manual-security clear; final
+  CI38296296320 green, reviewed worktree clean. S-R3/S-R4 resolved.
+- U1–U8 lock app/controller/menu/Dock/warning/Settings integration and inert
+  native preview. Next builder starts here; B3c signed staging follows.
+- Original build5 remains unchanged/running. No actual service/power/journal or
+  installed bundle changes. Missing Apple Developer account blocks positive
+  signed install; native acceptance and first arming remain separate gates.
+- No merge yet. Current inherited model; CodeRabbit prohibited.
+
+## Bookmark — B3b1 setup candidate (2026-10-12)
+
+- `codex/always-on-setup` adds read-only native policy extraction and headless
+  setup/removal coordination. App/controller/UI wiring remains B3b2; signed
+  staging remains B3c. Installed build5 is unchanged at PID 96007.
+- Exact compiling inert coordinator overlay: 122 assertions/59 failures;
+  implemented suite: 122/0. Targeted pre-fix regressions: two failures for early
+  registration-slot release during status settlement; one failure for an old
+  signing diagnostic erasing a newer active observation; one for stale quiet
+  state during wake revalidation. See VERIFICATION.md.
+- Current inherited model used, exact metadata unavailable. Fresh independent
+  code/manual-security and lead review remain required, as does remote CI.
+  CodeRabbit is prohibited. No service registration/removal, native writer,
+  production journal, installed bundle, grant or power mutation occurred.
+- S-R4 now exposes daemon admission closure with a required wire Boolean and
+  explicit removalRequired state. After failed unregister, a new app/client
+  discovers verified off with activation unavailable and a Finish helper removal
+  remedy; it does not enter a futile Activate loop. Real coordinator/client
+  loopback and targeted pre-fix overlays cover this across reconnect.
+- First CI38294630489 failed an unchanged finite-yield UI fixture. The exact
+  local cause was not reproduced in 100 runs. Fixture siblings now await bounded
+  state/continuation completion; the next CI run must validate the correction.
+- Setup observations have increasing revision, fixed remedy and pending flag.
+  Ordinary activation can be pending while its remedy stays Deactivate; OS
+  setup/removal always offers Wait. UI must use the remedy to keep stop usable.
+  Successful removal is quiet only in-process; wake/relaunch repeats the proof
+  and an intentionally retained root directory yields conservative repair.
+
+## Bookmark — B3b1 setup planning (2026-10-12)
+
+- `codex/always-on-setup` starts from PR #8 `326cc09ca9a35762cf8ab1a446656a1d11fe0141`.
+  Fresh read-only independent code/manual-security and lead source reviews clear;
+  K-R1 readiness, K-R2 unregister settlement and K-R3 queued stop fixed. CI
+  `38293214921` passed. Reviewed worktree remained clean at the pinned head;
+  current inherited model, exact metadata unavailable.
+- S1–S9 lock headless setup/absence proof and read-only native extraction. B3b2
+  follows with controller/menu/warning/Settings/app integration; B3c handles
+  signed staging. Builder may implement B3b1 only. No real service or power mutation.
+- Original build5 remains running, unchanged. Positive signed IPC/install is
+  blocked by missing Apple Developer identity; native UI/physical acceptance and
+  first arming remain separate. No merges yet; CodeRabbit prohibited.
+
+## Bookmark — B3a client candidate (2026-10-12)
+
+- Isolated `codex/always-on-client` extracts shared IPC/signing and adds an
+  authenticated, serialized app client; app/setup wiring remains B3b. No helper
+  was run, registered or removed and installed build 5 remains PID 96007.
+- Client checks: 155/0. Initial compiling scaffold 6/6 failures; exact final
+  inert observation/decoder overlay 155/73 failures. Targeted pre-fix overlay
+  reproduced five failures for readiness budget, pending unregister settlement
+  and queued activation losing a later stop. Corrected behavior is documented
+  in `VERIFICATION.md`; bounded reporting never claims unregister settlement.
+- Current inherited model used; exact metadata unavailable. Local regression
+  suites, separate debug/release compilation, release client checks and lint passed.
+  CI and fresh independent/security plus lead review remain required. No CodeRabbit by repo restriction.
+- `ClientObservation.removalPending` stays true until the actual OS unregister
+  completion. B3b must block registration while true and marshal OS callbacks
+  to MainActor. Missing signing still blocks positive signed/native acceptance.
+
+## Bookmark — B3a client planning (2026-10-12)
+
+- Isolated `codex/always-on-client` starts from daemon PR #7 head
+  `dbee2a891c8d0d597f20a72d31467b0d7dd77860`. Fresh independent read-only
+  code/manual-security and lead source review clear, no actionable finding.
+  CI `38291211680` passed, including nested helper packaging. Daemon worktree
+  remained clean at the pinned head; current inherited model, metadata unavailable.
+- K1–K8 lock shared IPC/signing extraction and bounded client. Next B3b supplies
+  setup/repair/absence proof and app wiring; B3c signed staging workflow. No install,
+  registration or arming. Positive signed acceptance is blocked by the user's
+  lack of Apple Developer identity; no unrelated identity or fallback authorized.
+- Build5 remains running unchanged. Native UI/physical acceptance stays open;
+  all PRs remain draft until those gates are resolved. CodeRabbit prohibited.
+
+## Bookmark — Native daemon candidate (2026-10-12)
+
+- `codex/always-on-daemon` adds the fixed signed XPC/launchd boundary, cached native
+  telemetry and nested helper packaging, stacked on coordinator PR #6. App-side
+  registration/client/setup/removal remains B3; no helper was run or registered.
+- The native audit probe confirms this host's current process has matching console
+  and audit identity plus required local/graphic/authenticated flags. Battery probe
+  reports normal. These read-only probes do not prove signed IPC or physical sleep.
+- Initial compiled policy scaffold failed 37/41 assertions. Final exact inert
+  boundary overlay failed 86/118; implementation passes 118/0. Lead finding N-R1
+  produced six pre-fix failures across stalled battery/thermal recovery. Console
+  validation now has its own single-flight queue. Evidence is in `VERIFICATION.md`.
+- Next: pinned independent code/manual-security review and CI, then B3 after lead
+  acceptance. Missing Apple Developer identity blocks positive signed acceptance
+  and installation, not remaining code. No enrollment/purchase or fallback.
+- Build 5 remains at the original path as PID 96007, without permissions or power
+  changes. CodeRabbit remains unavailable under the repository exclusion.
+
+## Bookmark — Native daemon planning (2026-10-12)
+
+- `codex/always-on-daemon` is an isolated planning branch on coordinator PR #6
+  head `7164b2e`. Independent and lead code/manual-security reviews clear with
+  no remaining finding; CI `38288409516` passed. Native boundary builder may
+  start. Locked N1–N8 are in `always-on-build.md`.
+- Next: native authentication/telemetry/daemon boundary, then B3 app client/setup/
+  removal integration. No live helper registration, power mutation or arming.
+  User confirmed no Apple Developer account. Apple-issued signing remains a
+  concrete blocker for positive signed acceptance/install in the chosen design;
+  finish feasible implementation/tests first. No enrollment/purchase authorized.
+- Lead repeated isolated UI hide check: CUA kept returning the controls window,
+  so hide/other-app stacking remain unverified. Preview was deactivated/quit;
+  process check confirms only original build5 PID96007. No installed change.
+
+## Bookmark — Coordinator candidate (2026-10-12)
+
+- `codex/always-on-coordinator` implements pure `AlwaysOnService` coordinator and
+  version 1 wire values, stacked on native IO PR #5. No daemon, authentication,
+  telemetry, app wiring, installation or power mutation is added in this slice.
+- Final in-memory suite: 347 assertions / 0 failures. Exact compiled inert
+  coordinator/wire overlay: 347 / 162 failures. Two targeted pre-fix runs each
+  expose eight failures; recovery states and evidence are in `VERIFICATION.md`.
+- All prior suites and local gauntlet passed. Final affected service checks and
+  separate debug/release compilation pass. Independent code/security fallback,
+  lead review and remote CI remain required at candidate handoff.
+- Build 5 remains installed/running unchanged. Next after pinned review: B2b2
+  authenticated native daemon boundary, then B3 client/setup/removal integration.
+  Signing and native acceptance remain required before installation/arming.
+
+## Bookmark — Coordinator planning (2026-10-12)
+
+- `codex/always-on-coordinator` is an isolated branch on native IO
+  PR #5 head `f547075`; B2a independent and lead code/security review clear,
+  CI `38284998731` passed. Coordinator builder may start; no install/arming.
+- B2b1 coordinator and wire contracts C1–C9 are locked in `always-on-build.md`;
+  B2b2 then adds native authentication/telemetry/daemon composition, followed by
+  B3 app client/setup/removal and packaging. No installation/arming yet.
+- Build5 remains running unchanged. Matching Apple-issued signing is still
+  needed for positive signed acceptance and installation; coding/tests continue.
+
+## Bookmark — Native IO candidate (2026-10-12)
+
+- `codex/always-on-native-io`, stacked on engine PR #4, implements protected
+  journal storage, fixed command execution, strict public-API readback and bounded
+  single-flight reads. It is not wired into the app and installs no helper.
+- `AlwaysOnNativeChecks` passes 114 assertions; exact final compiled inert
+  scaffold produces 114 assertions / 94 failures. Existing suites pass 60/0,
+  34/0 and 176/0. Evidence and native limitations are in `VERIFICATION.md`.
+- Lead's early process-ID reuse and unbounded/late-read findings were corrected
+  before pinning. Independent, lead and native filesystem/process security review
+  remain required; CodeRabbit is unavailable under the repository exclusion.
+- Production journal path remains absent. Build 5 remains running at its original
+  path as PID 96007. No pmset mutation, registration, permission change, installed
+  bundle replacement or UI automation occurred. Next: pinned-head review and CI,
+  then B2b only after acceptance. Installation/arming remains separately gated.
+
+## Bookmark — Native IO planning (2026-10-12)
+
+- `codex/always-on-native-io` starts from engine PR #4 fix `28eeffe` in its own
+  worktree. B2a locked contracts are in `always-on-build.md`; independent and lead
+  delta review cleared R1, and final-head CI `38281961153` passed. B2a may start.
+- Next sequence is native IO adapters, authenticated daemon, then app integration
+  and signed packaging. No helper is installed, no power setting has changed,
+  and build 5 still runs at its original path. Apple-issued signing remains a
+  required user-provided prerequisite for eventual installation.
+
+## Bookmark — B1 recovery engine candidate (2026-10-12)
+
+- `codex/always-on-engine` implements the pure typed recovery engine and injected
+  fake-adapter checks, stacked on reviewed UI head `1923274`. The engine is not
+  wired into the app; no live power, privileged, permission or installed-app
+  operation was performed. Build 5 remains the running baseline.
+- Final suite compiled inert with 176 assertions/102 failures; implementation
+  passes 176/0. Existing suites pass 60/0 and 34/0. Evidence, recovery matrix and
+  adapter/native limits are in `VERIFICATION.md` and `always-on-build.md`.
+- Original-head CI run `38281301606` passed. Independent review found only R1,
+  startup false-off; the fix adds checking before unresolved ownership reads and
+  passed 176/0 after 16 focused pre-fix failures. Next: corrected-head CI,
+  independent delta, lead and ownership/storage/token security review. B2 native
+  adapters follow only after those reviews; installation/arming and existing UI native acceptance remain
+  separate gates. CodeRabbit is unavailable under the repository exclusion.
+
+## Bookmark — Recovery engine slice starting (2026-10-12)
+
+- UI PR #3 pinned `1923274` passed independent and lead source review and CI run
+  `38278803917`. Native warning render passed; remaining physical/native gates
+  listed below still block installation/merge. No power setting has changed.
+- `codex/always-on-engine`, isolated `always-on-engine` worktree, starts from that
+  reviewed UI head. It implements a testable recovery engine with fake adapters;
+  native privileged adapters and app integration are subsequent sequential slices.
+- Locked behavior, gates and review ledger are in `always-on-build.md`.
+  Build 5 remains installed and running. Matching Apple-issued signing identity
+  is not yet available; user question pending. No unrelated identity may be used.
+
+## Bookmark — Always-on UI candidate (2026-10-12)
+
+- `codex/always-on-ui` implements the state/controller boundary, shared Dock/status
+  actions, Settings status, quit-before-restore handling, and persistent warning
+  panels. It is stacked on `codex/dock-presence`; both remain draft candidates.
+- The production backend reports **setup unavailable** and performs no power IO.
+  No helper, privileged operation, display/backlight write or input interception
+  is implemented in this slice. Backend design/handoff is in
+  [the locked build plan](always-on-build.md#backend-handoff-design-only-separate-slice).
+- 34 feature assertions pass after a compiled inert-scaffold run failed 31 of
+  those assertions; 60 existing scenarios, separate debug/release builds and
+  source/fixture metadata/signature checks pass. Concrete output and limits are in
+  `VERIFICATION.md`. Independent/lead pinned-head review and remote checks remain
+  required before this candidate can advance.
+- Native CUA inspected the **actual** isolated warning in active, pending,
+  stopping and recovery states, including Return/Deactivate and failure/retry.
+  The final 520 × 390-point render passed visual inspection. Full cross-Space,
+  other-app fullscreen stacking, multiple-display/hot-plug and VoiceOver
+  acceptance remain unverified; code configuration does not prove those behaviors.
+- Isolated preview: `dist/Always-on Preview.app`, bundle identifier
+  `local.snapbridge.alwaysonpreview`. It uses only an in-memory simulated backend.
+  Preview was deactivated and quit after verification. Original installed build 5
+  remains running as PID 96007; no installed bundle, permission or power setting
+  was changed. Main-app packaging was not run because build 5 must keep running.
+- User-authorized current model was used; exact builder model/effort metadata is
+  unavailable. CodeRabbit remains unavailable by explicit repository restriction.
+
+## Bookmark — Always-on build authorized (2026-10-12)
+
+- User explicitly authorized building the broader mode despite the investigation
+  limits and requested a persistent centered warning with a deactivate button.
+  This supersedes the investigation-only/open-lid constraints below.
+- [Locked build decisions and slices](always-on-build.md) govern implementation.
+  UI/controller slice is on `codex/always-on-ui`, stacked on Dock PR #2; helper
+  security architecture is under separate read-only review. No live activation
+  or privileged installation is authorized as part of the current build phase.
+- Build 5 remains installed. Dock native acceptance and permission refresh remain
+  pending; do not replace the running app to create build evidence.
+
+## Investigation update — guarded sleep override (2026-10-12)
+
+- User authorized investigation only and clarified that critical battery/heat
+  sleep should remain available. The lead and a separate read-only architecture
+  reviewer examined the matching Apple sources and host SDK/man pages.
+- A guarded global override could reduce ordinary failure risk, but has no
+  automatic expiry or caller ownership; advisory warnings do not guarantee time
+  to restore native emergency sleep. Prearming also changes open-lid behavior.
+  It does not satisfy the original requirements and is not validated for travel.
+- Findings, sources, failure matrix, and the bounded next experimental scope are
+  in [the plan](closed-lid-plan.md#guarded-override-investigation--october-12-2026).
+  No power settings, permissions, helpers, or installed app were changed.
+- No power implementation is underway. A best-effort prototype needs a separate
+  scope decision; live testing needs its own concrete test-Mac plan. Dock PR #2
+  remains separate and draft, with the native acceptance blocker below. Its
+  latest prior documentation-head CI passed on `9eafea56fab4de34ce51fb3b8de7051b7145b864`.
+
+## Bookmark — Build 6 retained; build 5 restored (2026-10-12)
+
+- Slice 1 of [the locked plan](closed-lid-plan.md) is implemented on
+  `codex/dock-presence` in the isolated `PaneManagement-worktrees/dock-presence`
+  checkout, based on `3ce28b8ce72d392c7885640d22b1b7e2e7a03b37`.
+- [Draft PR #2](https://github.com/ccmenshealth/pane-management/pull/2) received
+  independent and lead review on `ca9a781989c0051b14b223122ae71b6ab5595fc7`.
+  Must-fix R1 was menu mutation in an AppKit open callback. The builder moved
+  both menu refresh paths to `menuNeedsUpdate`; independent delta and lead review
+  cleared `df335612a036637624eace16e4cdbcf64b7de013`. Its
+  [code-head CI](https://github.com/ccmenshealth/pane-management/actions/runs/38272646660)
+  passed. The finding and SDK evidence are in the plan's findings ledger.
+- Candidate build 6 implements regular activation and a Dock menu with Settings
+  and pause/resume. Actual Dock rendering/context-menu behavior is **unverified**.
+  The existing menu-bar
+  icon and chooser reopen exclusions are retained. Both menus and Settings use
+  the same snapping preference. No closed-lid control or power backend is added.
+- Native subagent builder used the user-authorized current model; exact
+  model/effort metadata is unavailable in the builder session.
+- Build 6 from reviewed code `df335612a036637624eace16e4cdbcf64b7de013` was
+  installed at the same primary `dist/Pane Management.app` path, bundle ID
+  unchanged. Packaging, installed signature, and binary-hash equality passed.
+  The signed build 5 rollback bundle is retained in the builder's ignored
+  `.build/dock-acceptance-rollback/Pane Management build5.app`.
+- Native Settings render, preference round-trip/restoration, application-menu
+  Settings, and Quit/relaunch passed. Build 6 truthfully reported missing
+  Accessibility and unverified previews after the ad-hoc update. CUA Dock
+  targeting timed out; actual Dock/status menus and cross-menu actions remain
+  unverified, and the live chooser check was blocked by Accessibility.
+- Lead-directed rollback restored build 5 to the primary installed path, with
+  its original binary hash and valid signature. CUA confirmed running state,
+  Accessibility, verified ScreenCaptureKit access, and enabled=true. Build 5 is
+  running (PID 96007 at handoff). No privacy setting was changed.
+- Retained build 6 candidate:
+  `/Users/ccmh/Developer/PaneManagement-worktrees/dock-presence/dist/Pane Management.app`.
+  Next: lead coordinates a manual/native acceptance session at the stable
+  installed path, renewing only existing grants if needed, then verifies actual
+  Dock/status controls, shared pause/resume, closing/reopening and chooser
+  preservation. Exact evidence and rollback are in `VERIFICATION.md`.
+  Do not call this slice gate-green or merge before acceptance is resolved.
+- CodeRabbit is unavailable under the repository exclusion. Security review is
+  not applicable to the Dock/menu-only runtime change; no access or data flow is
+  added. Closed-lid feasibility review is complete; that separate slice is blocked
+  pending the user's scope decision because no caller-owned mechanism met the
+  exact lid-only behavior and recovery requirements. No sleep setting was changed.
+
 ## Bookmark — Review cadence merged (2026-09-14)
 
 - [PR #1](https://github.com/ccmenshealth/pane-management/pull/1) is merged into
@@ -45,7 +776,7 @@
   Distribution additionally requires Developer ID signing/notarization. Do not
   treat this configuration/documentation merge as a tested public app release.
 
-## Running application
+## Build 5 baseline — restored October 12
 
 - Build 5, source `9f4a0879fd9ebe0f825242a67ec695155a2dd185`, implements automatic
   two-column fitting without a second recovery click. The installed bundle was

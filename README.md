@@ -26,7 +26,7 @@ If upgrading from SnapBridge, quit the old app before opening Pane Management. T
 2. Optionally use **Enable Previews** to check ScreenCaptureKit access and, if needed, allow Screen Recording. Without it, Snap Assist still works with app icons and window titles. The button reports the actual API result instead of always opening Settings. If macOS denies the running build, **Check Again**, the current bundle path, Settings/Finder links, and a quit action appear. If the permission switch is already on, quit and reopen the selected app; after a rebuild, a stale entry may need removal and re-adding. Quitting clears session-only groups.
 3. In **Desktop & Dock → Windows**, turn off native drag-to-edge tiling, drag-to-menu-bar filling, Option-drag tiling, and drag-to-top Mission Control when those switches are present. Pause other window managers while testing. Pane Management does not change those settings automatically.
 4. To start automatically after signing in, add the built app under **System Settings → General → Login Items & Extensions → Open at Login**. Keep the bundle at a consistent path and avoid starting another snapper alongside it. This is a per-Mac setting, not enabled automatically for other users.
-5. Close Settings. The two-pane icon in the menu bar offers settings, pause/resume, snap groups, and quit.
+5. Close Settings. Pane Management stays in the Dock and menu bar while running. Click its Dock icon to reopen Settings; right-click it for Settings and pause/resume snapping. The two-pane menu-bar icon also offers those controls, snap groups, and quit. Both menus share the Settings window's snapping preference.
 
 ## Controls
 
@@ -91,7 +91,7 @@ Two-column snapping automatically accommodates a window that refuses the request
 - `Windows.swift`: public Accessibility access, window identity/eligibility, frame updates, visible-window filtering, optional thumbnails.
 - `Overlays.swift`: nonactivating AppKit layout, placement, Assist, and divider panels.
 - `Controller.swift`: drag lifecycle, placement verification, keyboard shortcuts, snap groups, and runtime settings.
-- `App.swift`: menu bar and setup UI.
+- `App.swift`: Dock menu, menu bar, and setup UI.
 
 Window coordinates use logical points in the Quartz convention: primary display top-left origin. AppKit panel frames are converted with the primary display's height, including monitors with negative coordinates. Layout boundaries are rounded together so thirds do not leave one-pixel seams.
 
@@ -157,3 +157,243 @@ See [CodeRabbit's automatic-review controls](https://docs.coderabbit.ai/configur
 - [Apple Accessibility API](https://developer.apple.com/documentation/applicationservices/axuielement)
 - [ScreenCaptureKit window capture](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-in-macos)
 - [Screenshot capture API](https://developer.apple.com/documentation/screencapturekit/scscreenshotmanager)
+
+## Always-on mode
+
+The menu bar, Dock menu, Settings and centered warning share the authenticated
+client and setup coordinator. Activation is always manual. The warning has a red
+triangle, a white exclamation mark and a Deactivate button; it remains visible
+while normal sleep is uncertain. This is a broad manual override, including with
+the lid open. App-managed critical-warning recovery is best effort; macOS
+emergency sleep protection is not guaranteed.
+
+This development stack remains unmerged and unarmed. Current installation and
+acceptance state is recorded in `docs/current-state.md`. The selected local route
+requires app and helper signatures from
+one dedicated certificate: each validates itself, pins its exact leaf certificate
+and requires the peer's fixed identifier with that same certificate. This runtime
+policy does not require Apple membership, a Team ID or trust in a certificate name.
+There is no ad-hoc privileged fallback. Certificate rotation requires coordinated
+normal-sleep restoration, helper removal and reinstallation; it never auto-enrolls.
+The dedicated local certificate and harmless native service probe have passed
+signing, root launch, reciprocal authentication and removal checks on this Mac.
+Production local staging is available below; native helper setup and authenticated
+off-state acceptance passed on this Mac. A separately approved brief open-lid
+activation and warning Deactivate drill passed and finished OFF. A later brief
+closed-lid hard-surface drill also passed and finished OFF; its sampling gap and
+continuous segment are documented in `VERIFICATION.md`. The user confirmed normal
+screen/input on reopening and the Dock Activate action. App-hang/app-crash
+restoration and explicit helper removal/reinstall also passed native drills.
+The user also confirmed Dock activation, warning visibility above Settings/across
+desktops/fullscreen, and menu-bar deactivation; the lead then verified OFF.
+Longer-duration/backpack use, helper-crash/reboot and physical critical-event
+recovery remain unproven. See the current bookmark for release status. The Developer ID staging script below remains a separate paid distribution
+route. Synthetic boundary checks do not prove local service acceptance.
+Signed IPC, approval, closed-lid behavior,
+critical-event recovery and native acceptance remain separate gates.
+
+Settings provides explicit setup, approval navigation, repair and verified helper
+removal. A valid signed bundle can be reported as notFound before its first
+registration: Set up always-on helper or Repair helper setup explicitly attempts
+registration, then checks real status. Check again alone never registers. This
+state remains a visible warning and is not proof of normal sleep. Invalid signing
+instead offers signed-install repair and recheck; failed setup remains retryable. Its helper actions stay in a fixed footer for a layout below the warning. Native window renders and clicks verify these
+controls; whole-desktop stacking/occlusion remains unverified. Removal first restores normal sleep,
+seals activation admission and verifies the same helper connection before asking
+the OS to unregister. A failed removal offers Finish helper removal, including
+after reconnect. Pending OS work cannot be treated as finished at a timeout.
+Wake/focus checks never activate or register automatically. Client work and owned
+sessions use a balanced App Nap activity that permits system and display sleep.
+
+The GUI links read-only probes, shared IPC, client and setup modules; privileged
+writers and the daemon runtime remain separate. Regression commands in **zsh**:
+
+```zsh
+swift build -c debug
+swift build -c release
+.build/debug/AlwaysOnChecks
+.build/debug/AlwaysOnEngineChecks
+.build/debug/AlwaysOnNativeChecks
+.build/debug/AlwaysOnServiceChecks
+.build/debug/AlwaysOnDaemonChecks
+.build/debug/AlwaysOnClientChecks
+.build/debug/AlwaysOnSetupChecks
+```
+
+The independent preview uses the same native warning and Settings footer with an
+in-memory backend. It imports no native setup/client/power implementation. In
+**zsh**, after quitting any previous preview:
+
+```zsh
+bash scripts/build-always-on-preview.sh
+open "dist/Always-on Preview.app"
+```
+
+Choose a fixture to inspect active, setup, signing, approval, repair, activation,
+removal and failed-recovery states. Preview setup/removal/navigation are inert.
+Activation/restoration takes about two seconds; Fail next restoration exercises
+the persistent recovery warning. No power settings or installed apps change.
+The warning grows to its content on normal displays, with faded diagonal black/
+yellow stripes and no normal scrollbar. On constrained displays (at least 320 ×
+300 logical points) overflowing content uses scrolling with hidden indicators; that minimum does not establish that the full Settings footer
+fits alongside it. Cross-Space/fullscreen, multi-display, VoiceOver and physical
+sleep behavior require their own acceptance checks. See `VERIFICATION.md`.
+
+## Signed staging (separate from installation)
+
+`scripts/build-signed-staging.sh` prepares a new candidate under
+`dist/signed-staging/<commit>-<UTC>-<UUID>/artifacts/`. It never replaces or starts
+the running app, registers a helper, or changes power settings. The existing
+ad-hoc development packager is unchanged.
+
+On clean committed source, this **zsh** command checks layout and tool availability
+without signing, reading Keychain identities, submitting to Apple, or creating an
+artifact:
+
+```zsh
+bash scripts/build-signed-staging.sh --preflight
+```
+
+A positive run requires an Apple **Developer ID Application** certificate and its
+private key, the matching Team ID, and a previously configured Keychain notary
+profile. No suitable identity is currently available; positive signing and native
+acceptance remain blocked. There is no automatic identity selection or ad-hoc
+fallback. After those prerequisites and separate authorization for submission,
+use **zsh** with explicit values:
+
+```zsh
+bash scripts/build-signed-staging.sh \
+  --identity YOUR_40_HEX_CERTIFICATE_FINGERPRINT \
+  --team-id YOUR_TEAM_ID \
+  --notary-profile YOUR_EXISTING_KEYCHAIN_PROFILE
+```
+
+The workflow signs the helper then app with hardened runtime and secure timestamp,
+checks Apple's Developer ID requirements and exact identities, rejects debugging
+entitlements, requires an Accepted notarization result, staples and validates the
+ticket, and checks Gatekeeper. Only then does it publish the app, a fresh ZIP and
+a nonsecret manifest with source commit, submission ID and SHA256 hashes.
+
+Argument, source or identity failures stop before building: correct the reported
+prerequisite and retry. A signing, notarization, stapling or assessment failure
+publishes nothing; correct that named operation and retry with a new candidate.
+Handled failures clean up their own partial output and preserve existing output.
+A forcibly killed process can leave a private `.partial-*` directory; it is never
+a published candidate. An interrupted submission may still finish at Apple; check
+its status with your existing notary profile before submitting again. Staging
+success proves neither installation nor physical closed-lid/critical-event behavior.
+Installation, approval, native acceptance and first arming remain separate gates.
+
+Synthetic checks inject every external command, forbid native subprocess fallback,
+and require no signing credentials. In **zsh**:
+
+```zsh
+python3 scripts/test_signed_staging.py
+python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py
+```
+
+### Harmless local-signing acceptance probe (not installed)
+
+`SigningProbeApp` and `SigningProbeDaemon` are a separate nonce-echo experiment.
+They use `local.snapbridge.signingprobe` and
+`local.snapbridge.signingprobe.service`, with no always-on power, journal or
+service dependency. Native `SMAppService` acceptance passed on this Mac using the
+dedicated local certificate: root launch, positive nonce echoes, three signature
+rejection controls and removal were verified. Earlier transient BTM startup delays
+remain unexplained. Exact evidence is in `VERIFICATION.md`; production always-on
+installation and behavior still need their separate acceptance gates.
+
+The probe GUI has explicit Register, Open Login Items, Ping, Remove, Check status
+and Quit actions. Launching performs no service action. Register/Remove stay
+pending until the OS actually completes; competing actions remain disabled.
+Quit stays available, including when the OS is stuck: quitting is not cleanup,
+and the operation may continue. Reopen, then Check status/Remove to recover.
+Only a successful nonce echo is labeled SUCCESS. Rejection, error and timeout
+are all reported as no success, not evidence that authentication enforcement
+worked. Missing signing offers an actionable Check status result without crashing.
+
+The next native drill requires a **dedicated local code-signing certificate** and
+explicit administrator approval. This build does not create/import a certificate,
+change system trust, use an unrelated key, install, launch, register or arm anything.
+Untrusted self-signed identities may appear with `CSSMERR_TP_NOT_TRUSTED`; the
+packager lists all identities, selects only the explicit fingerprint, and relies
+on actual strict signing/requirement verification. It never changes certificate
+trust or assumes that a listed identity will pass macOS installation.
+
+Safe read-only preparation (zsh):
+
+```zsh
+bash scripts/build-signing-probe.sh --preflight
+```
+
+After dedicated-certificate approval, the separate staging command is
+`bash scripts/build-signing-probe.sh --identity FORTY_HEX_CERTIFICATE_FINGERPRINT`.
+It requires committed clean source, creates a unique `dist/signing-probe` output,
+signs hardened-runtime helper then app with no timestamp/entitlements, verifies
+both exact leaf pins and identifiers, and writes public fingerprint/source/binary
+hashes. No notarization, network, Gatekeeper/trust change or installation occurs.
+Failed staging cleans its own temporary output; a forced process death may leave
+an unpublished `.partial-*` directory. Existing/racing candidates are preserved.
+The existing Developer ID packager remains separate and unchanged.
+
+After review, stage the dedicated probe and separately authorize copying that
+candidate to a stable local app location and Register/administrator approval.
+Check status, then obtain a successful GUI Ping. Run each bundled negative
+fixture below, with a fresh successful GUI Ping before **and** after each one.
+Use the manifest fingerprint for `ACTUAL_PIN`, and a different forty-hex pin for
+`WRONG_PIN` (the CLI rejects an equal pin). Commands are zsh, in `artifacts`:
+
+```zsh
+./wrong-id wrong-id ACTUAL_PIN
+./ad-hoc ad-hoc ACTUAL_PIN
+./wrong-pin wrong-pin WRONG_PIN
+```
+
+The first fixture is same-certificate/wrong client ID, the second ad-hoc, and the
+third valid same-certificate client ID/wrong expected helper pin. They are separate
+probe-only executables; they expose no production auth option. Any unexpected
+successful echo fails the drill. A negative without successful surrounding pings
+is inconclusive. Finally use Remove, await completion, Check status for not
+registered and verify daemon exit before deleting the candidate. If anything
+fails, retain the bundle and use Check status/Remove; do not kill a root process
+or replace this with a legacy privileged installer. A successful harmless drill
+still does not prove production sleep behavior or authorize first activation.
+
+### Local production staging
+
+`scripts/build-local-staging.sh` prepares only the production app/helper/current
+artwork in a unique `dist/local-signed-staging/<commit>-<UUID>/artifacts` directory.
+It never replaces the installed app, launches anything, registers a service or
+changes power settings. A dedicated local certificate avoids paid membership;
+no notarization, timestamp request or trust change is performed. This is a local
+candidate, not a notarized distribution. Production installation and first
+activation require their separate acceptance gates.
+
+Read-only preparation on clean committed source (zsh):
+
+```zsh
+bash scripts/build-local-staging.sh --preflight
+```
+
+After review and authorization to use the dedicated signing identity (zsh):
+
+```zsh
+bash scripts/build-local-staging.sh --identity FORTY_HEX_CERTIFICATE_FINGERPRINT
+```
+
+The packager selects only that exact certificate/private-key identity, including
+a self-signed identity marked untrusted in the listing. It signs helper then app
+with hardened runtime and verifies each fixed identifier, exact certificate and
+absence of entitlements. The manifest records public certificate fingerprint,
+source commit and both executable hashes. Probe/negative/check binaries are not
+packaged. Both binaries must pass; there is no ad-hoc fallback.
+
+Missing prerequisites or command failures publish nothing; correct the named
+prerequisite and retry. Existing/racing candidates are preserved. Handled failures
+remove only owned output; a forcibly killed process can leave an unpublished
+`.partial-*` directory. No failure changes installed state. The Developer ID and
+harmless-probe packagers remain separate. Native production signing, installation
+and physical recovery evidence must be reported separately from synthetic tests.
+
+Synthetic checks use injected commands and forbid native subprocess fallback
+(zsh): `python3 scripts/test_local_staging.py`.

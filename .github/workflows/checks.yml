@@ -24,17 +24,46 @@ jobs:
           persist-credentials: false
       - name: Validate source metadata
         run: |
-          bash -n scripts/build-app.sh scripts/build-fixture.sh
-          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist
+          bash -n scripts/*.sh
+          python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py scripts/probe_staging.py scripts/test_probe_staging.py scripts/local_staging.py scripts/test_local_staging.py
+          plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist Resources/AlwaysOnPreviewInfo.plist Resources/local.snapbridge.alwayson.service.plist Resources/SigningProbeInfo.plist Resources/local.snapbridge.signingprobe.service.plist
           git diff --check
+      - name: Run isolated signed staging checks (synthetic commands only)
+        run: python3 scripts/test_signed_staging.py
+      - name: Run isolated local probe staging checks
+        run: python3 scripts/test_probe_staging.py
+      - name: Run isolated local production staging checks
+        run: python3 scripts/test_local_staging.py
       - name: Build application with supplied artwork
         run: bash scripts/build-app.sh
+      - name: Run harmless signing probe checks
+        run: .build/release/SigningProbeChecks
       - name: Run regression checks
         run: .build/release/SnapCoreChecks
+      - name: Run always-on state regression checks
+        run: .build/release/AlwaysOnChecks
+      - name: Run recovery engine regression checks
+        run: .build/release/AlwaysOnEngineChecks
+      - name: Run native recovery IO checks
+        run: .build/release/AlwaysOnNativeChecks
+      - name: Run service coordinator checks
+        run: .build/release/AlwaysOnServiceChecks
+      - name: Run native daemon boundary checks
+        run: .build/release/AlwaysOnDaemonChecks
+      - name: Run authenticated client checks
+        run: .build/release/AlwaysOnClientChecks
+      - name: Run always-on setup checks
+        run: .build/release/AlwaysOnSetupChecks
+      - name: Package always-on UI preview
+        run: bash scripts/build-always-on-preview.sh
       - name: Package disposable test helper
         run: bash scripts/build-fixture.sh
       - name: Verify application bundles
         run: |
+          codesign --verify --deep --strict "dist/Always-on Preview.app"
+          plutil -lint "dist/Always-on Preview.app/Contents/Info.plist"
+          codesign --verify --strict "dist/Pane Management.app/Contents/MacOS/PaneAlwaysOn"
+          plutil -lint "dist/Pane Management.app/Contents/Library/LaunchDaemons/local.snapbridge.alwayson.service.plist"
           codesign --verify --deep --strict "dist/Pane Management.app"
           codesign --verify --deep --strict "dist/Pane Management Test Windows.app"
           plutil -lint "dist/Pane Management.app/Contents/Info.plist" "dist/Pane Management Test Windows.app/Contents/Info.plist"

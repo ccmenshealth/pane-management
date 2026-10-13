@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/SigningProbeDaemon</string>
+	<key>Label</key>
+	<string>local.snapbridge.signingprobe.service</string>
+	<key>MachServices</key>
+	<dict>
+		<key>local.snapbridge.signingprobe.service</key>
+		<true/>
+	</dict>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>RunAtLoad</key>
+	<true/>
+</dict>
+</plist>

@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 import ApplicationServices
+import AlwaysOnCore
+import AlwaysOnUI
+import AlwaysOnSetup
+import AlwaysOnClient
 
 @main
 enum PaneManagementApp {
@@ -8,16 +12,24 @@ enum PaneManagementApp {
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
-        app.setActivationPolicy(.accessory)
+        app.setActivationPolicy(.regular)
         withExtendedLifetime(delegate) { app.run() }
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+@MainActor final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let preferences = Preferences()
     lazy var controller = SnapController(preferences: preferences)
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
+    private let dockMenu = NSMenu()
+    let alwaysOn = AlwaysOnController(backend: SetupPresentationAdapter(SetupCoordinator(
+        service: NativeSetupService(),
+        client: SetupClientAdapter(AlwaysOnClient(transport: NativeClientTransport(), scheduler: SystemClientScheduler())),
+        proof: NativeSetupProof())))
+    private var wakeObserver: NSObjectProtocol?
+    private var alwaysOnWarnings: AlwaysOnWarnings?
+    private var alwaysOnStarted = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let identifier = Bundle.main.bundleIdentifier ?? "local.snapbridge.app"
@@ -27,8 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let mainMenu = NSMenu()
         let appItem = NSMenuItem(); mainMenu.addItem(appItem)
         let appMenu = NSMenu(); appItem.submenu = appMenu
-        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
-        settingsItem.target = self; appMenu.addItem(settingsItem)
+        appMenu.addItem(settingsMenuItem())
         appMenu.addItem(withTitle: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         NSApp.mainMenu = mainMenu
         if let icon = AppArtwork.applicationIcon { NSApp.applicationIconImage = icon }
@@ -39,18 +50,64 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem = item
         let menu = NSMenu(); menu.delegate = self; item.menu = menu
         rebuildMenu(menu)
+        dockMenu.delegate = self
+        alwaysOnWarnings = AlwaysOnWarnings(controller: alwaysOn)
+        alwaysOn.onQuitDecision = { NSApp.reply(toApplicationShouldTerminate: $0) }
+        alwaysOn.onOpenSettings = { [weak self] in self?.showSettings() }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.alwaysOn.checkSetup() }
+        }
+        alwaysOnStarted = true
+        alwaysOn.checkSetup()
         controller.start()
         PreviewAccess.shared.check(userInitiated: false)
         if !preferences.accessibility || CommandLine.arguments.contains("--settings") { showSettings() }
     }
 
-    func menuWillOpen(_ menu: NSMenu) { rebuildMenu(menu) }
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        rebuildDockMenu()
+        return dockMenu
+    }
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        if menu === dockMenu { rebuildDockMenu() }
+        else { rebuildMenu(menu) }
+    }
+    private func rebuildDockMenu() {
+        dockMenu.removeAllItems()
+        dockMenu.addItem(snappingMenuItem())
+        dockMenu.addItem(alwaysOnMenuItem())
+        dockMenu.addItem(.separator())
+        dockMenu.addItem(settingsMenuItem())
+    }
+    private func snappingMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: preferences.enabled ? "Pause snapping" : "Resume snapping", action: #selector(toggle), keyEquivalent: "")
+        item.target = self
+        return item
+    }
+    private func alwaysOnMenuItem() -> NSMenuItem {
+        let state = alwaysOn.state
+        let item = NSMenuItem(title: alwaysOn.actionTitle, action: #selector(alwaysOnAction(_:)), keyEquivalent: "")
+        item.target = self; item.representedObject = alwaysOn.action
+        item.isEnabled = alwaysOn.actionEnabled
+        if !alwaysOn.actionEnabled { item.action = nil }
+        item.state = state == .active ? .on : .off
+        return item
+    }
+    @objc private func alwaysOnAction(_ sender: NSMenuItem) {
+        guard let action = sender.representedObject as? AlwaysOnAction else { return }
+        alwaysOn.perform(action)
+    }
+    private func settingsMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        item.target = self
+        return item
+    }
     private func rebuildMenu(_ menu: NSMenu) {
         menu.removeAllItems()
         let title = NSMenuItem(title: "Pane Management", action: nil, keyEquivalent: ""); title.isEnabled = false
         menu.addItem(title)
-        let enabled = NSMenuItem(title: preferences.enabled ? "Pause snapping" : "Resume snapping", action: #selector(toggle), keyEquivalent: "")
-        enabled.target = self; menu.addItem(enabled)
+        menu.addItem(snappingMenuItem())
+        menu.addItem(alwaysOnMenuItem())
         menu.addItem(.separator())
         let layouts = NSMenuItem(title: "Choose layout   ⌃⌥Z", action: #selector(showLayouts), keyEquivalent: "")
         layouts.target = self; menu.addItem(layouts)
@@ -66,8 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             parent.submenu = groups; menu.addItem(parent)
         }
         menu.addItem(.separator())
-        let settings = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
-        settings.target = self; menu.addItem(settings)
+        menu.addItem(settingsMenuItem())
         let quit = NSMenuItem(title: "Quit Pane Management", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quit)
     }
@@ -82,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 580, height: 700),
                                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = "Pane Management"; window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, testAssist: { [weak self] in
+            window.contentView = NSHostingView(rootView: SettingsView(preferences: preferences, alwaysOn: alwaysOn, testAssist: { [weak self] in
                 self?.settingsWindow?.orderOut(nil)
                 DispatchQueue.main.asyncAfter(deadline: .now()+0.2) { self?.controller.testAssistWithFixture() }
             }, testOtherApps: { [weak self] in
@@ -91,20 +147,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }, testIntegration: { [weak self] in self?.controller.testFixtureIntegration() }))
             window.center(); settingsWindow = window
         }
+        alwaysOnWarnings?.reconcile()
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // Reopening an already-running menu-bar app must not cover an active
+        // Reopening the already-running app must not cover an active
         // chooser with Settings or steal its keyboard focus.
         if controller.assistant.isVisible || controller.palette.isVisible || controller.groupPicker.isVisible { return false }
         showSettings(); return true
     }
-    func applicationWillTerminate(_ notification: Notification) { controller.stop() }
+    func applicationDidBecomeActive(_ notification: Notification) {
+        if alwaysOnStarted { alwaysOn.checkSetup() }
+    }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Duplicate launches terminate before owning a power session. They must
+        // neither wait for an uninstalled callback nor restore another instance.
+        guard alwaysOnStarted else { return .terminateNow }
+        return alwaysOn.requestQuit() ? .terminateNow : .terminateLater
+    }
+    func applicationWillTerminate(_ notification: Notification) {
+        if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
+        controller.stop()
+    }
 }
 
 struct SettingsView: View {
     @ObservedObject var preferences: Preferences
+    @ObservedObject var alwaysOn: AlwaysOnController
     @ObservedObject private var previewAccess = PreviewAccess.shared
     var testAssist: () -> Void
     var testOtherApps: () -> Void
@@ -125,6 +195,7 @@ struct SettingsView: View {
                         Text("Windows-style snapping, with the other half included.").foregroundStyle(.secondary)
                     }
                 }
+                GroupBox { AlwaysOnControls(controller: alwaysOn, actions: false).padding(8).frame(maxWidth: .infinity, alignment: .leading) }
                 Text(preferences.status).font(.callout).foregroundStyle(preferences.accessibility ? Color.green : Color.orange)
                 if NSRunningApplication.runningApplications(withBundleIdentifier: "local.snapbridge.testwindows").isEmpty == false {
                     VStack(alignment: .leading, spacing: 8) {
@@ -206,6 +277,10 @@ struct SettingsView: View {
                 Text("Local prototype · macOS 14+ · No network connections\nWindow previews stay in memory and are cleared when the picker closes. Snap groups last until Pane Management quits. Full-screen Spaces and some app-specific window limits aren’t supported.")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }.padding(26)
+        }.safeAreaInset(edge: .bottom) {
+            AlwaysOnActions(controller: alwaysOn, settings: true)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                .background(.regularMaterial)
         }.frame(width: 580, height: 700)
     }
     private func permissionRow(_ title: String, detail: String, granted: Bool, button: String, action: @escaping () -> Void) -> some View {
