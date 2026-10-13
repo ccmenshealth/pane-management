@@ -1,6 +1,29 @@
 # Pane Management — Current State
 
-## Bookmark — installed, helper approved, Always On OFF (2026-10-12)
+## Bookmark — brief native activation/Deactivate passed; finished OFF (2026-10-12)
+
+User explicitly approved the brief drill out of the backpack, on an open hard
+surface, lid open, finish OFF. Lead activated the unchanged installed app, observed
+native active state and both SleepDisabled receipts true, then clicked the actual
+warning Deactivate. Warning disappeared; Settings returned to manual-activation
+off state and both receipts false. No override remains on. AppPID95172 and
+roothelperPID93989 unchanged. Full evidence is at top VERIFICATION.md.
+
+The actual active warning showed red border/red triangle/white exclamation, faded
+black/yellow stripes, fitting text and Deactivate, no scrollbar. CUA window image
+1040×600 pixels is not a logical-point or screen-size measurement; no screenshot
+was saved/published. Accessibility and ScreenCaptureKit recognition remain proven.
+
+Signed source ddba40d66222b360d52124a09bffe87d5bd11629; runtime/review762ed660, PR16;
+stable installed path and hashes unchanged. All feature PRs unmerged. This closure
+is Markdown only; prior docs CI38346017881 passed, latest CI will be checked.
+
+Physical lid, critical-event, crash and removal drills remain unauthorized and
+unperformed. Dock/right-click remains unverified (CUA unavailable), as do global
+Spaces/stacking, VoiceOver and backpack use. No further activation is authorized
+by this handoff. Never auto-arm or claim guaranteed macOS emergency protection.
+
+## Historical bookmark — installation acceptance before activation approval (2026-10-12)
 
 Lead completed user-authorized install and native helper approval at the original
 stable `/Users/ccmh/Developer/PaneManagement/dist/Pane Management.app` path.

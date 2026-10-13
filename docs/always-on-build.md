@@ -1312,3 +1312,15 @@ VERIFICATION.md. No activation or override occurred. Native Dock/right-click is
 still unverified because CUA Dock surface is unavailable. First controlled
 activation/deactivation, physical lid, critical recovery and removal drills remain
 separately gated. All PRs unmerged; this closure changes Markdown only.
+
+#### First controlled native activation acceptance — 2026-10-12
+
+User separately approved the brief open-lid/hard-surface/out-of-backpack drill.
+Lead activated unchanged ddba40d candidate, observed active UI and dual true
+sleep-disabled receipts, then used the actual warning Deactivate and verified
+warning removal, UI off and dual false receipts. AppPID95172/helperPID93989
+unchanged; finished OFF. Actual active warning stripes/icon/text/button fitted
+without a scrollbar. Full evidence at top VERIFICATION.md; no screenshot saved.
+Physical lid/critical/crash/removal were neither approved nor performed, and
+Dock/global Spaces/VoiceOver/backpack acceptance remains open. This documentation
+closure authorizes no further activation and changes no source/candidate.

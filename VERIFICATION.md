@@ -1,3 +1,36 @@
+## Native first activation and warning Deactivate PASS — 2026-10-12
+
+User explicitly approved a brief activate/deactivate drill with the laptop out
+of the backpack, on an open hard surface, lid open, finishing OFF. Lead used the
+unchanged installed candidate: signed source ddba40d66222b360d52124a09bffe87d5bd11629,
+runtime/review762ed6600c4495d1352ebfd5be480119426ddbeb, at the original stable path.
+AppPID95172 and roothelperPID93989 remained the same throughout.
+
+1. Lead clicked native Settings Activate. UI reported active; read-only pmset
+   showed SleepDisabled1 and IOPMrootDomain showed SleepDisabledYes.
+2. Lead closed Settings to inspect the actual active warning directly: red border,
+   red triangle with white exclamation mark, faded black/yellow diagonal stripes,
+   fitting text and Deactivate button, no scroll area/bar. CUA's window image was
+   1040×600 pixels; this is not a logical-point or screen-size measurement. No
+   screenshot was saved or published.
+3. Lead clicked the warning's Deactivate button. The warning disappeared (CUA
+   noWindowsAvailable was expected), pmset returned SleepDisabled0 and
+   IOPMrootDomain SleepDisabledNo. Reopened native Settings confirmed Always-on
+   mode is off, normal sleep available and activation must be manual.
+
+The brief native activation/explicit-warning-stop drill PASSED and finished OFF;
+no sleep override was left on. This proves this observed manual path and setting
+readbacks, not physical sleep, safe backpack use or macOS emergency protection.
+Physical lid, critical-event, crash and production removal tests were not
+user-authorized or performed. Dock visual/right-click remains unverified because
+CUA Dock is unavailable; global Spaces/stacking and VoiceOver remain unproven.
+No further activation is authorized by this documentation handoff.
+
+Only Markdown/PR evidence changes here. Source, signed candidate and installed
+hashes are unchanged; all feature PRs remain unmerged. Prior docs CI38346017881
+passed; latest closure CI is checked separately. Independent/manual-security and
+lead code review remain pinned to762ed660; no new product behavior was added.
+
 ## Native installed helper setup and off-state acceptance PASS — 2026-10-12
 
 Lead's user-authorized native acceptance installed the exact signed candidate at
