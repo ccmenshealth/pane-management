@@ -35,7 +35,12 @@ at callback and Task entry. Compiled deterministic pre-fix 237/8; fixed debug/re
 reran debug/release237/0 and verified clean. Lead documentation nit (orphan
 lid-evidence heading) corrected. All roles inherited current model/effort; exact
 labels unavailable. CI38440556739 in progress; metadata/synthetic staging green.
-Isolated dedicated-identity staging authorized; installation remains Steve-gated.
+Historical staging gate was subsequently completed at signed source `b613570`.
+Steve then authorized Pane Management updates without a separate installation
+question (not unrelated installs). Lead installed that exact candidate and verified
+native OFF at 11:25:02 Pacific; see top VERIFICATION for receipt and limitations.
+No Always On activation or new native reboot/delayed-helper drill occurred.
+Documentation closeout and final CI/lead merge remain pending.
 
 ## Decisions locked October 12, 2026
 

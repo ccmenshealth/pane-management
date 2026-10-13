@@ -1,3 +1,63 @@
+## Startup recovery update — installed OFF acceptance (2026-10-13)
+
+Lead completed the authorized update at the stable primary `dist/Pane Management.app`.
+Steve superseded the separate installation-confirmation gate for Pane Management
+updates; that authority does not cover unrelated software. This closeout only
+records lead-supplied evidence; its builder performed no new build, test, staging,
+installation, process or native UI action.
+
+Installed source: `b613570dc02bc18cfb3484143e5071cfa86e3cad`.
+
+| Artifact | SHA256 |
+| --- | --- |
+| App executable | `dc8e22b7fe63ddad26cc708c62663971d4fb3c1a38920f043da54ca71187a8db` |
+| Helper executable | `bb54b7a33e13ef3e96961f35daf7332787d6a9f0a862d92c29f6c2585a48f53c` |
+| Staging manifest | `b87396bb9fd221e9bc4ac4da7e918da9a83f9cd1a6422749e9752f6dc9bec43c` |
+
+Rollback bundle preserved at primary
+`dist/backups/before-startup-recovery-278bcb69-a5cc-4338-a039-3f7ec21bb161/Pane Management.app`.
+The exact candidate and manifest remain in PR21's staging evidence. Strict/deep
+signature verification and executable hashes matched before and after installation.
+Dedicated identity and bundle identifiers remained unchanged.
+
+Native sequence, distinct from automated regression evidence:
+
+- Old app PID852/helper PID564 began OFF. Native Remove helper completed with the
+  service and helper absent. Refresh with the retained root directory brought back
+  the expected unregistered recovery warning; lead terminated only the old GUI
+  with SIGTERM after fresh dual OFF and service-absent evidence.
+- With neither app nor helper running, lead used `ditto` into a unique `.update`
+  bundle and renamed the existing app to the backup before installing the candidate.
+- New app PID42729 showed expected unregistered recovery; native Repair helper
+  setup registered it. At 11:21:43 Pacific the initial launch failed with AMFI -423
+  (unknown certificate chain) / OS_REASON_CODESIGNING, under prior BTM UUID
+  `938CFF54-A9D5-45AA-A964-5326F18A89F9`.
+- Lead changed only Pane Management's background Login Items toggle OFF; Steve
+  approved the OS authentication prompt. At Steve's request to remove the popup,
+  lead terminated GUI PID42729 only after fresh dual OFF. Toggling Pane's entry ON
+  required no further authentication and started helper PID43721 (execs1), with
+  fresh BTM UUID `2E069386-D803-4AE9-8D6E-A514C6A5D17D`. No trust/global security
+  setting was loosened. The launch-failure cause beyond these observations is not
+  established; registration refresh success is not a root-cause proof.
+- Reopened app PID43906 showed Settings OFF with no warning, verified by actual
+  accessibility state and an app-only screenshot. Accessibility/ScreenCaptureKit
+  indicators were green and snapping was enabled. This is not a new snapping
+  functional test. Settings was closed as the final native action; no screenshot
+  file was published.
+
+At **11:25:02 Pacific**, lead confirmed app PID43906/helper PID43721, pmset
+SleepDisabled0 and root SleepDisabledNo, lid open, strict/deep signature success
+and both exact executable hashes above. **Always On was never activated during
+the update. Native OFF-state acceptance passed**, with no remaining required check
+for that scope. No new physical reboot or native >90-second helper-delay drill is
+claimed; delayed recovery remains proven by virtual regressions. No general claim
+about unrelated idle-sleep settings, backlight or emergency protection is inferred.
+
+Runtime `dd7fee3` passed independent code/manual security and lead review at
+`b02ecf9`, with P2 fully resolved. Installed-source CI38440877868 passed (1m53s).
+Final documentation CI and lead review/merge remain pending; CodeRabbit stays
+excluded. Historical implementation and pre-install evidence follows.
+
 ## Startup helper delay reconciliation — build evidence (2026-10-13)
 
 ### Review follow-up — queued retry fence

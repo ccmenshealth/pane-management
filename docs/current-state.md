@@ -1,6 +1,32 @@
 # Pane Management — Current State
 
-## Bookmark — startup reconciliation reviewed; staging and installation pending (2026-10-13)
+## Bookmark — startup recovery installed; native OFF acceptance passed (2026-10-13)
+
+[PR21](https://github.com/ccmenshealth/pane-management/pull/21) is ready for lead
+merge after this documentation head's CI and review. Installed signed source is
+`b613570dc02bc18cfb3484143e5071cfa86e3cad` at the stable primary
+`dist/Pane Management.app`; exact hashes and rollback backup are at top VERIFICATION.
+Runtime `dd7fee3` passed independent code/manual security and lead review at
+`b02ecf9`; installed-source CI38440877868 passed. This follow-up is Markdown only.
+
+At 11:25:02 Pacific, lead verified app PID43906/helper PID43721, dual override OFF
+(pmset SleepDisabled0/root No), lid open, strict/deep signature and exact hashes.
+Native Settings showed OFF without the warning, recognized Accessibility and
+ScreenCaptureKit permissions, and snapping enabled; Settings was then closed.
+Always On was never activated during the update. Approved OFF-state acceptance
+passed; no further native check is required for that scope. Physical reboot or
+native >90-second delayed-helper recovery was not drilled; regression evidence is
+virtual. An initial helper signature-policy launch failure was followed by a
+scoped Login Items registration refresh and successful launch, without trust or
+security loosening. Cause beyond that sequence is not established.
+
+Steve said updates no longer need a separate installation question. This standing
+authority applies to Pane Management updates, not unrelated software installations.
+Final documentation CI/review and lead merge are the remaining steps; no builder
+merge, new build, test, staging or native action is part of this closeout.
+
+
+## Historical bookmark — startup reconciliation reviewed before installation (2026-10-13)
 
 `codex/startup-recovery` adds bounded status-only startup probes with 2/5/10/30s
 backoff, remaining at 30s until the delayed helper resolves or a manual action
