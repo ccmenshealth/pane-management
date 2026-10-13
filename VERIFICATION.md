@@ -1,3 +1,23 @@
+## Patched local candidate signed — 2026-10-12
+
+Signed source `ddba40d66222b360d52124a09bffe87d5bd11629` (runtime/review pin
+762ed660), after final docs-head CI38342796841/job115117333554 passed. Authorized
+isolated staging exited0/signed:true without prompt/error. Candidate:
+`/Users/ccmh/Developer/PaneManagement-worktrees/setup-notfound-repair/dist/local-signed-staging/ddba40d66222b360d52124a09bffe87d5bd11629-a1eb1514-4ab6-45c9-8067-f5f9ecc9c91c/artifacts/Pane Management.app`.
+
+- App SHA256 `403ccdf93075829887f16c93bd7704b21efcd09e7d9a5debe3159980f509e7e3`.
+- Helper SHA256 `80ff1843e22f59571f6cc6bfe57d6cdf63fca546d7ee7647fe19f1e9ae0a9d6f`.
+- Both signatures independently passed strict/deep exact identifier and leaf
+  EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F requirements, hardened runtime and no
+  entitlements. Manifest hashes match; expected production-only contents and
+  LSUIElement=false confirmed. Source stayed clean through staging.
+- Local ignored evidence: `.build/evidence/notfound-native-stage.json`,
+  `notfound-native-verification.log`; `notfound-native-stage-error.log` empty.
+- No installed-state, helper, power, permission or arming action by builder.
+  Candidate handed to lead for user-authorized replacement and native explicit
+  setup acceptance with Always On OFF. This is packaging evidence, not evidence
+  that real registration, Accessibility recognition or physical sleep works.
+
 ## Fresh notFound explicit setup repair — 2026-10-12
 
 Runtime/review pin `762ed6600c4495d1352ebfd5be480119426ddbeb`, PR16; base

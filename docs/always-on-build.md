@@ -1293,3 +1293,9 @@ prohibited; literal security review unavailable, independent manual fallback.
 Only Markdown changes in closure. Latest docs-head CI must pass before authorized
 isolated local staging with dedicated cert. No builder native install/helper
 action/power/permission change; lead owns acceptance and first arming stays gated.
+
+Native patched staging from clean docs source ddba40d passed after CI38342796841.
+Exact dedicated leaf/fixed IDs, runtime, no entitlements, hashes and production-only
+contents passed independent read-only checks. Candidate/evidence in VERIFICATION;
+handed to lead for authorized native replacement/setup with Always On OFF. Builder
+performed no install, launch, helper, power, permission or arming action.

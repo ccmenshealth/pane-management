@@ -1,5 +1,15 @@
 # Pane Management — Current State
 
+## Bookmark — patched local candidate ready for native setup (2026-10-12)
+
+PR16 runtime/review762ed660; signed source ddba40d66222b360d52124a09bffe87d5bd11629.
+Final pre-signing CI38342796841 passed. Authorized local staging and independent
+read-only signature/identity/runtime/entitlement/hash/content checks passed with
+no prompt/error. Exact candidate path/hashes at top VERIFICATION.md. Native
+replacement/setup remains lead-owned under user authorization with Always On OFF;
+builder did not install/launch/register/change permissions or power. This closure
+is Markdown only. No merge or first activation occurred.
+
 ## Bookmark — fresh notFound repair reviewed (2026-10-12)
 
 Draft PR16 runtime/review pin762ed6600c4495d1352ebfd5be480119426ddbeb cleared
