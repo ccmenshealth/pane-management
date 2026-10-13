@@ -11,8 +11,82 @@ import AlwaysOnDaemon
         let owner = ConsoleSession(uid: 501, auditSession: 7)
         let goodFlags: UInt64 = 0x6010
         check(BoundaryPolicy.auditValid(session: owner, before: 501, after: 501, returned: 7, auid: 501, flags: goodFlags), "valid console policy")
-        for field in 0..<10 {
-            check(!BoundaryPolicy.auditValid(session: field == 0 ? .init(uid: 0, auditSession: 7) : (field == 1 ? .init(uid: 501, auditSession: 0) : owner), before: field == 2 ? nil : 501, after: field == 3 ? 502 : 501, returned: field == 4 ? 8 : 7, auid: field == 5 ? 502 : 501, flags: field == 6 ? goodFlags | 0x1000 : field == 7 ? goodFlags & ~0x10 : field == 8 ? goodFlags & ~0x2000 : field == 9 ? goodFlags & ~0x4000 : goodFlags), "audit rejects defect \(field)")
+        for field in 0..<9 {
+            check(!BoundaryPolicy.auditValid(session: field == 0 ? .init(uid: 0, auditSession: 7) : (field == 1 ? .init(uid: 501, auditSession: 0) : owner), before: field == 2 ? nil : 501, after: field == 3 ? 502 : 501, returned: field == 4 ? 8 : 7, auid: field == 5 ? 502 : 501, flags: field == 6 ? goodFlags | 0x1000 : field == 7 ? goodFlags & ~0x10 : field == 8 ? goodFlags & ~0x2000 : goodFlags), "audit rejects defect \(field)")
+        }
+        // Exercise the production predicate through cache, bridge and coordinator,
+        // rather than injecting sessionValid=true as older bridge fixtures do.
+        for flags: UInt64 in [0x2030, 0x6030] {
+            let rig = Rig(); rig.collect(flags: flags); await rig.service.start()
+            let channel = ManagedConnection(service: rig.service, session: owner)
+            let status = await channel.handle(wire(.status))
+            check(status.state == .off && status.outcome == .observed && rig.power.writes.isEmpty, "console flags \(flags): status without arming")
+            let active = await channel.handle(wire(.activate))
+            check(active.outcome == .activated && active.activationToken != nil && rig.power.value, "console flags \(flags): manual activation")
+            let beat = await channel.handle(wire(.heartbeat, active.activationToken))
+            check(beat.state == .active && beat.outcome == .observed, "console flags \(flags): heartbeat")
+            let other = ManagedConnection(service: rig.service, session: owner)
+            let stolen = await other.handle(wire(.deactivate, active.activationToken))
+            let wrongToken = await channel.handle(wire(.deactivate))
+            check(stolen.outcome == .rejected && wrongToken.outcome == .rejected && rig.power.value, "console flags \(flags): ownership and token fences")
+            let stopped = await channel.handle(wire(.deactivate, active.activationToken))
+            check(stopped.state == .off && stopped.outcome == .observed && !rig.power.value, "console flags \(flags): deactivate")
+            _ = await channel.handle(wire(.activate))
+            let recovered = await other.handle(wire(.retryRestore))
+            check(recovered.state == .off && recovered.outcome == .observed && !rig.power.value, "console flags \(flags): reconnect retry reaches verified OFF")
+            let prepared = await other.handle(wire(.prepareForUpdateOrRemoval))
+            let final = await other.handle(wire(.status))
+            check(prepared.outcome == .prepared && prepared.preparationPermit != nil && final.preparationPermit == prepared.preparationPermit && final.state == .off, "console flags \(flags): strict removal preparation and receipt")
+            let sealed = await channel.handle(wire(.activate))
+            check(sealed.outcome == .rejected && !rig.power.value && rig.power.writes == [true, false, true, false], "console flags \(flags): removal seals activation")
+        }
+        do {
+            let rig = Rig(); rig.collect(flags: 0x6030); await rig.service.start()
+            let channel = ManagedConnection(service: rig.service, session: owner)
+            let active = await channel.handle(wire(.activate))
+            check(active.activationToken != nil, "credential transition starts from an actual lease")
+            rig.clock.now = 101; rig.collect(flags: 0x2030)
+            await rig.service.monitor()
+            check(rig.power.value && rig.power.writes == [true], "clearing only credential history does not restore active console")
+            let beat = await channel.handle(wire(.heartbeat, active.activationToken))
+            check(beat.state == .active && beat.outcome == .observed, "same lease renews after credential flag clears")
+            let stopped = await channel.handle(wire(.deactivate, active.activationToken))
+            check(stopped.state == .off && stopped.outcome == .observed && rig.power.writes == [true, false], "same lease deactivates after credential flag clears")
+        }
+        do {
+            let rig = Rig(); rig.collect(flags: 0x2030); await rig.service.start()
+            let channel = ManagedConnection(service: rig.service, session: owner)
+            let active = await channel.handle(wire(.activate))
+            rig.power.failRestore = true
+            let failed = await channel.handle(wire(.deactivate, active.activationToken))
+            check(failed.state == .recoveryRequired && rig.power.value, "credential-free console still shows actual restore failure")
+            rig.power.failRestore = false
+            let reconnect = ManagedConnection(service: rig.service, session: owner)
+            let retried = await reconnect.handle(wire(.retryRestore))
+            check(retried.state == .off && retried.outcome == .observed && !rig.power.value, "existing Retry action recovers after power failure clears")
+        }
+        for defect in 0..<12 {
+            let rig = Rig(); rig.collect(flags: 0x2030); await rig.service.start()
+            let channel = ManagedConnection(service: rig.service, session: owner)
+            let active = await channel.handle(wire(.activate))
+            check(active.activationToken != nil, "negative control \(defect) starts with a lease")
+            let session = defect == 0 ? ConsoleSession(uid: 0, auditSession: 7) :
+                defect == 1 ? ConsoleSession(uid: .max, auditSession: 7) :
+                defect == 2 ? ConsoleSession(uid: 501, auditSession: 0) :
+                defect == 3 ? ConsoleSession(uid: 501, auditSession: .max) : owner
+            let valid = BoundaryPolicy.auditValid(session: session,
+                before: defect == 4 ? nil : session.uid, after: defect == 5 ? 502 : session.uid,
+                returned: defect == 6 ? 8 : session.auditSession, auid: defect == 7 ? 502 : session.uid,
+                flags: defect == 8 ? 0x3030 : defect == 9 ? 0x2020 : defect == 10 ? 0x30 : 0x2030)
+            rig.cache.setSession(owner, valid: valid, at: defect == 11 ? 94 : 100)
+            let newcomer = ManagedConnection(service: rig.service, session: owner)
+            for op in ServiceOperation.allCases {
+                let existing = await channel.handle(wire(op, active.activationToken))
+                let fresh = await newcomer.handle(wire(op, active.activationToken))
+                check(existing.outcome == .rejected && fresh.outcome == .rejected, "identity defect \(defect) rejects existing/new \(op)")
+            }
+            await rig.service.monitor()
+            check(!rig.power.value && rig.power.writes == [true, false], "identity defect \(defect) restores owned override")
         }
         let pin = String(repeating: "0123456789ABCDEF", count: 2) + "01234567"
         let appRequirement = "identifier \"local.snapbridge.app\""
@@ -241,17 +315,21 @@ private final class TestTime { var now = 100.0 }
     func clear() throws { record = .missing }
 }
 @MainActor private final class Power: RecoveryPower {
-    var value = false, writes: [Bool] = [], pause: String?
+    var value = false, writes: [Bool] = [], pause: String?, failRestore = false
     var waiting: CheckedContinuation<Void, Never>?
     func suspend(_ point: String) async { if pause == point { await withCheckedContinuation { waiting = $0 } } }
     func release() { pause = nil; let held = waiting; waiting = nil; held?.resume() }
     func read() async throws -> PowerReceipt { await suspend("baseline"); return .init(preference: value, rootDomain: value) }
-    func setDisabled(_ disabled: Bool) async throws -> PowerReceipt { writes.append(disabled); await suspend(disabled ? "enable" : "disable"); value = disabled; return .init(preference: value, rootDomain: value) }
+    func setDisabled(_ disabled: Bool) async throws -> PowerReceipt { writes.append(disabled); if !disabled && failRestore { throw NSError(domain: "FixturePower", code: 1) }; await suspend(disabled ? "enable" : "disable"); value = disabled; return .init(preference: value, rootDomain: value) }
 }
 @MainActor private final class Rig {
     let cache = TelemetryCache(), clock = Clock(), journal = Journal(), power = Power()
     lazy var environment = CachedEnvironment(cache: cache, now: { self.clock.now })
     lazy var service = ServiceCoordinator(journal: journal, power: power, clock: clock, environment: environment)
+    func collect(flags: UInt64) {
+        let owner = ConsoleSession(uid: 501, auditSession: 7)
+        cache.setSession(owner, valid: BoundaryPolicy.auditValid(session: owner, before: 501, after: 501, returned: 7, auid: 501, flags: flags), at: clock.now)
+    }
     init() {
         cache.setNotificationsHealthy(true); cache.setBattery(.normal, at: 100); cache.setThermal(.nominal, at: 100)
         cache.setSession(.init(uid: 501, auditSession: 7), valid: true, at: 100)

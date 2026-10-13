@@ -1,3 +1,59 @@
+## Console-session recovery regression — 2026-10-13
+
+Scope: `BoundaryPolicy.auditValid` changes only required mask `0x6010` to
+`0x2010`; `0x4000` is mutable credential history. Exact signature requirements,
+kernel UID/ASID, returned ASID/AUID, before/after console UID, remote rejection,
+non-root/non-unset IDs, freshness and ownership/removal fences remain unchanged.
+See incident rules R1–R6 and primary Apple sources in `docs/always-on-build.md`.
+
+Fail-first used the new test overlay on unmodified production source at base
+`be00ea36b8b18373c9b08b6a8c4fa10c7551efb3` (product diff empty at red run).
+`swift build -c debug --product AlwaysOnDaemonChecks` compiled successfully; `.build/debug/AlwaysOnDaemonChecks` exited 1: **266 assertions, 37 failures**.
+Representative runtime failures: observed `0x2030` status, manual activation,
+heartbeat, deactivation, reconnect retry, strict removal preparation; credential
+flag clearing during a lease; actual restore-error/Retry exit. This was not a
+compile failure or merely reversing the old missing-auth-bit assertion.
+Local full red output: `/tmp/pane-console-recovery-red.log`; build output:
+`/tmp/pane-console-recovery-red-build.log`.
+
+The fixed test composes the real policy → telemetry cache → managed connection →
+service coordinator/recovery engine with in-memory journal/power. Both `0x2030`
+and `0x6030` cover all six operations, no-autoarm status, wrong-token/other-connection
+rejection and sealed removal. A midlease `0x6030`→`0x2030` transition preserves
+renewal and deactivation. Twelve invalid/stale cases still reject every operation
+on existing and new connections and restore an owned override. Failed power
+restoration remains recovery-required; existing Retry reaches verified OFF after
+the fault clears. These fixtures perform no native power writes and do not prove
+installed signed XPC acceptance.
+
+Separate debug and release builds passed. All nine suites passed in both configurations: SnapCore 60, SigningProbe
+114, AlwaysOn 84, Engine 176, Native 114, Service 355, Daemon 266, Client 181,
+Setup 178; zero failures. Diff/shell/Python/plist lint passed. Synthetic staging
+suites passed: Developer ID 17, probe 11, local production 13. After strengthening the invalid-ID controls, the exact final test overlay
+again failed 266/37 on base production; both builds and daemon suites were rerun.
+[CI38401709446](https://github.com/ccmenshealth/pane-management/actions/runs/38401709446/job/115310709103)
+passed in 1m32s on runtime head `509687c16a6c2cd57363dff2253928f53b2275f3`. No UI change: new browser/native visual rendering is not applicable;
+installed recovery acceptance requires a separately approved update.
+
+Sibling audit: native session collection has one production `auditValid` caller;
+all six service operations share admission and revalidation. No alternate auth-bit
+predicate was found in production. Independent reviewer
+`/root/console_session_recovery_reviewer` passed code/manual security review of
+`509687c16a6c2cd57363dff2253928f53b2275f3` with no findings; lead review passed the
+same head, including all six operations, ownership and removal. Lead verified the
+reviewed worktree clean. Reviewer inherited current model/effort; exact runtime
+metadata unavailable. The preserved identity policy proves an existing GUI audit
+session matching the current console UID; it does not independently prove the
+foreground ASID or an unlocked screen. No new stronger guarantee is claimed.
+
+Literal security-review tool is unavailable; independent manual security review
+is the fallback. CodeRabbit remains unavailable under the user's repository
+exclusion. This closure is Markdown only; final CI and lead delta review remain.
+Lead authorized staging with the existing dedicated local certificate after the
+review passes. Staging is a separate artifact, not installation: installed native
+recovery remains pending Steve's explicit update approval. No registration, launch,
+permission or live power change is included.
+
 ## Observed merge and release closeout — 2026-10-12
 
 - [PR16](https://github.com/ccmenshealth/pane-management/pull/16) squash-merged at
