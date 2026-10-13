@@ -1211,3 +1211,14 @@ clean before/after, no actionable findings. CI `38304407317` passed. Inherited
 current model, exact metadata unavailable; security review N/A presentation-only,
 CodeRabbit prohibited. Preview quit normally; no merge or arming. Later closure
 changes are Markdown only, checked under the repository bookkeeping exception.
+
+### Local staging implementation ledger — 2026-10-12
+
+R1 integration has no runtime conflict: warning sources match2636ff1 and auth/app/
+daemon sources matchb70efed. Three evidence-document conflicts preserve both
+branches' records. R2–R5 packager has13 passing synthetic tests including17 command
+failure/retry positions; final inert overlay20 assertion failures+7 missing-output
+errors. Lead copy nit (probe help on production command) corrected with actual
+pre-fix focused failure. Shared probe defaults and paid route remain unchanged.
+No new native acceptance is claimed. Build/regression/CI and independent review
+remain pending until the final candidate ledger entry.

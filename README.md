@@ -174,8 +174,9 @@ and requires the peer's fixed identifier with that same certificate. This runtim
 policy does not require Apple membership, a Team ID or trust in a certificate name.
 There is no ad-hoc privileged fallback. Certificate rotation requires coordinated
 normal-sleep restoration, helper removal and reinstallation; it never auto-enrolls.
-Local certificate creation, packaging and a harmless native service probe are still
-pending. The Developer ID staging script below remains a separate paid distribution
+The dedicated local certificate and harmless native service probe have passed
+signing, root launch, reciprocal authentication and removal checks on this Mac.
+Production local staging is available below; production installation is pending. The Developer ID staging script below remains a separate paid distribution
 route. Synthetic boundary checks do not prove local service acceptance.
 Signed IPC, approval, closed-lid behavior,
 critical-event recovery and native acceptance remain separate gates.
@@ -217,8 +218,9 @@ Choose a fixture to inspect active, setup, signing, approval, repair, activation
 removal and failed-recovery states. Preview setup/removal/navigation are inert.
 Activation/restoration takes about two seconds; Fail next restoration exercises
 the persistent recovery warning. No power settings or installed apps change.
-The warning supports usable displays at least 320 × 300 logical points with
-scrolling content; that minimum does not establish that the full Settings footer
+The warning grows to its content on normal displays, with faded diagonal black/
+yellow stripes and no normal scrollbar. On constrained displays (at least 320 ×
+300 logical points) overflowing content uses scrolling with hidden indicators; that minimum does not establish that the full Settings footer
 fits alongside it. Cross-Space/fullscreen, multi-display, VoiceOver and physical
 sleep behavior require their own acceptance checks. See `VERIFICATION.md`.
 
@@ -341,3 +343,42 @@ registered and verify daemon exit before deleting the candidate. If anything
 fails, retain the bundle and use Check status/Remove; do not kill a root process
 or replace this with a legacy privileged installer. A successful harmless drill
 still does not prove production sleep behavior or authorize first activation.
+
+### Local production staging
+
+`scripts/build-local-staging.sh` prepares only the production app/helper/current
+artwork in a unique `dist/local-signed-staging/<commit>-<UUID>/artifacts` directory.
+It never replaces the installed app, launches anything, registers a service or
+changes power settings. A dedicated local certificate avoids paid membership;
+no notarization, timestamp request or trust change is performed. This is a local
+candidate, not a notarized distribution. Production installation and first
+activation require their separate acceptance gates.
+
+Read-only preparation on clean committed source (zsh):
+
+```zsh
+bash scripts/build-local-staging.sh --preflight
+```
+
+After review and authorization to use the dedicated signing identity (zsh):
+
+```zsh
+bash scripts/build-local-staging.sh --identity FORTY_HEX_CERTIFICATE_FINGERPRINT
+```
+
+The packager selects only that exact certificate/private-key identity, including
+a self-signed identity marked untrusted in the listing. It signs helper then app
+with hardened runtime and verifies each fixed identifier, exact certificate and
+absence of entitlements. The manifest records public certificate fingerprint,
+source commit and both executable hashes. Probe/negative/check binaries are not
+packaged. Both binaries must pass; there is no ad-hoc fallback.
+
+Missing prerequisites or command failures publish nothing; correct the named
+prerequisite and retry. Existing/racing candidates are preserved. Handled failures
+remove only owned output; a forcibly killed process can leave an unpublished
+`.partial-*` directory. No failure changes installed state. The Developer ID and
+harmless-probe packagers remain separate. Native production signing, installation
+and physical recovery evidence must be reported separately from synthetic tests.
+
+Synthetic checks use injected commands and forbid native subprocess fallback
+(zsh): `python3 scripts/test_local_staging.py`.

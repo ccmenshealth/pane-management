@@ -25,13 +25,15 @@ jobs:
       - name: Validate source metadata
         run: |
           bash -n scripts/*.sh
-          python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py scripts/probe_staging.py scripts/test_probe_staging.py
+          python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py scripts/probe_staging.py scripts/test_probe_staging.py scripts/local_staging.py scripts/test_local_staging.py
           plutil -lint Resources/Info.plist Resources/TestWindowsInfo.plist Resources/AlwaysOnPreviewInfo.plist Resources/local.snapbridge.alwayson.service.plist Resources/SigningProbeInfo.plist Resources/local.snapbridge.signingprobe.service.plist
           git diff --check
       - name: Run isolated signed staging checks (synthetic commands only)
         run: python3 scripts/test_signed_staging.py
       - name: Run isolated local probe staging checks
         run: python3 scripts/test_probe_staging.py
+      - name: Run isolated local production staging checks
+        run: python3 scripts/test_local_staging.py
       - name: Build application with supplied artwork
         run: bash scripts/build-app.sh
       - name: Run harmless signing probe checks

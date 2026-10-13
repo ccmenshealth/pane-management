@@ -15,7 +15,7 @@ cp Resources/local.snapbridge.alwayson.service.plist "$task_app/Contents/Library
 cp Resources/Info.plist "$task_app/Contents/Info.plist"
 iconutil --convert icns --output "$task_app/Contents/Resources/AppIcon.icns" Icons/AppIcon.iconset
 cp Icons/Assets.xcassets/MenuBarIconTemplate.imageset/MenuBarIconTemplate.pdf "$task_app/Contents/Resources/MenuBarIconTemplate.pdf"
-# Ad-hoc CI/development packaging intentionally fails the daemon Apple identity gate.
+# Ad-hoc CI/development packaging intentionally fails the daemon certificate identity gate.
 codesign --force --sign - --identifier local.snapbridge.alwayson.service "$task_app/Contents/MacOS/PaneAlwaysOn"
 codesign --verify --strict "$task_app/Contents/MacOS/PaneAlwaysOn"
 codesign --force --sign - --identifier local.snapbridge.app "$task_app"

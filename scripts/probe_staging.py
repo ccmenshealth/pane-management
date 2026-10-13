@@ -19,8 +19,8 @@ INFO = "SigningProbeInfo.plist"
 DAEMON = HELPER + ".plist"
 
 
-def arguments(argv):
-    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+def arguments(argv, description=__doc__):
+    parser = argparse.ArgumentParser(description=description, allow_abbrev=False)
     parser.add_argument("--preflight", action="store_true")
     parser.add_argument("--identity")
     keys = [a.split("=", 1)[0] for a in argv if a.startswith("--")]
@@ -52,17 +52,17 @@ class ProbeStaging(Staging):
         require(self.call("xcrun", "--find", "swift")[0].strip(), "Swift unavailable.")
         return head
 
-    def verify_probe(self, target, identifier, pin):
+    def verify_probe(self, target, identifier, pin, label="Probe"):
         requirement = f'=identifier "{identifier}" and certificate leaf = H"{pin}"'
         self.call("codesign", "--verify", "--deep", "--strict", *(["-R", requirement] if pin else []), target)
         out, err = self.call("codesign", "--display", "--verbose=4", target)
         text = (out + err).decode()
         require(re.search(r"^Identifier=" + re.escape(identifier) + r"$", text, re.M)
                 and re.search(r"^CodeDirectory .*flags=0x[0-9a-fA-F]+\([^\n)]*\bruntime\b", text, re.M),
-                "Probe identifier or hardened runtime verification failed.")
+                label + " identifier or hardened runtime verification failed.")
         require(pin is not None or re.search(r"^Signature=adhoc$", text, re.M), "Negative fixture must be ad-hoc signed.")
         entitlements, _ = self.call("codesign", "--display", "--entitlements", "-", "--xml", target)
-        require(not entitlements.strip() or plistlib.loads(entitlements) == {}, "Probe must have no entitlements.")
+        require(not entitlements.strip() or plistlib.loads(entitlements) == {}, label + " must have no entitlements.")
 
     def stage(self, args):
         head = self.preflight()

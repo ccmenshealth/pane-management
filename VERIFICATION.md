@@ -1,3 +1,49 @@
+## Local production staging candidate — 2026-10-12
+
+Branch codex/local-signed-release integrates probe closureb70efed and reviewed
+warning2636ff1. Warning production/test/preview files match the reviewed warning
+branch byte-for-byte; IPC/app/daemon runtime matches the probe base. No fresh
+native UI evidence is claimed. Prior native warning sizing/stripes evidence and
+probe root-launch/authentication/removal evidence below remain distinct.
+
+The production packager reuses source/layout checks and exact leaf-pin signature
+verification, while selecting only production app/helper/assets. Both signatures
+are mandatory; no probe fixtures, paid-account requirement, ad-hoc fallback,
+notarization, service operation, trust mutation or power operation occurs.
+
+Evidence is retained in ignored `.build/local-staging-evidence/`:
+
+- Final inert API-compatible staging overlay executes the final13-test suite:
+  20 assertion failures and7 expected missing-output errors, restored in finally.
+  `run-red.py`, `inert-local-staging.py` and `red.log` preserve the recipe/result.
+  Existing shared argument guards remain functional in the inert overlay.
+- Actual pre-fix imported probe help text fails the focused production-help test
+  once (`help-prefix-red.log`). Shared parser now accepts an optional description;
+  verifier accepts an optional diagnostic label, preserving probe defaults.
+- Correct implementation:13 tests pass, including all17 external-command failure
+  positions followed by successful retry, both ID/certificate/runtime/entitlement
+  boundaries, absent identity/key, dirty/changed source, metadata, linked paths/
+  binaries, unexpected build path, exclusive publication and racing output.
+- Native subprocess fallback is forbidden by the test fixture; every external
+  command is injected. Paid17 and probe11 synthetic suites pass unchanged.
+- Python compile, per-script bash syntax, all Resource plists and diff lint pass.
+- Separate Swift builds and full named regression matrix are pending at this
+  planning entry; final evidence is appended before the review handoff.
+
+Recovery: preflight failure offers the named prerequisite and retry; signing/
+verification/build failure publishes nothing and cleans owned partial files;
+existing/racing output is preserved; publication failure removes only the newly
+reserved destination and a fresh retry succeeds. Forced termination may leave
+unpublished .partial files, never installed state. Sibling audit covers both
+production signatures and cleanup branches, local probe identity discovery and
+shared verifier defaults, paid route isolation and stable packager guard. The
+stable script's obsolete Apple-only comment is corrected without behavior change.
+
+Current model inherited; exact model/effort unavailable. Independent read-only
+code/manual-security, lead review and CI remain required. CodeRabbit prohibited;
+literal security-review unavailable, independent manual fallback applies. No real
+production signing, native launch, helper install/register, power or arming.
+
 ## Native local-signing acceptance PASS — 2026-10-12, Pacific
 
 The user explicitly authorized the same-helper diagnostic rerun. The unchanged
