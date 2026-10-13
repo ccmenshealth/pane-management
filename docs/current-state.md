@@ -1,6 +1,30 @@
 # Pane Management — Current State
 
-## Bookmark — console-session recovery fix reviewed; installation pending (2026-10-13)
+## Bookmark — recovery fix installed; warning cleared; Always On OFF (2026-10-13)
+
+User-approved update is complete at the stable app path. Native Settings showed
+OFF with no recovery warning, and Accessibility/ScreenCaptureKit permissions
+recognized. Normal quit and reopen passed. At 07:02:14 Pacific the lead verified
+app PID70254, root helper PID70090, dual sleep-override OFF and lid OPEN. Always On
+was never activated during the update. No further native check is needed for the
+approved OFF-state scope; physical backlight state is not established.
+
+[PR18](https://github.com/ccmenshealth/pane-management/pull/18) merged as
+`8cd8f789f3779a7040de9405cac24e6f352cf701`; main CI38402496439 passed.
+Installed signed source is `9f133fe39573b310787bdac0d953250ca4218059`, with runtime
+`509687c` independently reviewed and lead-reviewed; final Markdown delta was
+lead-reviewed. Exact installed hashes, preserved rollback bundle and native
+installation sequence are at the top of `VERIFICATION.md`.
+
+Ordinary system authentication restored audit flags from `0x2030` to `0x6030`
+before native acceptance. The missing-bit fix is proven by compiled red/green
+regressions, not a native `0x2030` run. An initial updated-helper launch failed;
+a scoped Login Items registration refresh then launched it successfully. Cause
+beyond those observations is not established. This fresh-main closure is Markdown
+only; no build, signing, installation, launch or power action by its builder.
+
+
+## Historical bookmark — console-session recovery fix reviewed; installation pending (2026-10-13)
 
 Isolated branch `codex/console-session-recovery` fixes a stuck recovery warning:
 a valid current console session reported audit flags `0x2030`, but N3 demanded

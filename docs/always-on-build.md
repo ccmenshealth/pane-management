@@ -431,6 +431,15 @@ foreground-ASID/unlocked-screen assertion. Markdown closure needs lead delta rev
 and final CI; separate signed staging is authorized, installed acceptance is pending
 Steve's explicit update approval. No runtime change follows the reviewed head.
 
+Incident installation closure (2026-10-13): PR18 merged as `8cd8f78`; main
+CI38402496439 passed. User-approved source `9f133fe` is installed with the existing
+local certificate; native OFF Settings, warning absence, normal quit/reopen and
+final dual OFF passed. The initial launch failure and successful scoped Login
+Items refresh are recorded in `VERIFICATION.md`. System authentication restored
+`0x6030` before acceptance, so native `0x2030` behavior is not claimed. No activation
+occurred; no additional native ask is needed for this OFF-state scope. This
+fresh-main follow-up records evidence only; CodeRabbit remains excluded.
+
 #### N1–N8 implementation lock
 
 - N1: B2b2 on `codex/always-on-daemon` adds the supported native boundary only
