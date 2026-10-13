@@ -1,5 +1,54 @@
 ## Native local production staging PASS — 2026-10-12
 
+## Fresh notFound explicit setup repair — 2026-10-12
+
+Base c2f7782; isolated codex/setup-notfound-repair. Native lead observed the exact
+signed production bundle report notFound/BTM record-not-found before registration;
+Check again and Settings Repair were inert. The helper was not running/registered,
+the recovery directory absent and both public sleep-disabled receipts false.
+Lead stopped the installed app after scoped Accessibility refresh; no override or
+activation occurred. Patched native acceptance is still pending.
+
+The shared coordinator now offers explicit setup for a valid signed notFound
+bundle, registers only after a click and identity validation, and re-inspects real
+status. notFound remains setupRequired/quit-unsafe, and the exact notRegistered
+absence proof is unchanged. Invalid signatures offer signed-install repair and
+Check again; failed registration offers a named setup retry. Pending registration
+continues excluding competing actions until actual completion.
+
+- Final tests overlaid on the actual c2f7782 coordinator (no API/inert shims):
+  **178 assertions / 27 failures**. Restored final coordinator: **178 / 0**.
+  Ignored local logs: `.build/evidence/notfound-final-prefix-red.log`,
+  `notfound-final-prefix-build.log`, `notfound-setup-final-green.log`.
+- `swift build -c debug` compile/typecheck and separate `swift build -c release`
+  passed. Debug Setup178/0, Client181/0, UI84/0, Daemon149/0; release Setup178/0
+  and UI84/0. Final debug rebuild after the red overlay passed. Existing probe
+  Swift concurrency warnings are unchanged and outside the production delta.
+- `git diff --check` passed. No plist, script, workflow, dependency or package
+  change; plist/bash/Python checks not applicable to this delta.
+- Regression exercises startup without registration/proof borrowing, both shared
+  primary action and Settings Repair, invalid signing, error/repeated-notFound
+  retry, pending exclusion and late enabled/approval/active settlement without
+  activation. Existing enabled/approval no-duplicate and exact bracket tests pass.
+- Recoverability: Set up always-on helper/Repair helper setup for notFound; signed
+  installation repair then Check again for invalid identity; retry Set Up for
+  failure/repeated notFound; wait while pending; Open Login Items after approval;
+  separate Activate only from observed off, Deactivate for observed active.
+- Sibling audit: App.swift menu and Dock both use alwaysOnMenuItem/alwaysOnAction;
+  warning/Settings primary action delegates to the same controller, Settings
+  Repair calls its same backend setup, and SetupPresentationAdapter preserves
+  the remedy. Harmless probe Register already validates identity and explicitly
+  registers independent of its status with a busy lifecycle guard; no analogous
+  notFound admission blocker. No sibling runtime change needed.
+- Builder inherited current model; exact metadata unavailable. Independent and
+  lead code/manual-security review and remote CI pending at publication. Literal
+  security-review unavailable; independent manual review required for this
+  registration-boundary change. CodeRabbit prohibited by repository restriction.
+  No merge, real signing, install, helper action, permission or power change by
+  this builder. Native rendering/repair acceptance belongs to lead after reviews,
+  CI and separately authorized local restaging. First activation remains gated.
+
+
 Reviewed runtime pin ed480e204e5b8503c7be3cd9f768f9d28beabd02; signed source
 d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd (docs-only closure). Runtime CI38333954926
 and pre-signing docs CI38334359619 passed. Lead explicitly authorized staging

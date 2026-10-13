@@ -167,8 +167,9 @@ while normal sleep is uncertain. This is a broad manual override, including with
 the lid open. App-managed critical-warning recovery is best effort; macOS
 emergency sleep protection is not guaranteed.
 
-This development stack is **not installed or armed**. The existing build 5 remains
-the running app. The selected local route requires app and helper signatures from
+This development stack remains unmerged and unarmed. Current installation and
+acceptance state is recorded in `docs/current-state.md`. The selected local route
+requires app and helper signatures from
 one dedicated certificate: each validates itself, pins its exact leaf certificate
 and requires the peer's fixed identifier with that same certificate. This runtime
 policy does not require Apple membership, a Team ID or trust in a certificate name.
@@ -176,13 +177,17 @@ There is no ad-hoc privileged fallback. Certificate rotation requires coordinate
 normal-sleep restoration, helper removal and reinstallation; it never auto-enrolls.
 The dedicated local certificate and harmless native service probe have passed
 signing, root launch, reciprocal authentication and removal checks on this Mac.
-Production local staging is available below; production installation is pending. The Developer ID staging script below remains a separate paid distribution
+Production local staging is available below; native helper acceptance is pending. The Developer ID staging script below remains a separate paid distribution
 route. Synthetic boundary checks do not prove local service acceptance.
 Signed IPC, approval, closed-lid behavior,
 critical-event recovery and native acceptance remain separate gates.
 
 Settings provides explicit setup, approval navigation, repair and verified helper
-removal. Its helper actions stay in a fixed footer for a layout below the warning. Native window renders and clicks verify these
+removal. A valid signed bundle can be reported as notFound before its first
+registration: Set up always-on helper or Repair helper setup explicitly attempts
+registration, then checks real status. Check again alone never registers. This
+state remains a visible warning and is not proof of normal sleep. Invalid signing
+instead offers signed-install repair and recheck; failed setup remains retryable. Its helper actions stay in a fixed footer for a layout below the warning. Native window renders and clicks verify these
 controls; whole-desktop stacking/occlusion remains unverified. Removal first restores normal sleep,
 seals activation admission and verifies the same helper connection before asking
 the OS to unregister. A failed removal offers Finish helper removal, including

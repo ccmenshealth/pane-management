@@ -12,6 +12,7 @@ private enum Failure: Error { case fixture }
     var failRead = false, signed = true, registerFails = false
     var registerGate: CheckedContinuation<Void, Never>?
     var holdRegister = false, holdUnregister = false, unregisterFails = false
+    var registeredStatus: SetupServiceStatus = .enabled
     var unregisterCompletion: (@MainActor (Result<Void, Error>) -> Void)?
     var onRead: (() -> Void)?
     var holdReadNumber: Int?
@@ -27,7 +28,7 @@ private enum Failure: Error { case fixture }
         registrations += 1
         if holdRegister { await withCheckedContinuation { registerGate = $0 } }
         if registerFails { throw Failure.fixture }
-        values = [.enabled]
+        values = [registeredStatus]
     }
     func unregister(_ completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         removals += 1
@@ -87,6 +88,7 @@ private enum Failure: Error { case fixture }
     @MainActor static func spin(_ condition: () -> Bool) async { for _ in 0..<10000 { if condition() { check(true, "fixture reached suspension"); return }; await Task.yield() }; check(false, "fixture reached suspension") }
     @MainActor static func main() async {
         await presentation()
+        await missingRegistration()
         let fresh = Harness()
         check(fresh.service.reads == 0 && fresh.service.registrations == 0, "constructor is inert")
         await fresh.setup.startup()
@@ -108,7 +110,7 @@ private enum Failure: Error { case fixture }
             check(!h.setup.observation.quitSafe && h.setup.observation.remedy == .retryDeactivationAndRepair, "uncertain proof \(fault)")
             check(h.service.registrations == 0, "uncertain proof cannot register \(fault)")
         }
-        for status in [SetupServiceStatus.enabled, .requiresApproval, .notFound] {
+        for status in [SetupServiceStatus.enabled, .requiresApproval] {
             let h = Harness(); h.service.values = [status]; await h.setup.startup()
             check(h.proof.powers == 0 && h.service.registrations == 0, "configured startup avoids optional proof \(status)")
             switch status {
@@ -116,7 +118,7 @@ private enum Failure: Error { case fixture }
             case .requiresApproval:
                 check(h.setup.observation.remedy == .openLoginItems && !h.setup.observation.quitSafe, "approval visible")
                 h.setup.openLoginItems(); check(h.service.opens == 1, "explicit navigation only")
-            default: check(h.setup.observation.remedy == .checkAgain && !h.setup.observation.quitSafe, "missing bundle repair")
+            default: check(false, "unexpected configured status")
             }
             await h.setup.setup(); check(h.service.registrations == 0, "no duplicate/repair registration \(status)")
         }
@@ -216,6 +218,56 @@ private enum Failure: Error { case fixture }
         print("AlwaysOnSetupChecks: \(count) assertions, \(failures) failures")
         if failures != 0 { exit(1) }
     }
+    @MainActor static func missingRegistration() async {
+        for settings in [false, true] {
+            let h = Harness(); h.service.values = [.notFound]
+            let adapter = SetupPresentationAdapter(h.setup)
+            let controller = AlwaysOnController(backend: adapter)
+            await adapter.refresh()
+            check(controller.action == .setUp && controller.needsRepair && !adapter.snapshot.quitSafe, "notFound offers explicit setup, stays unsafe")
+            check(h.service.registrations == 0 && h.proof.powers == 0 && h.proof.absences == 0, "notFound startup neither registers nor borrows absent proof")
+            check(!controller.requestQuit(), "notFound does not approve quit")
+            if settings { controller.repairHelperFromSettings() } else { controller.perform(controller.action) }
+            await spin { controller.canRemove }
+            check(h.service.registrations == 1 && h.client.statuses == 1 && controller.state == .off, "notFound shared primary/Settings action completes setup \(settings)")
+            check(h.client.activations == 0, "notFound setup never activates \(settings)")
+        }
+        let invalid = Harness(); invalid.service.values = [.notFound]; invalid.service.signed = false
+        await invalid.setup.startup(); await invalid.setup.setup()
+        check(invalid.service.registrations == 0 && !invalid.setup.observation.quitSafe && invalid.setup.observation.remedy == .checkAgain, "invalid notFound identity cannot register, offers repair/recheck")
+        if case .setupRequired(let reason) = invalid.setup.observation.state {
+            check(reason.contains("signed with the same certificate"), "invalid identity explains signed installation repair")
+        } else { check(false, "invalid identity remains setupRequired") }
+        let failure = Harness(); failure.service.values = [.notFound]; failure.service.registerFails = true
+        await failure.setup.setup()
+        check(failure.service.registrations == 1 && !failure.setup.observation.quitSafe && failure.setup.observation.remedy == .setUp, "failed notFound registration retains explicit retry")
+        if case .setupRequired(let reason) = failure.setup.observation.state {
+            check(reason.contains("Try Set Up again"), "registration failure names retry button")
+        } else { check(false, "failed notFound remains setupRequired") }
+        failure.service.registerFails = false; failure.service.registeredStatus = .notFound
+        await failure.setup.setup()
+        check(failure.service.registrations == 2 && !failure.setup.observation.quitSafe && failure.setup.observation.remedy == .setUp, "repeated notFound remains unsafe and retryable")
+        failure.service.registeredStatus = .enabled; await failure.setup.setup()
+        check(failure.service.registrations == 3 && failure.setup.observation.state == .off && failure.client.activations == 0, "explicit retry reaches observed off without activation")
+        for final in [SetupServiceStatus.enabled, .requiresApproval] { for active in [false, true] {
+            let h = Harness(); h.service.values = [.notFound]; h.service.holdRegister = true
+            h.service.registeredStatus = final; h.client.state = active ? .active : .off
+            let task = Task { await h.setup.setup() }
+            await spin { h.service.registerGate != nil }
+            check(h.setup.observation.lifecyclePending && !h.setup.observation.quitSafe && h.setup.observation.remedy == .wait, "notFound late register retains lifecycle")
+            await h.setup.setup(); await h.setup.activate(); await h.setup.deactivate(); await h.setup.refresh(); h.setup.openLoginItems()
+            let removed = await h.setup.remove()
+            check(!removed && h.service.registrations == 1 && h.client.activations == 0 && h.client.stops == 0 && h.client.removes == 0 && h.service.opens == 0, "notFound pending registration excludes competitors")
+            h.service.registerGate?.resume(); await task.value
+            check(!h.setup.observation.lifecyclePending && h.client.activations == 0, "late actual settlement releases lane without activation")
+            if final == .requiresApproval {
+                check(h.setup.observation.remedy == .openLoginItems && !h.setup.observation.quitSafe, "late approval exposes Login Items exit")
+                h.setup.openLoginItems(); check(h.service.opens == 1, "late approval accepts explicit navigation")
+            } else {
+                check(h.setup.observation.state == (active ? .active : .off) && h.setup.observation.remedy == (active ? .deactivate : .activate), "late enabled uses actual authenticated state")
+            }
+        } }
+    }
     @MainActor static func files() async {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("setup-check-" + UUID().uuidString)
         do {
@@ -268,7 +320,7 @@ private enum Failure: Error { case fixture }
         check(h.service.opens == 0, "adapter refresh no implicit navigation")
         adapter.openLoginItems(); check(h.service.opens == 1, "adapter explicit approval")
         h.service.values = [.notFound]; await adapter.refresh()
-        check(adapter.snapshot.action == .checkSetup && !adapter.snapshot.quitSafe, "adapter missing installation")
+        check(adapter.snapshot.action == .checkSetup && !adapter.snapshot.quitSafe, "adapter unsigned missing installation offers recheck")
         h.service.values = [.enabled]; await adapter.refresh()
         check(adapter.snapshot.state == .off && adapter.snapshot.action == .activate, "adapter available off")
         await adapter.activate(); check(adapter.snapshot.state == .active && adapter.snapshot.action == .deactivate, "adapter activate")

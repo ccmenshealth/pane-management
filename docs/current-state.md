@@ -5,16 +5,22 @@
 User authorized installing the update/helper with Always On OFF. Lead installed
 the exact signed source d12f18a candidate at the original stable app path after
 quitting build5; old app preserved under dist/backups/build5-a10745c6-eb1d-4db3-82ac-429f8289255a.
-Production PID78184 has valid signatures and expected executable/plist contents.
+The installed candidate has valid signatures and expected executable/plist contents.
 macOS reports notFound before registration; Check again and Repair did not advance.
-No production registration, power change or activation occurred. Accessibility
-refresh and native Dock visual acceptance remain open; builder cannot change them.
+No production registration, power change or activation occurred. Lead refreshed
+only this app's Accessibility entry with user authentication; recognition after
+patched restart and native Dock visual acceptance remain open. Lead stopped exact
+PID78184 after confirming no helper process/service/journal and both public sleep
+disabled readings false. No app/helper currently runs. Builder cannot change
+installed state. The actual striped warning rendered without a scrollbar.
 
 Isolated codex/setup-notfound-repair starts from reviewed integration c2f7782
 (explicit stacked-base exception). N1–N6 are locked before code. Current model
-inherited; exact model/effort metadata unavailable. Next: actual pre-fix red test,
-minimal shared coordinator fix, named local gates, fresh independent code/manual
-security and lead review, CI, then separately authorized restaging/native repair.
+inherited; exact model/effort metadata unavailable. The minimal fix passes debug/release builds and requested suites: Setup178/0,
+Client181/0, UI84/0, Daemon149/0 debug; Setup178/0 and UI84/0 release. Exact final
+tests failed27/178 against actual pre-fix coordinator, then passed178/0 restored.
+Diff lint passed. Next: fresh independent code/manual-security and lead review,
+remote CI, then separately authorized restaging/native repair.
 
 ## Bookmark — production local candidate signed, not installed (2026-10-12)
 

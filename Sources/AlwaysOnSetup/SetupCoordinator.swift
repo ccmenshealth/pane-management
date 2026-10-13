@@ -35,7 +35,7 @@ import AlwaysOnClient
         refreshing = true; defer { refreshing = false }
         await inspect()
     }
-    private func inspect() async {
+    private func inspect(registrationFailed: Bool = false) async {
         epoch &+= 1; let id = epoch; approval = false
         // An active warning remains actionable while its status is rechecked.
         // Safe off/unavailable snapshots expire as soon as a fresh proof starts.
@@ -50,7 +50,15 @@ import AlwaysOnClient
                 approval = true
                 publish(.setupRequired("Approve the helper in Login Items, then check again."), .openLoginItems)
             case .notFound:
-                publish(.setupRequired("Repair the signed app installation, then check again."), .checkAgain)
+                do {
+                    try service.validateIdentity()
+                    let reason = registrationFailed
+                        ? "Helper registration did not complete. Try Set Up again, or repair the signed installation and check again. Normal sleep is not verified."
+                        : "The helper is not registered or could not be located. Choose Set up always-on helper to try setup. Normal sleep is not verified."
+                    publish(.setupRequired(reason), .setUp)
+                } catch {
+                    publish(.setupRequired("Install the app and helper signed with the same certificate, then check again."), .checkAgain)
+                }
             case .notRegistered:
                 let power = try await proof.power()
                 guard id == epoch else { return }
@@ -77,16 +85,18 @@ import AlwaysOnClient
         guard !pending, !refreshing else { return }
         lifecycle = true; epoch &+= 1; approval = false
         publish(.setupRequired("Checking helper setup. Wait for completion."), .wait)
+        var registrationFailed = false
         do {
             let status = try await service.status()
-            if status == .notRegistered {
+            // macOS can report notFound for a valid bundle before its first registration.
+            if status == .notRegistered || status == .notFound {
                 try service.validateIdentity()
                 publish(.setupRequired("Registering helper. Wait for completion before changing setup."), .wait)
                 // No timeout releases this slot: the OS can still apply a late registration.
-                try await service.register()
+                do { try await service.register() } catch { registrationFailed = true }
             }
         } catch { /* Status after completion/error resolves registration races. */ }
-        await inspect()
+        await inspect(registrationFailed: registrationFailed)
         lifecycle = false
         publish(observation.state, intendedRemedy)
 
