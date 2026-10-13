@@ -1337,3 +1337,16 @@ reported normal screen/input and Dock Activate action present; Dock inspection
 was human-reported, not CUA, and no Dock activation click was tested. Full evidence
 at top VERIFICATION. No longer-duration/backpack/thermal/critical/crash/removal
 guarantee. Candidate unchanged; docs only, finished OFF, no further arming grant.
+
+#### App recovery and lifecycle closeout — 2026-10-12
+
+User authorized further recovery drills/release closure. Lead observed automatic
+dual-OFF recovery after exact-app SIGSTOP (first OFF21.742s) and SIGKILL (first
+OFF1.063s), native removal with absent service/process, and explicit reinstall
+reusing approval, authenticated OFF. Recovery directory remained root:wheel0700.
+Installed source/signatures/hashes unchanged. Exact timing/limits in VERIFICATION.
+Human Dock activation/warning layering/Spaces/fullscreen/menu-bar stop remains
+pending; do not infer final OFF after that activity. No helper-crash/reboot/physical
+critical stress or prolonged backpack proof. All merges pending: after gates pass,
+lead retargets integrated PR16 to main, verifies final CI, squash-merges once, then
+closes PRs2–15 superseded preserving review. No source rewrite; docs-only builder.

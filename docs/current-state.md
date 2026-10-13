@@ -1,6 +1,28 @@
 # Pane Management — Current State
 
-## Bookmark — brief closed-lid test passed; finished OFF (2026-10-12)
+## Bookmark — recovery drills passed; human visual check pending (2026-10-12)
+
+User authorized continuing recovery drills/release closure. Lead verified app-hang
+restoration (last sampled ON20.704s, first OFF21.742s; stayed OFF to resume41.565s),
+app-crash restoration (first OFF1.063s; stayed OFF11.517s), native helper removal
+and explicit reinstall with existing approval. Full timing/PID/readback evidence
+at top VERIFICATION.md. Last lead-verified reinstall state was authenticated OFF,
+appPID8366/helperPID8607, dual OFF/lid open. Protected root:wheel0700 directory
+remains after removal; no deletion claim. Permissions stayed recognized.
+
+Pending human action: Dock activation, warning above Settings/Spaces/fullscreen,
+then menu-bar deactivation. Do not claim this passed or assume final OFF after
+user activity without confirmation. Helper-crash, reboot, physical critical
+thermal/battery stress and prolonged backpack use remain untested. No auto-arm.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629, runtime/review
+762ed660, strict/deep signatures and installed hashes unchanged. All merges remain
+pending. Once applicable gates pass, lead will review the integrated diff,
+retarget PR16 to main, check final CI, squash once and close PRs2–15 as superseded
+while preserving review history. No runtime rewrite required. This closure is
+Markdown only; prior docs CI38347362302 passed, latest checks pending.
+
+## Historical bookmark — brief closed-lid test passed (2026-10-12)
 
 User authorized the brief closed-lid hard-surface drill. Lead sampled 62 closed
 rows over 62.441519 seconds in the second monitor segment, maximum gap 1.027101

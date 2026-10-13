@@ -1,3 +1,51 @@
+## Native app-hang, app-crash and removal/reinstall recovery PASS — 2026-10-12
+
+User authorized continuing recovery drills and release closure. This supersedes
+prior drill-specific no-further-activation handoffs. Lead performed the following
+native tests against the unchanged installed signed source ddba40d (runtime/review
+762ed660). Times below are Pacific on October 12; dual ON/OFF means agreement of
+pmset SleepDisabled and IOPMrootDomain SleepDisabled, not physical sleep proof.
+
+- **App hang:** exact app PID95172 received SIGSTOP at 21:48:28.703267, after
+  confirming dual ON and lid open. Last sampled ON was 20.704 seconds after stop;
+  first sampled OFF was 21.742 seconds. Both remained OFF through the 41.565-second
+  resume point. After SIGCONT, native CUA showed OFF/manual activation. Restoration
+  is bounded by those sample observations, not asserted at an exact instant.
+- **App crash:** after native reactivation and dual ON, exact app PID95172 received
+  SIGKILL at 21:49:35.834286. First sampled dual OFF was 1.063 seconds later and
+  stayed OFF through 11.517 seconds. Old PID was absent. Native reopen produced
+  app PID8366, OFF/manual activation, with existing permissions still recognized.
+- **Verified helper removal:** native Remove helper around 21:50 reported
+  “Helper removed. Normal sleep was verified.” The exact launchctl service and
+  root helper process were absent; both readings OFF and lid open. The protected
+  recovery directory remained root:wheel0700; it was NOT deleted.
+- **Explicit reinstall:** native Set Up reused existing user approval without a
+  new prompt. UI again reported authenticated OFF; new root helper PID8607,
+  runs1/execs1, with both readings OFF. Strict/deep signatures passed and installed
+  executable hashes remained:
+  app `403ccdf93075829887f16c93bd7704b21efcd09e7d9a5debe3159980f509e7e3`,
+  helper `80ff1843e22f59571f6cc6bfe57d6cdf63fca546d7ee7647fe19f1e9ae0a9d6f`.
+
+Thermal state was fair before these drills. No helper crash, reboot, physical
+critical thermal/battery stress, or long-duration/backpack test was performed.
+No automation or automatic arming was introduced. These results establish only
+the observed app-hang/crash restoration and explicit removal/reinstall paths.
+
+**Pending human visual check:** activate through the Dock, inspect warning above
+Settings/across Spaces/fullscreen, then deactivate through the menu bar. This has
+not been reported complete. Last lead-verified state after reinstall was OFF;
+final state after pending user activity must be rechecked, not assumed.
+
+All merges remain pending. Planned release closure, once applicable gates pass:
+lead reviews the integrated diff, retargets PR16 to main and checks final CI,
+squash-merges once, then closes PRs2–15 as superseded while preserving their
+review history. No source rewrite is required or authorized by this docs work.
+This commit changes Markdown/PR evidence only; builder performed no native action,
+build, test, signing, installation, helper/power operation or merge. Prior docs
+CI38347362302 passed; this closure's checks are reported separately. Runtime
+reviews remain pinned to762ed660; CodeRabbit is prohibited and new security review
+is not applicable to this evidence-only delta.
+
 ## Brief native closed-lid execution and reopen acceptance PASS — 2026-10-12
 
 User separately approved a 30-second closed-lid test on the same open hard
