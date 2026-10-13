@@ -1,4 +1,47 @@
-## Approved native service drill — 2026-10-12, Pacific
+## Native local-signing acceptance PASS — 2026-10-12, Pacific
+
+The user explicitly authorized the same-helper diagnostic rerun. The unchanged
+signed source12baca95 candidate was recopied to the same
+`/Users/ccmh/Applications/Local Signing Probe.app` location and exact app/helper
+certificate requirements reverified. Register reached enabled. At18:37:47,
+launchctl showed root SigningProbeDaemonPID8385 running, execs1/trampolined1.
+GUI8284 and scoped logs verified these ordered controls:
+
+| Pacific time | Action and result |
+| --- | --- |
+| 18:37:54 | GUI positive nonce ping SUCCESS |
+| 18:38:14.925 | Wrong-ID same-cert fixturePID8752; daemon logged “Dropping check-in message due to code signing requirement”; CLI exit0 NO SUCCESS |
+| 18:38:23 | Fresh GUI positive nonce ping SUCCESS |
+| 18:38:32.249 | Ad-hoc fixturePID8968; daemon logged the same code-signing rejection; CLI exit0 NO SUCCESS |
+| 18:38:35 | Fresh GUI positive nonce ping SUCCESS |
+| 18:38:42.453 | Wrong-pin fixturePID9100 using forty zeroes; client logged “Received message forbidden due to code signing requirement”; CLI exit0 NO SUCCESS |
+| 18:38:47 | Fresh GUI positive nonce ping SUCCESS |
+
+CUA visually confirmed each success. Because the successful message text can stay
+unchanged, scoped logs confirmed fresh connections for subsequent pings. Negative
+fixtures share an identical executable image and appear under process name
+`wrong-id` in logs; the explicit invocation and PID mapping above identifies each
+scenario. Positive controls surround every rejection. This demonstrates actual
+root launch and reciprocal certificate/identifier enforcement for this harmless
+probe on this Mac; failures alone are no longer the basis for acceptance.
+
+Remove completed; explicit Check status returned not registered, then Quit.
+Final launchctl job, daemonPID8385 and probe GUI/daemon processes were absent.
+Finder moved only the installed probe copy to Trash; the signed staging candidate
+and manifest remain. Original Pane Management build5PID96007 and executable hash
+`3367ecbfc6d95a54bde086348d4c67988c8be8089042ba30a4c853f6634e978a`
+unchanged. No power, production helper or trust operation occurred.
+
+The rerun succeeded without a root trace, Terminal or password. Diagnostic output
+directory `/tmp/pane-probe-diagnostic-b9jmjchi` remained empty. Earlier delayed
+BTM pre-exec failures remain unexplained transient behavior, not a demonstrated
+local-certificate rejection. No workaround/source change was introduced between
+attempts. Reviewed productpin9458b946 and signed source12baca95 remain unchanged;
+this closure is Markdown only. Native acceptance unblocks the next integration
+and local product packaging slice; production install/UI/lid/recovery testing
+and first always-on activation remain distinct gates.
+
+## Earlier approved native service drill — 2026-10-12, Pacific
 
 **Outcome: registration/approval and removal verified; root executable launch and
 successful authenticated communication remain inconclusive.** The user explicitly

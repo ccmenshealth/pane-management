@@ -280,8 +280,11 @@ python3 -m py_compile scripts/signed_staging.py scripts/test_signed_staging.py
 `SigningProbeApp` and `SigningProbeDaemon` are a separate nonce-echo experiment.
 They use `local.snapbridge.signingprobe` and
 `local.snapbridge.signingprobe.service`, with no always-on power, journal or
-service dependency. Local certificate authentication is implemented, but native
-`SMAppService` acceptance remains unproven; external examples disagree.
+service dependency. Native `SMAppService` acceptance passed on this Mac using the
+dedicated local certificate: root launch, positive nonce echoes, three signature
+rejection controls and removal were verified. Earlier transient BTM startup delays
+remain unexplained. Exact evidence is in `VERIFICATION.md`; production always-on
+installation and behavior still need their separate acceptance gates.
 
 The probe GUI has explicit Register, Open Login Items, Ping, Remove, Check status
 and Quit actions. Launching performs no service action. Register/Remove stay

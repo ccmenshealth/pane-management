@@ -1,5 +1,27 @@
 # Pane Management — Current State
 
+## Bookmark — native local-signing probe PASS; removed (2026-10-12)
+
+- User-authorized diagnostic rerun used the identical signed source12baca95
+  candidate at the same `/Users/ccmh/Applications/Local Signing Probe.app` path.
+  No rebuild, signing/auth change, privileged trace, Terminal or password needed.
+  Register reached enabled; launchctl18:37:47 Pacific showed root daemonPID8385
+  running with execs1/trampolined1. Four GUI positive nonce pings succeeded.
+- Wrong-ID same-cert, ad-hoc client and wrong expected helper pin were each
+  rejected between successful positive pings. Scoped logs explicitly record the
+  daemon's code-signature rejection twice and client's wrong-pin rejection once.
+  Exact PID/timestamp mapping is in VERIFICATION.md. Harmless native acceptance
+  PASSED on this Mac with the dedicated local certificate.
+- Remove plus explicit Check status confirmed not registered; Quit completed.
+  Final launchctl job, root daemon8385 and probe GUI/daemon processes absent.
+  Finder moved only the installed probe copy to Trash; signed candidate retained.
+  Original build5PID96007/hash unchanged. No power or production helper action.
+- Earlier BTM startup delays remain unexplained transient failures; they did not
+  demonstrate certificate rejection. Product/review pin9458b946 and signed source
+  12baca95 unchanged. This update is Markdown only. Next integration/local product
+  packaging can use this evidence; production installation, real warning/Dock/lid
+  recovery acceptance and first always-on activation remain separate gates.
+
 ## Bookmark — approved native probe inconclusive; removed safely (2026-10-12)
 
 - User explicitly authorized “run and remove test helper” and personally approved

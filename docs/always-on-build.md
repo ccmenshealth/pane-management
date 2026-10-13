@@ -1110,3 +1110,19 @@ Next targeted root-launch diagnosis needs separate human administrator handoff i
 privileged sampling is required; no privileged sample obtained in this drill.
 Reviewed product9458b946 and signed source12baca95 remain unchanged. This closure is
 Markdown only; no further drill, signing, build or production activation performed.
+
+### Native local-signing acceptance PASS — 2026-10-12
+
+Authorized diagnostic rerun of identical signed source12baca95 at the same path
+succeeded: launchctl root daemon8385 execs1/trampolined1, four positive GUI pings
+surrounding wrong-ID/ad-hoc/wrong-pin rejections, with explicit signature-rejection
+logs and PID mapping in VERIFICATION.md. No privileged trace/password/Terminal,
+source workaround, rebuild or resigning. Earlier BTM delay remains unexplained;
+it was not proof of certificate rejection. Native harmless acceptance passes on
+this Mac. Actual Remove+Check status/Quit, job/process absence and installed-copy
+Finder Trash verified; signed candidate retained, baseline build5 unchanged.
+
+Product/review9458b946 and signed source12baca95 unchanged. This Markdown closure
+unblocks subsequent integration/local product staging work, not production arming.
+Real product installation, Dock/warning/lid/recovery acceptance and first activation
+remain separate gates. No power or production helper action occurred in the probe.
