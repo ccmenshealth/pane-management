@@ -57,6 +57,7 @@ private enum Failure: Error { case fixture }
     var removeOK = true, holdRemove = false, holdActivate = false
     var removalGate: CheckedContinuation<Void, Never>?, activationGate: CheckedContinuation<Void, Never>?
     func event(_ state: ClientState) { self.state = state; onChange?() }
+    func probeStartup() async -> (state: ClientState, retry: Bool) { statuses += 1; return (state, false) }
     func status() async { statuses += 1; onChange?() }
     func activate() async {
         activations += 1; let earlierStops = stops
@@ -87,6 +88,8 @@ private enum Failure: Error { case fixture }
     @MainActor static func rejectsAsync(_ label: String, _ action: () async throws -> Void) async { do { try await action(); check(false, label) } catch { check(true, label) } }
     @MainActor static func spin(_ condition: () -> Bool) async { for _ in 0..<10000 { if condition() { check(true, "fixture reached suspension"); return }; await Task.yield() }; check(false, "fixture reached suspension") }
     @MainActor static func main() async {
+        await startupChecks(check)
+        await startupLoopback(check)
         await presentation()
         await missingRegistration()
         let fresh = Harness()

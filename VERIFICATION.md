@@ -1,5 +1,69 @@
 ## Lid-close display check — 2026-10-13
 
+
+## Startup helper delay reconciliation — build evidence (2026-10-13)
+
+Lead observed app attempts ending 10:04:38.503 Pacific after a 10:03:24 reboot,
+helper listener beginning 10:05:48.916, and no fresh client request until manual
+Retry at 10:11:30.834 immediately confirmed OFF. That establishes the missing
+startup retry; the helper's initial delay cause is not established.
+
+The coordinator's first real controller/adapter refresh now probes authenticated
+status and retries unresolved startup failures at 2/5/10/30s, capped at 30s without
+permanent expiry. Each client readiness attempt is bounded at five seconds; native
+registration/power-proof reads retain their existing bounded readers. No process
+activity is held for a background probe or retry. One probe/timer at a time; weak
+closures release unused coordinators. Manual actions cancel the retry and advance
+an epoch so late probe results cannot replace activation, stop or lifecycle state.
+Subsequent probes preserve the warning's actionable Retry/Repair controls.
+
+Status-only means no explicit mutation RPCs or client mutation replay. It does NOT
+mean the helper cannot write: its existing status path may restore unsafe owned
+state or clean the journal. Production ServiceCoordinator/RecoveryEngine loopback
+checks prove a healthy lease on another connection survives a startup probe, while
+critical telemetry still permits existing helper-owned restoration to verified OFF.
+No daemon, engine, trust, identity, audit, freshness or ownership policy changed.
+
+Fail-first evidence: archived exact pre-fix production `06873169f210fc2619b70f284c97558bf229d5ea`
+into ignored `.build/startup-pre-fix`, overlaid only the three setup test files,
+and ran `swift run --package-path .build/startup-pre-fix --disable-sandbox
+--cache-path .build/cache -Xswiftc -DPRE_FIX AlwaysOnSetupChecks`. The transparent
+PRE_FIX convenience initializer only accepts/ignores the new scheduler argument;
+it delegates to the old initializer and changes no production behavior. Compile
+passed; **218 assertions, 11 runtime failures**. Failures include no automatic
+recovery after >90 virtual seconds, missing backoff, process activity, foreign
+active mutation, lost-probe recovery, and blocked lifecycle recovery. Fixed setup
+suite: **218 assertions, 0 failures**, including actual controller startup wiring,
+long delay, persistent unavailable, hung deadline, no explicit mutation requests,
+manual setup/removal/activation/Retry supersession, stale replies, transport loss,
+setup/removal-required termination and weak timer cleanup.
+
+Recoverability and sibling audit:
+
+| Path/state | Visible exit and evidence |
+| --- | --- |
+| Startup helper unavailable/hung | Existing recovery warning; Retry deactivation/Repair remain available during later probes; eventual authenticated OFF clears it |
+| Genuine recovery or foreign active | Stop background retry; explicit Retry/Repair; production loopback preserves another healthy lease |
+| Approval/missing signed helper | Existing Login Items/Set Up exits; no automatic registration; retries stop |
+| Removal required | Existing Finish removal exit; no autoactivation; removal loopback verifies final permit/unregister |
+| Manual activate/deactivate/Retry | Startup cancelled first; client FIFO serializes with any bounded probe; late replies cannot erase resulting state |
+| Manual setup/removal | Epoch fences old status; real registration/removal lifecycle unchanged; failed removal retains its specific retry exit |
+| Startup/focus/wake | App uses existing controller/adapter refresh; coalesced probe and capped backoff prevent overlapping attempts |
+| Owned active/ordinary refresh/client loss | Existing status, heartbeat and mutating safety-recovery paths unchanged; startup probe refuses to disturb owned token, closes its connection, and fences its loss callbacks |
+
+Both separate `swift build --disable-sandbox --cache-path .build/cache` and
+`swift build -c release --disable-sandbox --cache-path .build/cache` passed.
+All nine executables passed in BOTH configurations: SnapCore 60 scenarios,
+AlwaysOn/UI 84 assertions, engine 176, native 114, service 355, daemon 266,
+client 181, setup 218, signing 114, all zero failures. `bash -n scripts/*.sh`
+(each file), `plutil -lint Resources/*.plist` (six files) and `git diff --check`
+passed. Logs are retained locally in ignored `.build/startup-recovery-evidence`.
+Warning UI source is unchanged;
+existing 84 UI assertions run in both configurations. No new native render, reboot,
+installation or production power drill is claimed by this builder. Independent
+code/manual security review and lead review are pending; literal security-review
+is unavailable and CodeRabbit is excluded by Steve. Installed build is unchanged.
+
 Steve explicitly approved a brief Always On test on a hard surface, ending OFF.
 The read-only sampler was running before activation and before requesting closure.
 From 07:15:27 Pacific it recorded 186 samples with no errors and a maximum 1.280s

@@ -14,21 +14,24 @@ private let session = ConsoleSession(uid: 501, auditSession: 7)
     func clear() throws { stored = .missing }
 }
 @MainActor private final class Power: RecoveryPower {
-    var writes: [Bool] = []
-    func read() async throws -> PowerReceipt { .init(preference: false, rootDomain: false) }
-    func setDisabled(_ value: Bool) async throws -> PowerReceipt { writes.append(value); return .init(preference: value, rootDomain: value) }
+    var writes: [Bool] = [], value = false
+    func read() async throws -> PowerReceipt { .init(preference: value, rootDomain: value) }
+    func setDisabled(_ value: Bool) async throws -> PowerReceipt { writes.append(value); self.value = value; return .init(preference: value, rootDomain: value) }
 }
 @MainActor private final class Environment: ServiceEnvironment {
+    var thermal: ThermalGuard = .nominal
     func isCurrent(_ value: ConsoleSession) -> Bool { value == session }
     func samples(for value: ConsoleSession) -> ServiceSamples {
-        .init(battery: .normal, batteryAt: 100, thermal: .nominal, thermalAt: 100, sessionValid: value == session, sessionAt: 100)
+        .init(battery: .normal, batteryAt: 100, thermal: thermal, thermalAt: 100, sessionValid: value == session, sessionAt: 100)
     }
 }
 @MainActor private final class Channel: ClientChannel {
     var isOpen = true
+    var onRequest: ((ServiceOperation) -> Void)?
     let key: ConnectionKey, service: ServiceCoordinator
     init(_ service: ServiceCoordinator) { self.service = service; key = service.accept(session)! }
     func send(_ data: Data, completion: @escaping @MainActor (Result<Data, Error>) -> Void) {
+        onRequest?((try? BoundaryPolicy.decode(data))?.operation ?? .status)
         Task { do { completion(.success(try BoundaryPolicy.encode(await service.handle(BoundaryPolicy.decode(data), from: key)))) }
             catch { completion(.failure(error)) } }
     }
@@ -37,8 +40,11 @@ private let session = ConsoleSession(uid: 501, auditSession: 7)
 }
 @MainActor private final class Transport: ClientTransport {
     let service: ServiceCoordinator
+    var operations: [ServiceOperation] = []
     init(_ service: ServiceCoordinator) { self.service = service }
-    func connect(lost: @escaping @MainActor () -> Void) throws -> ClientChannel { Channel(service) }
+    func connect(lost: @escaping @MainActor () -> Void) throws -> ClientChannel {
+        let channel = Channel(service); channel.onRequest = { [weak self] in self?.operations.append($0) }; return channel
+    }
 }
 @MainActor private final class Registration: SetupService {
     var removals = 0
@@ -81,4 +87,27 @@ private final class Activity: ClientActivity {
     var begins = 0, ends = 0
     func begin() -> AnyObject { begins += 1; return NSObject() }
     func end(_ token: AnyObject) { ends += 1 }
+}
+
+@MainActor func startupLoopback(_ check: (Bool, String) -> Void) async {
+    let power = Power(), environment = Environment()
+    let service = ServiceCoordinator(journal: Journal(), power: power, clock: Clock(), environment: environment)
+    await service.start()
+    let owner = AlwaysOnClient(transport: Transport(service), scheduler: SystemClientScheduler(), activity: Activity())
+    check(await owner.activate().state == .active, "startup loopback establishes a real engine-owned lease")
+    let transport = Transport(service)
+    let guest = AlwaysOnClient(transport: transport, scheduler: SystemClientScheduler(), activity: Activity())
+    let setup = SetupCoordinator(service: Registration(), client: SetupClientAdapter(guest), proof: Proof())
+    await SetupPresentationAdapter(setup).refresh()
+    for _ in 0..<100 { await Task.yield() }
+    check(transport.operations == [.status] && power.writes == [true], "status-only startup does not adopt or restore another connection's healthy lease")
+    check(!setup.observation.quitSafe && setup.observation.remedy == .retryDeactivationAndRepair, "foreign active loopback remains explicit recovery")
+    environment.thermal = .critical
+    let nextTransport = Transport(service)
+    let next = AlwaysOnClient(transport: nextTransport, scheduler: SystemClientScheduler(), activity: Activity())
+    let nextSetup = SetupCoordinator(service: Registration(), client: SetupClientAdapter(next), proof: Proof())
+    await SetupPresentationAdapter(nextSetup).refresh()
+    check(nextTransport.operations == [.status] && power.writes.last == false && !power.value, "status retains existing helper-owned critical-stop restoration")
+    check(nextSetup.observation.state == .off, "helper-owned safety recovery can produce authenticated OFF")
+    _ = await owner.deactivate()
 }

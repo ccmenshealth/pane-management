@@ -1,5 +1,30 @@
 # Always-on mode — authorized build
 
+## Startup reconciliation decisions locked October 13, 2026
+
+- D1: Only unresolved startup checks retry, with bounded attempts and 2/5/10/30
+  second backoff, remaining at 30 seconds while unavailable.
+- D2: Background attempts send only authenticated status requests, never explicit
+  mutation RPCs or client mutation replay, registration, removal or permission
+  changes. Existing helper status-triggered safety restoration/journal cleanup
+  remains unchanged. Verified OFF clears the warning; real recovery stays actionable.
+- D3: Preserve trust, session, ownership and freshness checks. Manual actions
+  supersede probes; stale responses cannot overwrite them. One bounded probe at
+  a time; no pending task or timer may retain the coordinator indefinitely.
+- D4: Stop on OFF, removal-required, setup-required, authoritative active/recovery
+  or manual supersession. Unowned active is not adopted. No sleep-preventing
+  activity is held by probes or retry timers.
+- D5: Warning copy and rendering remain unchanged.
+- D6: Audit startup, focus, wake, manual retry, activation, deactivation, setup,
+  removal and transport loss; preserve visible operator exits.
+- D7: No installation, production launch, helper lifecycle or live power action
+  during implementation. Separate lead authorization gates signing/installation.
+
+Native incident evidence supplied by lead: after 10:03:24 Pacific reboot, app
+connection attempts ended at 10:04:38.503; helper listener started at 10:05:48.916.
+No fresh client request arrived until manual Retry at 10:11:30.834 succeeded.
+The helper initialization delay's underlying cause is not established.
+
 ## Decisions locked October 12, 2026
 
 The user explicitly instructed "Let's build it anyway" after the documented

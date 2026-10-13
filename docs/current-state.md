@@ -1,5 +1,25 @@
 # Pane Management — Current State
 
+## Bookmark — startup reconciliation built; review and installation pending (2026-10-13)
+
+`codex/startup-recovery` adds bounded status-only startup probes with 2/5/10/30s
+backoff, remaining at 30s until the delayed helper resolves or a manual action
+supersedes the check. Authenticated OFF clears the warning automatically; observed
+foreign active/recovery remains visible with Retry/Repair. Existing helper-owned
+safety restoration during status is unchanged. No autoactivation or client mutation
+replay. Warning rendering is unchanged; normal startup/focus/wake use the existing
+controller → adapter → coordinator path.
+
+Builder inherited the current model/effort; exact runtime labels unavailable.
+Final regression overlay on untouched `0687316` production compiled: 218 assertions,
+11 failures. Fixed setup suite: 218/0. Separate debug/release builds, all nine
+suites in both configurations and lint passed; exact evidence is at top VERIFICATION.md.
+Independent code/manual security and lead review, CI, separate signed staging and
+Steve's explicit installation approval remain pending. CodeRabbit remains excluded.
+No installed bundle, app/helper lifecycle, permissions or live power state changed.
+Installed source remains `9f133fe` at the stable primary `dist/Pane Management.app`.
+
+
 ## Follow-up — lid-close display check completed; Always On OFF (2026-10-13)
 
 User-approved hard-surface test captured internal display-driver brightness
