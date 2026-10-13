@@ -1,5 +1,13 @@
 # Pane Management — Current State
 
+## Bookmark — local production staging planning (2026-10-12)
+
+Isolated codex/local-signed-release starts from probe closureb70efed. R1–R7
+are locked before implementation. Native harmless acceptance passed; production
+local packaging/integration is next. No real production signing, install or arming.
+Independent review, lead review and CI remain required. Original build5 preserved.
+
+
 ## Bookmark — native local-signing probe PASS; removed (2026-10-12)
 
 - User-authorized diagnostic rerun used the identical signed source12baca95

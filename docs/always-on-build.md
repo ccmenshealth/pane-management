@@ -1126,3 +1126,39 @@ Product/review9458b946 and signed source12baca95 unchanged. This Markdown closur
 unblocks subsequent integration/local product staging work, not production arming.
 Real product installation, Dock/warning/lid/recovery acceptance and first activation
 remain separate gates. No power or production helper action occurred in the probe.
+
+### Local production staging — locked R1–R7 (2026-10-12)
+
+R1. Integrate reviewed warning branch2636ff1 with probe/auth baseb70efed; preserve
+chronological native evidence, audit shared copy and packaging siblings, and make
+no power semantics change. R2. Separate explicit forty-hex local identity or
+read-only preflight; reuse verified staging mechanisms, clean committed source,
+fixed production IDs and current artwork/Dock metadata. Publish only production
+app/helper/resources under unique dist/local-signed-staging; no probe fixtures.
+R3. Release build, helper then app exact certificate signing, hardened runtime,
+timestamp none, no entitlements or ad-hoc fallback; strict own pin/ID checks on
+both binaries, public source/pin/SHA256 manifest. No paid identity, Team ID,
+notary/network or trust change; explicit self-signed identity lookup permits the
+reviewed untrusted suffix. Never replace the stable bundle.
+R4. Reject invalid inputs/paths/metadata; clean only owned partial/output, preserve
+existing/racing candidates. Failures publish no usable candidate and explain the
+failed prerequisite with retry. Native effects and permissions remain separate.
+R5. Inject every external command and forbid subprocess fallback. Fail-first
+synthetic tests cover failure positions, identity/pins/IDs, missing key, dirty
+source, races, symlinks, entitlements, cleanup and retry.
+R6. Separate debug/release builds; debug SnapCore/AlwaysOn/Engine/Native/Service/
+Daemon/Client/Setup/SigningProbe checks; release AlwaysOn/Daemon checks; all three
+staging Python suites; Python/shell/plist/diff lint. Independent read-only code
+and manual-security, lead review and CI precede any real production signing.
+CodeRabbit prohibited. Current model inherited; exact model/effort unavailable.
+R7. Draft PR on local-signing-probe, clean runtime pin for review, no merge,
+install, launch, register, activate, power, keychain or trust action. Production
+staging requires the lead's separate release of the signing gate; installation,
+physical acceptance and first arming remain separately gated. Scope under800 new
+lines excluding already reviewed merged changes.
+
+Recovery: prerequisite failures offer correcting the named prerequisite/retry;
+command failures offer retry after correcting the named operation; publication
+conflict preserves the existing candidate and retry selects a new UUID; handled
+failures remove owned partial output; forced termination can leave unpublished
+.partial directories but no installed state. Tests exercise each exit and retry.
