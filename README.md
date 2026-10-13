@@ -177,7 +177,9 @@ There is no ad-hoc privileged fallback. Certificate rotation requires coordinate
 normal-sleep restoration, helper removal and reinstallation; it never auto-enrolls.
 The dedicated local certificate and harmless native service probe have passed
 signing, root launch, reciprocal authentication and removal checks on this Mac.
-Production local staging is available below; native helper acceptance is pending. The Developer ID staging script below remains a separate paid distribution
+Production local staging is available below; native helper setup and authenticated
+off-state acceptance passed on this Mac. First activation and physical sleep/
+recovery behavior remain separately gated. The Developer ID staging script below remains a separate paid distribution
 route. Synthetic boundary checks do not prove local service acceptance.
 Signed IPC, approval, closed-lid behavior,
 critical-event recovery and native acceptance remain separate gates.

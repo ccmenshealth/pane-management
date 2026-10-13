@@ -1299,3 +1299,16 @@ Exact dedicated leaf/fixed IDs, runtime, no entitlements, hashes and production-
 contents passed independent read-only checks. Candidate/evidence in VERIFICATION;
 handed to lead for authorized native replacement/setup with Always On OFF. Builder
 performed no install, launch, helper, power, permission or arming action.
+
+#### N native acceptance closure — 2026-10-12
+
+Lead installed unchanged signed source ddba40d at the stable path. Native
+notFound→explicit Set Up→requiresApproval→user-approved authenticated off passed.
+Normal Quit/reopen and system Quit & Reopen stayed off. Final native Settings
+recognized scoped Accessibility and verified ScreenCaptureKit access after
+user-approved refresh. AppPID95172/roothelperPID93989; both public sleep-disabled
+receipts false. Exact hashes, protected journal metadata and evidence are at top
+VERIFICATION.md. No activation or override occurred. Native Dock/right-click is
+still unverified because CUA Dock surface is unavailable. First controlled
+activation/deactivation, physical lid, critical recovery and removal drills remain
+separately gated. All PRs unmerged; this closure changes Markdown only.

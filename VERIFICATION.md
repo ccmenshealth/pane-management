@@ -1,3 +1,54 @@
+## Native installed helper setup and off-state acceptance PASS — 2026-10-12
+
+Lead's user-authorized native acceptance installed the exact signed candidate at
+`/Users/ccmh/Developer/PaneManagement/dist/Pane Management.app`. Signed source
+`ddba40d66222b360d52124a09bffe87d5bd11629`; runtime/review pin
+`762ed6600c4495d1352ebfd5be480119426ddbeb`. Pre-install candidate and installed
+strict/deep exact-certificate/identifier verification passed. Installed hashes
+were rechecked unchanged after the final native restart:
+
+- App: `403ccdf93075829887f16c93bd7704b21efcd09e7d9a5debe3159980f509e7e3`.
+- Helper: `80ff1843e22f59571f6cc6bfe57d6cdf63fca546d7ee7647fe19f1e9ae0a9d6f`.
+
+Native notFound warning offered Set up always-on helper; clicking it progressed
+to requiresApproval. User approved the specific Pane Management Login Items
+administrator prompt. Its background switch became ON. App Check again then
+reported authenticated **Always-on mode is off**, normal sleep available and
+manual activation required. This proves the repaired native setup path and live
+authenticated off observation, not physical sleep or emergency protection.
+
+- launchctl showed the fixed production service running as UID0, PID93989,
+  execs1/trampolined1/runs1, no exit. Protected `/var/db/local.snapbridge.alwayson`
+  exists as root:wheel0700 from normal daemon startup. Final app PID95172.
+- Normal app Quit succeeded; reopening the same installed bundle again showed
+  off without activation. The later system Quit & Reopen also succeeded.
+- User authenticated scoped Accessibility and Screen Recording refreshes for
+  only Pane Management and the exact current stable bundle. Final native Settings
+  displayed the Accessibility checkmark and “ScreenCaptureKit access verified.
+  Previews stay in memory.” No unrelated permission entry was changed; private
+  screenshots/window contents were not saved or published.
+- Final read-only observations: pmset SleepDisabled0 and IOPMrootDomain
+  SleepDisabledNo. No activation or sleep override occurred. Primary main stayed
+  clean; build5 backup remains preserved. Builder performed only documentation
+  work during this native lead-owned acceptance sequence.
+- Actual ddba40d setup warning was actionable and fitted its content. Earlier
+  d12f18a installed warning visually demonstrated faded stripes, red/white icon
+  and no scrollbar; the warning implementation is unchanged between them.
+- Native Dock visual/right-click remains unverified because CUA could not obtain
+  the Dock surface. Reviewed regular app policy, LSUIElement=false metadata and
+  shared menu/Dock action code are not substituted for physical acceptance.
+- First activation, deactivation/restoration drill, closed-lid behavior, critical
+  battery/thermal recovery and production removal remain unperformed and gated.
+  Next is explicit user approval for a controlled activate/deactivate drill with
+  lid open on a ventilated surface, before any physical closed-lid test. Never
+  auto-arm and never claim guaranteed macOS emergency sleep protection.
+
+All feature PRs remain unmerged. Reviewed code, signed candidate and installed
+hashes are unchanged by this Markdown-only native-evidence closure. Prior docs
+CI38343298496 passed; final closure CI is checked separately. CodeRabbit remains
+prohibited; independent code/manual-security and lead review of runtime762ed660
+remain clear. No new runtime/security behavior is introduced by this record.
+
 ## Patched local candidate signed — 2026-10-12
 
 Signed source `ddba40d66222b360d52124a09bffe87d5bd11629` (runtime/review pin

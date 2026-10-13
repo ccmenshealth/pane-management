@@ -1,5 +1,29 @@
 # Pane Management — Current State
 
+## Bookmark — installed, helper approved, Always On OFF (2026-10-12)
+
+Lead completed user-authorized install and native helper approval at the original
+stable `/Users/ccmh/Developer/PaneManagement/dist/Pane Management.app` path.
+Signed source ddba40d66222b360d52124a09bffe87d5bd11629, runtime/review762ed660,
+PR16; installed hashes and full native evidence are at top VERIFICATION.md.
+Native Set Up→approval→authenticated off passed. Normal Quit/reopen and system
+Quit & Reopen stayed off. Final appPID95172, roothelperPID93989; pmsetSleepDisabled0
+and IOPMrootDomainSleepDisabledNo. Protected root:wheel0700 journal directory
+exists from daemon startup. No activation or sleep override occurred.
+
+User-approved scoped permission refresh is complete: native Settings recognized
+Accessibility and verified ScreenCaptureKit access. Setup warning is actionable
+and fits; actual Dock/right-click remains physically unverified (CUA unavailable).
+Main clean, original build5 backup preserved. Candidate/source unchanged by this
+Markdown-only closure; all feature PRs remain unmerged. Prior docs CI38343298496
+passed; final closure CI will be checked.
+
+Next: separate user gate for controlled activate/deactivate with lid open on a
+ventilated surface, then separately controlled closed-lid testing. Critical-event
+recovery and production removal also remain untested. Never auto-arm or claim
+guaranteed OS emergency sleep protection. Builder has no native action authority
+for these drills.
+
 ## Bookmark — patched local candidate ready for native setup (2026-10-12)
 
 PR16 runtime/review762ed660; signed source ddba40d66222b360d52124a09bffe87d5bd11629.
