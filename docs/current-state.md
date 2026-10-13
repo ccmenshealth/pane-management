@@ -1,5 +1,21 @@
 # Pane Management — Current State
 
+## Bookmark — fresh notFound repair reviewed (2026-10-12)
+
+Draft PR16 runtime/review pin762ed6600c4495d1352ebfd5be480119426ddbeb cleared
+fresh independent read-only code/manual-security and lead code/security review
+without findings; tree clean. Exact final pre-fix red27/178 and restored178/0,
+requested debug/release gates and diff lint passed. Initial red28 included one
+incorrect unsigned-fixture expectation, corrected before final red/gates. Current
+model inherited, exact metadata unavailable. CodeRabbit prohibited; literal
+security-review unavailable, independent manual fallback used.
+
+This closure changes docs only. Runtime CI38342598768 was pending at closure;
+latest docs-head CI must pass before isolated local staging. Lead authorizes only
+staging with the dedicated certificate after green CI, not install/launch/helper
+action/power/permission changes or arming by builder. Lead owns native acceptance.
+Installed prior signed candidate is stopped; no app/helper/power override active.
+
 ## Bookmark — installed setup blocked on fresh notFound (2026-10-12)
 
 User authorized installing the update/helper with Always On OFF. Lead installed

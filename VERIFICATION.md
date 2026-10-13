@@ -1,8 +1,7 @@
-## Native local production staging PASS — 2026-10-12
-
 ## Fresh notFound explicit setup repair — 2026-10-12
 
-Base c2f7782; isolated codex/setup-notfound-repair. Native lead observed the exact
+Runtime/review pin `762ed6600c4495d1352ebfd5be480119426ddbeb`, PR16; base
+c2f7782; isolated codex/setup-notfound-repair. Native lead observed the exact
 signed production bundle report notFound/BTM record-not-found before registration;
 Check again and Settings Repair were inert. The helper was not running/registered,
 the recovery directory absent and both public sleep-disabled receipts false.
@@ -20,6 +19,9 @@ continues excluding competing actions until actual completion.
   **178 assertions / 27 failures**. Restored final coordinator: **178 / 0**.
   Ignored local logs: `.build/evidence/notfound-final-prefix-red.log`,
   `notfound-final-prefix-build.log`, `notfound-setup-final-green.log`.
+  Initial red was28/178: one changed expectation incorrectly ignored the older
+  adapter fixture's retained unsigned identity. Restoring its correct Check again
+  expectation yielded the authoritative exact final red27/178 above.
 - `swift build -c debug` compile/typecheck and separate `swift build -c release`
   passed. Debug Setup178/0, Client181/0, UI84/0, Daemon149/0; release Setup178/0
   and UI84/0. Final debug rebuild after the red overlay passed. Existing probe
@@ -40,14 +42,18 @@ continues excluding competing actions until actual completion.
   the remedy. Harmless probe Register already validates identity and explicitly
   registers independent of its status with a busy lifecycle guard; no analogous
   notFound admission blocker. No sibling runtime change needed.
-- Builder inherited current model; exact metadata unavailable. Independent and
-  lead code/manual-security review and remote CI pending at publication. Literal
-  security-review unavailable; independent manual review required for this
-  registration-boundary change. CodeRabbit prohibited by repository restriction.
+- Fresh independent read-only code/manual-security and lead code/security reviews
+  clear at762ed660 with no actionable findings; lead verified clean tree. All roles
+  inherited current model; exact metadata unavailable. Literal security-review
+  unavailable, independent manual fallback used. CodeRabbit prohibited by repo.
+  Original runtime CI38342598768 was pending when docs closure was requested;
+  latest docs-head CI must pass before signing. Runtime code remains unchanged.
   No merge, real signing, install, helper action, permission or power change by
   this builder. Native rendering/repair acceptance belongs to lead after reviews,
   CI and separately authorized local restaging. First activation remains gated.
 
+
+## Native local production staging PASS — 2026-10-12
 
 Reviewed runtime pin ed480e204e5b8503c7be3cd9f768f9d28beabd02; signed source
 d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd (docs-only closure). Runtime CI38333954926

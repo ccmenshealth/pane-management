@@ -1280,3 +1280,16 @@ pending → wait for actual completion; approval → Open Login Items then Check
 again; authenticated off → Activate only by a new click; active → Deactivate.
 Independent manual security review is required for the registration boundary.
 CodeRabbit remains prohibited. Lead owns installed state and native acceptance.
+
+#### N repair review ledger — 2026-10-12
+
+PR16 runtime/review pin762ed6600c4495d1352ebfd5be480119426ddbeb cleared fresh
+independent read-only code/manual-security and lead code/security reviews with
+no actionable findings; clean tree verified. Exact final pre-fix red27/178,
+restored178/0; separate debug/release builds and named affected suites passed.
+Initial red28 included a corrected unsigned-fixture expectation; final red is
+authoritative. Current model inherited, exact metadata unavailable. CodeRabbit
+prohibited; literal security review unavailable, independent manual fallback.
+Only Markdown changes in closure. Latest docs-head CI must pass before authorized
+isolated local staging with dedicated cert. No builder native install/helper
+action/power/permission change; lead owns acceptance and first arming stays gated.
