@@ -1,5 +1,19 @@
 # Pane Management — Current State
 
+## Bookmark — production local candidate signed, not installed (2026-10-12)
+
+Native staging from clean source d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd passed
+with the dedicated certificate after clear reviews and CI38334359619. Both
+production signatures, fixed IDs, exact leaf pins, hardened runtime, no
+entitlements and expected bundle contents passed. Candidate path/hashes are at
+the top of VERIFICATION.md. Runtime/review pin remains ed480e2.
+
+No prompt, install, launch, helper registration, power/trust/ACL change or arming.
+Original build5 PID96007/hash unchanged; production job/process/journal absent.
+Next is separately authorized native installation/approval and production
+acceptance; physical/lid/critical recovery and first activation remain gated.
+This native-evidence closure is docs only; draft PR15 remains unmerged.
+
 ## Bookmark — local production staging reviewed (2026-10-12)
 
 Draft PR15 runtime/review pin ed480e204e5b8503c7be3cd9f768f9d28beabd02, base

@@ -1239,3 +1239,14 @@ certificate EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F from clean committed source
 Stop for signing prompts/blockers. No install, launch, registration, root journal,
 power, trust, keychain ACL or arming. Candidate evidence follows separately;
 production installation/physical acceptance and first activation remain gated.
+
+### Native production local staging ledger — 2026-10-12
+
+After docs CI38334359619 passed, staging-only authorized run succeeded from clean
+source d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd. Both exact certificate/identifier
+signatures, runtime flags, no entitlements and only production contents were
+verified independently; concrete path/hashes are in VERIFICATION.md. No signing
+prompt, trust mutation or paid signing. Runtime/review pin ed480e2 unchanged.
+Baseline96007/hash preserved; production job/process/journal absent. No install,
+launch, register, power or arming. Subsequent native installation/approval and
+production/physical acceptance remain separate gates. This closure is docs only.

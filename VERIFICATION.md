@@ -1,3 +1,36 @@
+## Native local production staging PASS — 2026-10-12
+
+Reviewed runtime pin ed480e204e5b8503c7be3cd9f768f9d28beabd02; signed source
+d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd (docs-only closure). Runtime CI38333954926
+and pre-signing docs CI38334359619 passed. Lead explicitly authorized staging
+only with dedicated public certificate EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F.
+The native staging command exited0, signed:true, with no signing prompt or error.
+
+Candidate artifacts: `/Users/ccmh/Developer/PaneManagement-worktrees/local-signed-release/dist/local-signed-staging/d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd-e1791ea0-0f8e-49ad-bf5f-d137ca780c74/artifacts`.
+
+- App executable SHA256: `5ad0411004e05d42311f34c674c46f0cb2ebe24a12d3a6d556212ec87be4648d`.
+- Helper executable SHA256: `a52fdee888a1d41c876b3693006186e8acb6e6778625d0ef06c201085a172cda`.
+- Packager gates and separate read-only codesign strict/deep verification passed
+  for BOTH fixed production identifiers and the exact selected leaf fingerprint.
+  Actual metadata shows hardened runtime, Authority Pane Management Local Signing,
+  TeamIdentifier not set. Entitlement output is absent/empty for both.
+- Bundle contains only Info.plist, the two production executables, production
+  LaunchDaemon plist, current icon/menu glyph and signing resource seal. No probe/
+  negative/check executables. Info is build6, LSUIElement=false (Dock metadata).
+- Candidate hashes independently match its manifest. Local evidence is retained
+  in `.build/local-staging-evidence/native-stage.json` and
+  `native-verification.log`; native-stage-error.log is empty.
+- Original build5 remains PID96007 with SHA256
+  3367ecbfc6d95a54bde086348d4c67988c8be8089042ba30a4c853f6634e978a. Production
+  launchctl service, PaneAlwaysOn process and /var/db/local.snapbridge.alwayson
+  remain absent. No helper has launched during packaging. No install, launch,
+  registration, root-journal, power, trust/keychain ACL or arming action occurred.
+
+This proves local candidate signing and packaging, not native production service
+acceptance, warning/Dock global behavior, critical recovery or physical lid use.
+Installation/approval and first activation remain separate gates. This evidence
+commit is Markdown only; reviewed runtime and signed-source pins remain distinct.
+
 ## Local production staging candidate — 2026-10-12
 
 Branch codex/local-signed-release integrates probe closureb70efed and reviewed
