@@ -1,3 +1,35 @@
+## Final requested visual acceptance PASS; final OFF verified — 2026-10-12
+
+Steve answered **“all works”** to the requested check: activate through the Dock
+right-click action, open Pane Management Settings, switch desktops, enter a
+fullscreen app, confirm the warning remains above those surfaces, then deactivate
+through the menu bar. These results are **USER-REPORTED native acceptance**, not
+CUA observations of the Dock/Spaces/fullscreen interactions.
+
+After that answer, the lead independently confirmed dual OFF and lid open through
+CLI readbacks. Native CUA Settings showed Always-on mode OFF with manual activation
+required, recognized permission checkmarks, and unchanged appPID8366/helperPID8607.
+This closes the pending human visual check and verifies final OFF after user
+activity, rather than assuming the requested deactivation succeeded.
+
+The requested Always On/Dock/warning acceptance gates now pass through the
+combination of individually recorded native lead observations and human reports.
+This does not establish helper-crash/reboot recovery, physical critical thermal or
+battery protection, prolonged backpack use, VoiceOver, or unasked legacy snapping
+actions. No extrapolation or emergency-protection guarantee is made.
+
+Installed signed source remains ddba40d66222b360d52124a09bffe87d5bd11629; final setup
+runtime/review pin remains762ed6600c4495d1352ebfd5be480119426ddbeb, with earlier
+component review pins preserved below. Installed path, signatures and executable
+hashes are unchanged. This update changes documentation only; builder performed
+no runtime, build, signing, candidate, native or merge action.
+
+PR16 is already retargeted to main as the integrated release. Merge is still
+PENDING final docs CI and lead check. Planned closure is one squash of PR16, then
+close PRs2–15 as superseded while preserving their review history. Prior integrated
+CI38348582654 passed; final closure checks are reported separately. No merge or
+superseded-PR closure is claimed until observed.
+
 ## Native app-hang, app-crash and removal/reinstall recovery PASS — 2026-10-12
 
 User authorized continuing recovery drills and release closure. This supersedes

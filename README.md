@@ -184,8 +184,10 @@ closed-lid hard-surface drill also passed and finished OFF; its sampling gap and
 continuous segment are documented in `VERIFICATION.md`. The user confirmed normal
 screen/input on reopening and the Dock Activate action. App-hang/app-crash
 restoration and explicit helper removal/reinstall also passed native drills.
+The user also confirmed Dock activation, warning visibility above Settings/across
+desktops/fullscreen, and menu-bar deactivation; the lead then verified OFF.
 Longer-duration/backpack use, helper-crash/reboot and physical critical-event
-recovery remain unproven; see the current bookmark for pending visual checks. The Developer ID staging script below remains a separate paid distribution
+recovery remain unproven. See the current bookmark for release status. The Developer ID staging script below remains a separate paid distribution
 route. Synthetic boundary checks do not prove local service acceptance.
 Signed IPC, approval, closed-lid behavior,
 critical-event recovery and native acceptance remain separate gates.

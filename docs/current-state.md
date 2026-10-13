@@ -1,6 +1,27 @@
 # Pane Management — Current State
 
-## Bookmark — recovery drills passed; human visual check pending (2026-10-12)
+## Bookmark — requested acceptance passed; OFF; merge pending (2026-10-12)
+
+Steve reported “all works” for Dock activation, warning above Pane Settings/across
+desktops/fullscreen, and menu-bar deactivation. This is USER-REPORTED acceptance,
+distinct from CUA. Lead subsequently confirmed dual OFF/lid open via CLI and
+native Settings OFF/manual activation with permission checkmarks recognized.
+AppPID8366/helperPID8607 unchanged. Final state is verified OFF. Full evidence and
+prior controlled activation/lid/app-recovery/removal drills are in VERIFICATION.
+
+Requested Always On/Dock/warning acceptance gates pass. Helper-crash/reboot,
+physical critical thermal/battery protection, prolonged backpack use and VoiceOver
+remain unproven; these results say nothing about unasked legacy snapping actions.
+No auto-arm or guarantee of emergency sleep protection.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629, final setup
+runtime/review762ed660, stable app path/signatures/hashes unchanged. PR16 is
+retargeted to main with the integrated release description. Merge remains PENDING
+final docs CI and lead check: squash PR16 once, then close PRs2–15 as superseded
+preserving their review history. No merge/closure has occurred. This commit is
+Markdown only; prior integrated CI38348582654 passed, final checks pending.
+
+## Historical bookmark — recovery drills passed, visual check was pending (2026-10-12)
 
 User authorized continuing recovery drills/release closure. Lead verified app-hang
 restoration (last sampled ON20.704s, first OFF21.742s; stayed OFF to resume41.565s),

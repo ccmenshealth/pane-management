@@ -1350,3 +1350,15 @@ pending; do not infer final OFF after that activity. No helper-crash/reboot/phys
 critical stress or prolonged backpack proof. All merges pending: after gates pass,
 lead retargets integrated PR16 to main, verifies final CI, squash-merges once, then
 closes PRs2–15 superseded preserving review. No source rewrite; docs-only builder.
+
+#### Final requested visual acceptance and release gate — 2026-10-12
+
+Steve reported “all works” for Dock activation, warning above Settings/desktops/
+fullscreen and menu-bar deactivation. USER-REPORTED PASS, distinct from CUA. Lead
+then independently confirmed dual OFF/lid open and native Settings OFF/manual
+activation, recognized grants, unchanged appPID8366/helperPID8607. Requested
+Always On/Dock/warning acceptance gates pass; helper-crash/reboot/physical critical
+stress/prolonged backpack/VoiceOver remain unproven, with no legacy snapping
+extrapolation. Signed source/runtime/hashes unchanged. PR16 now targets main;
+one squash and superseded closure of PRs2–15 remain pending final docs CI/lead
+check, not yet performed. Builder changes documentation only.
