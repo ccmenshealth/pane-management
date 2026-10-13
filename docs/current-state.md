@@ -1,5 +1,21 @@
 # Pane Management — Current State
 
+## Bookmark — installed setup blocked on fresh notFound (2026-10-12)
+
+User authorized installing the update/helper with Always On OFF. Lead installed
+the exact signed source d12f18a candidate at the original stable app path after
+quitting build5; old app preserved under dist/backups/build5-a10745c6-eb1d-4db3-82ac-429f8289255a.
+Production PID78184 has valid signatures and expected executable/plist contents.
+macOS reports notFound before registration; Check again and Repair did not advance.
+No production registration, power change or activation occurred. Accessibility
+refresh and native Dock visual acceptance remain open; builder cannot change them.
+
+Isolated codex/setup-notfound-repair starts from reviewed integration c2f7782
+(explicit stacked-base exception). N1–N6 are locked before code. Current model
+inherited; exact model/effort metadata unavailable. Next: actual pre-fix red test,
+minimal shared coordinator fix, named local gates, fresh independent code/manual
+security and lead review, CI, then separately authorized restaging/native repair.
+
 ## Bookmark — production local candidate signed, not installed (2026-10-12)
 
 Native staging from clean source d12f18a8dfbeb4e647dfe903e123f544bf7ed4cd passed

@@ -1250,3 +1250,33 @@ prompt, trust mutation or paid signing. Runtime/review pin ed480e2 unchanged.
 Baseline96007/hash preserved; production job/process/journal absent. No install,
 launch, register, power or arming. Subsequent native installation/approval and
 production/physical acceptance remain separate gates. This closure is docs only.
+
+### Fresh notFound setup repair — locked N1–N6 (2026-10-12)
+
+Native installation of the correctly signed production bundle returned macOS
+`notFound`/record-not-found before registration. Check again and Settings Repair
+could not advance because explicit setup admitted only notRegistered. These rules
+supersede S5/S7's assumption that notFound always means a broken installation.
+
+- N1: notFound remains setupRequired and quit-unsafe. Offer explicit Set Up or
+  Settings Repair; never treat it as verified off or relax the exact
+  notRegistered/power-false/directory-absent/notRegistered proof.
+- N2: explicit setup admits notRegistered or notFound after existing own-signature
+  validation, registers once in the same non-expiring lifecycle slot, then
+  re-inspects actual status. Enabled/approval never duplicate registration. No
+  automatic registration, unregistration, BTM reset, auth/ID change or activation.
+- N3: invalid identity cannot register; offer signed-install repair and Check again.
+  Error/repeated notFound stays unsafe and offers a visible retryable setup exit.
+- N4: pending registration holds competing lifecycle actions until actual OS
+  completion. Activation remains a separately guarded action.
+- N5: audit shared menu/Dock primary action, Settings Repair, adapter/controller
+  and harmless probe. Tests cover both UI entry points, identity refusal, failure
+  and retry, pending/late settlement to enabled/approval/active without activation.
+- N6: no path migration, permission workaround or native state mutation here.
+
+Recoverability: notFound → Set Up or Settings Repair; invalid signature → repair
+the signed installation then Check again; repeated notFound/error → retry Set Up;
+pending → wait for actual completion; approval → Open Login Items then Check
+again; authenticated off → Activate only by a new click; active → Deactivate.
+Independent manual security review is required for the registration boundary.
+CodeRabbit remains prohibited. Lead owns installed state and native acceptance.
