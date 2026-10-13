@@ -88,6 +88,7 @@ private enum Failure: Error { case fixture }
     @MainActor static func rejectsAsync(_ label: String, _ action: () async throws -> Void) async { do { try await action(); check(false, label) } catch { check(true, label) } }
     @MainActor static func spin(_ condition: () -> Bool) async { for _ in 0..<10000 { if condition() { check(true, "fixture reached suspension"); return }; await Task.yield() }; check(false, "fixture reached suspension") }
     @MainActor static func main() async {
+        await queuedStartupChecks(check)
         await startupChecks(check)
         await startupLoopback(check)
         await presentation()

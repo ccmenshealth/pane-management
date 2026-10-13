@@ -24,10 +24,13 @@ extension SetupCoordinator {
     func schedule(after delay: TimeInterval, _ action: @escaping @MainActor () -> Void) -> ClientTimer {
         let timer = StartupTimer(); events.append((now + delay, timer, action)); return timer
     }
-    func tick() async {
-        now += 1
+    func fireWithoutDraining(after delay: Double) {
+        now += delay
         let due = events.filter { $0.0 <= now }; events.removeAll { $0.0 <= now }
         for event in due where !event.1.cancelled { event.2() }
+    }
+    func tick() async {
+        fireWithoutDraining(after: 1)
         await settle()
     }
     func advance(_ seconds: Int) async {
@@ -189,5 +192,63 @@ private final class StartupActivity: ClientActivity {
         weak let coordinator = h!.setup
         await h!.adapter.refresh(); h = nil; await settle(); await clock.advance(90)
         check(coordinator == nil && clock.live == 0, "retry timer does not retain discarded coordinator")
+    }
+}
+
+// These actor-local methods intentionally never suspend, matching the permitted
+// fast-completion path. That lets a manual operation settle between timer fire
+// and execution of the Task queued by the timer, without sleeps or dispatch hooks.
+@MainActor private final class ImmediateStartupClient: SetupClient {
+    var state: ClientState = .unknown("Delayed helper")
+    var removalPending = false
+    var onChange: (() -> Void)?
+    var statuses = 0, probes = 0, activations = 0, stops = 0, removals = 0
+    func probeStartup() async -> (state: ClientState, retry: Bool) {
+        probes += 1; return (.unknown("Delayed helper"), true)
+    }
+    func status() async { statuses += 1; state = .off; onChange?() }
+    func activate() async { activations += 1; state = .active; onChange?() }
+    func deactivate() async { stops += 1; state = .off; onChange?() }
+    func remove(unregister: (@escaping @MainActor (Result<Void, Error>) -> Void) -> Void) async -> Bool {
+        removals += 1; unregister { _ in }; state = .off; onChange?(); return true
+    }
+}
+@MainActor func queuedStartupChecks(_ check: (Bool, String) -> Void) async {
+    for action in ["deactivate", "activate", "setup", "remove"] {
+        let clock = StartupClock(), service = StartupService(), client = ImmediateStartupClient()
+        let coordinator = SetupCoordinator(service: service, client: client, proof: StartupProof(), scheduler: clock)
+        await coordinator.refresh()
+        check(client.probes == 1 && clock.live == 1, "queued fixture has exactly one unresolved startup retry")
+        clock.fireWithoutDraining(after: 2)
+        // No yielding between firing the callback and completing the manual action.
+        switch action {
+        case "deactivate": await coordinator.deactivate()
+        case "activate": await coordinator.deactivate(); await coordinator.activate()
+        case "setup": await coordinator.setup()
+        default: _ = await coordinator.remove()
+        }
+        let settled = coordinator.observation
+        let statuses = client.statuses, probes = client.probes
+        let mutations = client.activations + client.stops + client.removals
+        await settle()
+        check(client.statuses == statuses, "fired retry cannot enter ordinary status after manual \(action)")
+        check(coordinator.observation == settled, "fired retry cannot overwrite settled manual \(action)")
+        await clock.advance(60)
+        check(client.probes == probes && client.activations + client.stops + client.removals == mutations && clock.live == 0,
+              "manual \(action) leaves no stale retry or mutation replay")
+    }
+    do {
+        let clock = StartupClock(), client = ImmediateStartupClient()
+        let coordinator = SetupCoordinator(service: StartupService(), client: client, proof: StartupProof(), scheduler: clock)
+        await coordinator.refresh(); clock.fireWithoutDraining(after: 2)
+        // A focus refresh can run before the queued timer Task and install the
+        // next retry. The old Task must neither probe again nor clear that timer.
+        await coordinator.refresh()
+        check(client.probes == 2 && clock.live == 1, "intervening refresh schedules one new retry")
+        await settle()
+        check(client.probes == 2 && clock.live == 1, "stale queued retry preserves newer timer")
+        await clock.advance(5)
+        check(client.probes == 3 && clock.live == 1, "newer retry still executes once")
+        await coordinator.deactivate()
     }
 }

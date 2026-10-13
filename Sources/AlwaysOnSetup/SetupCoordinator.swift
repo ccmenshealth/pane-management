@@ -60,10 +60,16 @@ import AlwaysOnClient
         let delays = [2.0, 5.0, 10.0, 30.0]
         let delay = delays[min(startupStep, delays.count - 1)]
         startupStep = min(startupStep + 1, delays.count - 1)
+        let id = epoch
         startupTimer = scheduler.schedule(after: delay) { [weak self] in
-            guard let self else { return }
+            guard let self, self.startupUnresolved, self.epoch == id else { return }
             self.startupTimer = nil
-            Task { [weak self] in await self?.refresh() }
+            Task { [weak self] in
+                // Cancellation may occur after the timer fires but before this
+                // Task runs. Never let an obsolete retry enter ordinary refresh.
+                guard let self, self.startupUnresolved, self.epoch == id else { return }
+                await self.refresh()
+            }
         }
     }
     private func inspect(registrationFailed: Bool = false, startupOnly: Bool = false) async {
