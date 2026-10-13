@@ -1,5 +1,25 @@
 # Pane Management — Current State
 
+## Bookmark — console-session recovery fix awaiting review (2026-10-13)
+
+Isolated branch `codex/console-session-recovery` fixes a stuck recovery warning:
+a valid current console session reported audit flags `0x2030`, but N3 demanded
+mutable `HAS_AUTHENTICATED` (`0x4000`). R1–R6 in `always-on-build.md` limit the fix
+to requiring console + graphic while retaining all other identity/freshness and
+ownership checks. The lead verified both sleep-override receipts OFF and closed
+the app at Steve's request to clear the intrusive warning; helper remains running.
+That is override-state evidence, not proof of every normal sleep setting.
+
+Builder inherited the current model/effort (exact runtime label unavailable).
+Compiled pre-fix production with the new regressions: 266 assertions, 37 failures;
+fixed debug/release daemon suites: 266/0. All nine suites passed in both
+configurations, with separate debug/release builds, metadata lint and synthetic
+staging checks. Remote checks and independent code/manual security review pending.
+No live power write, install, registration or permission change by this builder.
+Next: finish release/CI, obtain independent and lead review; only then stage a
+signed candidate on lead request. Installation needs Steve's explicit approval.
+
+
 ## Bookmark — release merged and installed; Always On OFF (2026-10-12)
 
 [PR16](https://github.com/ccmenshealth/pane-management/pull/16) squash-merged to

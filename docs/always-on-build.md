@@ -396,6 +396,31 @@ setup repair/unknown warning. Setup registers/authenticates only, never activate
 
 ### B2b2 native boundary handoff
 
+#### Console-session recovery incident lock (2026-10-13)
+
+R1 supersedes only N3's authenticated-flag requirement: require console + graphic
+`0x2010`, forbid remote `0x1000`, and ignore `HAS_AUTHENTICATED` (`0x4000`).
+Apple's [audit-session implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/security/audit/audit_session.c)
+allows members to clear that bit independently; [authd's login path](https://github.com/apple-oss-distributions/Security/blob/main/OSX/authd/engine.m)
+excludes automatic login from setting it. It is not a durable GUI identity check.
+R2 preserves exact reciprocal certificate/identifier validation, kernel UID/ASID,
+returned ASID/AUID, non-root/non-unset IDs, both console UID reads, remote rejection,
+freshness, ownership/token/lease/journal and removal fences.
+R3: observed `0x2030` and authenticated `0x6030` support all six operations; clearing
+only `0x4000` during a lease preserves renewal and stop. Loss of console/graphic,
+remote status, identity mismatch and stale facts still reject or restore.
+R4: no automatic activation; real power/recovery failures remain visible. Retry
+from the current valid console can reach verified OFF.
+R5: scope is the boundary predicate, regression composition and concise evidence;
+no protocol, private API, client/UI redesign or general authentication bypass.
+R6: build/review only. Signing a separate candidate follows review and lead request;
+installation requires Steve's explicit approval. No live power changes.
+
+Recoverability: an otherwise valid logged-in session that loses only the credential
+flag can use the existing Retry deactivation action to verify normal sleep. Failed
+power restoration still stays recovery-required until a successful retry. Existing
+invalid/stale identity safeguards must continue to restore an owned override.
+
 #### N1–N8 implementation lock
 
 - N1: B2b2 on `codex/always-on-daemon` adds the supported native boundary only
