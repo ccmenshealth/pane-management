@@ -1080,3 +1080,15 @@ approved signed staging and harmless service acceptance/removal drill. No trust
 change or paid membership is required by this planned experiment; whether macOS
 accepts its local signature is still unproven. No production local package or
 arming until that result is established.
+
+### Native signing evidence — 2026-10-12
+
+User-created dedicated identity `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F` signed the
+reviewed probe successfully from clean source `12baca95bd552dc0926bc784af4bb85586a7e657`. Packager exited0,
+strict own-leaf/ID/hardened-runtime/no-entitlement gates passed; no trust mutation
+or blocking Keychain prompt. Candidate/manifest and all binary hashes recorded in
+VERIFICATION.md. Product/review pin9458b946 unchanged; this update is Markdown only.
+No install, register, signed-helper launch, power or production operation occurred.
+Next is explicit user confirmation for the new ping-only administrator-service
+access and positive/negative/removal drill. Local SMAppService acceptance remains
+unproven; no production package or arming is authorized by this signing result.

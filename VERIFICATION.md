@@ -1,3 +1,39 @@
+## Native local probe signing succeeded — 2026-10-12
+
+The user created the dedicated credential after the handoff and reported it
+ready. The reviewed packager ran once on clean source `12baca95bd552dc0926bc784af4bb85586a7e657` with
+explicit fingerprint `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F` and exited0,
+`signed:true`. No blocking Keychain prompt observed. Signature requirements,
+fixed IDs, hardened runtime and absence of entitlements passed for the signed
+app/helper and negative fixtures; the ad-hoc fixture was also verified as such.
+The self-signed identity's untrusted listing diagnostic did not prevent these
+actual signing/strict-verification checks. No trust settings were changed.
+
+Candidate relative to this isolated worktree:
+`dist/signing-probe/12baca95bd552dc0926bc784af4bb85586a7e657-aca17390-5763-4862-9cc2-f5433c98984d/artifacts`.
+The candidate contains `manifest.json` with only public source/fingerprint/hashes.
+
+| Executable | SHA256 |
+| --- | --- |
+| `Local Signing Probe.app/Contents/MacOS/SigningProbeApp` | `8a5c32f6c53fc6aa0acdb54c0a04601d75c7f4ebe34fb406fe328c906f0dd20e` |
+| `Local Signing Probe.app/Contents/MacOS/SigningProbeDaemon` | `e776ba5b7db94755c284b4c8a1b575d6dc645abac1e01245072b172a80ed9474` |
+| `wrong-id` | `8798d577cea4f621e0b3ddc19d74a95abef8dc13e8d5c2bb40f41a3a5cc04667` |
+| `wrong-pin` | `c88ea60708989ad229d8be11951189f73448c95f80b9223527655afae7b323a2` |
+| `ad-hoc` | `8b9ce739e3f441d8dc8a9437ee4ee77c0f20613c3d71b5b13260451ea43ec940` |
+
+Reviewed product pin remains `9458b946982589b0b25a5f8e9e26d755018ceff3`;
+source12baca95 includes only later review/preview Markdown. Its CI38306212290
+passed. This evidence update is Markdown only; no build/signing rerun. Existing
+build5 and production sources/settings remain untouched. No certificate/private
+key content or unrelated personal certificate metadata is recorded here.
+
+No signed candidate/helper was installed, launched, registered or run, and no
+power operation occurred. Native SMAppService acceptance and surrounding positive
+pings/negative fixtures/removal remain pending. Next requires user confirmation
+for installing/running this ping-only administrator-level service, testing it and
+removing it; this grants new privileged service access. Signing success is not
+native service acceptance or permission to arm production always-on behavior.
+
 ## Harmless local signing probe candidate — 2026-10-12
 
 - Isolated probe uses fixed new IDs, nonce-only protocol and reciprocal shared

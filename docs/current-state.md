@@ -1,5 +1,25 @@
 # Pane Management — Current State
 
+## Bookmark — native local signing succeeded; service drill awaits confirmation (2026-10-12)
+
+- User created the dedicated **Pane Management Local Signing** credential and
+  reported completion. Reviewed probe staging succeeded from clean source
+  `12baca95bd552dc0926bc784af4bb85586a7e657` using only its public certificate fingerprint
+  `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F`. No blocking Keychain prompt observed.
+- Candidate: `dist/signing-probe/12baca95bd552dc0926bc784af4bb85586a7e657-aca17390-5763-4862-9cc2-f5433c98984d/artifacts`.
+  Its manifest records source/fingerprint and five executable SHA256 hashes;
+  exact hashes are in VERIFICATION.md. Helper/app/negative fixture signature,
+  fixed identifier, hardened-runtime and no-entitlement checks passed. No trust
+  change, paid account, unrelated identity or source workaround was used.
+- Product/review pin remains `9458b946982589b0b25a5f8e9e26d755018ceff3`;
+  subsequent commits are Markdown only. Prior docs CI38306212290 passed.
+  All feature PRs remain draft/unmerged and production build5 is unchanged.
+- No signed candidate or root helper was installed/launched/registered, and no
+  power operation occurred. Actual SMAppService acceptance remains unproven.
+  Next: user confirmation for the ping-only administrator-level service
+  installation/run/positive-negative/removal drill. This grants new privileged
+  service access; it is separate from signing and from production arming.
+
 ## Bookmark — harmless local signing probe reviewed (2026-10-12)
 
 - Draft [PR #14](https://github.com/ccmenshealth/pane-management/pull/14) runtime
