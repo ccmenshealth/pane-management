@@ -1,9 +1,10 @@
 # Pane Management — Current State
 
-## Bookmark — startup recovery installed; native OFF acceptance passed (2026-10-13)
+## Bookmark — startup fix merged and installed; Always On OFF (2026-10-13)
 
-[PR21](https://github.com/ccmenshealth/pane-management/pull/21) is ready for lead
-merge after this documentation head's CI and review. Installed signed source is
+[PR21](https://github.com/ccmenshealth/pane-management/pull/21) merged at 11:29:28
+Pacific as `d5ab7ce88d23b97f3b85350896995ed07f4e50e0`. Final head `914c912` passed
+CI38446787298 (1m59s) and lead documentation review. Installed signed source is
 `b613570dc02bc18cfb3484143e5071cfa86e3cad` at the stable primary
 `dist/Pane Management.app`; exact hashes and rollback backup are at top VERIFICATION.
 Runtime `dd7fee3` passed independent code/manual security and lead review at
@@ -22,8 +23,9 @@ security loosening. Cause beyond that sequence is not established.
 
 Steve said updates no longer need a separate installation question. This standing
 authority applies to Pane Management updates, not unrelated software installations.
-Final documentation CI/review and lead merge are the remaining steps; no builder
-merge, new build, test, staging or native action is part of this closeout.
+The startup fix has no remaining runtime or installation work. This Markdown-only
+milestone record adds no build, test, signing or native action; worktrees and
+rollback artifacts remain preserved.
 
 
 ## Historical bookmark — startup reconciliation reviewed before installation (2026-10-13)

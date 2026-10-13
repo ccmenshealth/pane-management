@@ -55,8 +55,11 @@ about unrelated idle-sleep settings, backlight or emergency protection is inferr
 
 Runtime `dd7fee3` passed independent code/manual security and lead review at
 `b02ecf9`, with P2 fully resolved. Installed-source CI38440877868 passed (1m53s).
-Final documentation CI and lead review/merge remain pending; CodeRabbit stays
-excluded. Historical implementation and pre-install evidence follows.
+PR21 merged at 11:29:28 Pacific as `d5ab7ce88d23b97f3b85350896995ed07f4e50e0`.
+Final head `914c912` passed CI38446787298 (1m59s) and lead documentation review.
+Installed source `b613570` and its verified hashes remain unchanged; no runtime or
+installation work remains. This milestone record performs no further local build,
+test, signing or native action. CodeRabbit stays excluded; historical evidence follows.
 
 ## Startup helper delay reconciliation — build evidence (2026-10-13)
 
