@@ -27,8 +27,20 @@ Evidence is retained in ignored `.build/local-staging-evidence/`:
 - Native subprocess fallback is forbidden by the test fixture; every external
   command is injected. Paid17 and probe11 synthetic suites pass unchanged.
 - Python compile, per-script bash syntax, all Resource plists and diff lint pass.
-- Separate Swift builds and full named regression matrix are pending at this
-  planning entry; final evidence is appended before the review handoff.
+- Separate debug (193.36s) and release (276.91s) builds passed. Debug suites
+  SnapCore60, UI84, Engine176, Native114, Service355, Daemon149, Client181,
+  Setup141 and Probe114 all passed with zero failures. Release UI84 and Daemon149
+  passed. A premature attempt before the release alias existed did not run any
+  tests; the recorded passing runs followed completed release compilation.
+- Clean committed-source read-only preflight passed at
+  ed480e204e5b8503c7be3cd9f768f9d28beabd02 with signed:false.
+- Existing probe-only concurrency warnings remain in Probe.swift:52 and
+  Native.swift:42 (plus suggested preconcurrency import). Those sources are
+  unchanged and probe binaries are not included in the production candidate.
+  No claim of warning-free compilation is made.
+- Fresh independent read-only code/manual-security and lead reviews cleared the
+  same runtime pin with no findings and clean worktree. Runtime CI38333954926
+  passed. This evidence closure is Markdown only; its CI is tracked separately.
 
 Recovery: preflight failure offers the named prerequisite and retry; signing/
 verification/build failure publishes nothing and cleans owned partial files;
@@ -40,7 +52,7 @@ shared verifier defaults, paid route isolation and stable packager guard. The
 stable script's obsolete Apple-only comment is corrected without behavior change.
 
 Current model inherited; exact model/effort unavailable. Independent read-only
-code/manual-security, lead review and CI remain required. CodeRabbit prohibited;
+code/manual-security, lead review and runtime CI passed. CodeRabbit prohibited;
 literal security-review unavailable, independent manual fallback applies. No real
 production signing, native launch, helper install/register, power or arming.
 

@@ -1222,3 +1222,20 @@ errors. Lead copy nit (probe help on production command) corrected with actual
 pre-fix focused failure. Shared probe defaults and paid route remain unchanged.
 No new native acceptance is claimed. Build/regression/CI and independent review
 remain pending until the final candidate ledger entry.
+
+### Local staging final review ledger — 2026-10-12
+
+PR15 runtime/review pin ed480e204e5b8503c7be3cd9f768f9d28beabd02 cleared independent
+read-only code/manual-security and lead review, no findings, clean before/after.
+CI38333954926 passed; all named local debug/release builds/suites, synthetic
+staging checks and lint passed. Current model inherited, exact metadata unavailable;
+CodeRabbit prohibited and literal security-review unavailable, manual fallback.
+Prior probe-only concurrency warnings remain, without changing or packaging probe
+runtime. Read-only preflight passed. Native warning evidence is reused only for
+byte-identical reviewed UI sources, not expanded to global/physical acceptance.
+
+After docs-head CI passes, lead authorizes native LOCAL STAGING ONLY with dedicated
+certificate EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F from clean committed source.
+Stop for signing prompts/blockers. No install, launch, registration, root journal,
+power, trust, keychain ACL or arming. Candidate evidence follows separately;
+production installation/physical acceptance and first activation remain gated.

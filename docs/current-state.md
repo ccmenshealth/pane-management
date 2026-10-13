@@ -1,5 +1,21 @@
 # Pane Management — Current State
 
+## Bookmark — local production staging reviewed (2026-10-12)
+
+Draft PR15 runtime/review pin ed480e204e5b8503c7be3cd9f768f9d28beabd02, base
+b70efed, cleared fresh independent read-only code/manual-security and lead
+reviews with no findings and clean tree. Runtime CI38333954926 passed. All named
+local builds, suites, synthetic checks and lint passed; see VERIFICATION.md.
+CodeRabbit prohibited; literal security review unavailable, manual fallback used.
+Current model inherited; exact metadata unavailable. This closure is docs only.
+
+Read-only preflight passed at the runtime pin, signed:false. After this docs-head
+CI passes, the lead authorized staging only with the dedicated local certificate.
+Stop for any signing prompt/blocker. No production signing has yet occurred; no
+install, launch, register, power, trust/keychain ACL change or arming is authorized
+by this slice. Original build5 remains unchanged. Native production installation,
+physical acceptance and first activation remain separate gates.
+
 ## Bookmark — local production staging planning (2026-10-12)
 
 Isolated codex/local-signed-release starts from probe closureb70efed. R1–R7
