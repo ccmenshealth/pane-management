@@ -1,5 +1,47 @@
 # Always-on mode — authorized build
 
+## Startup reconciliation decisions locked October 13, 2026
+
+- D1: Only unresolved startup checks retry, with bounded attempts and 2/5/10/30
+  second backoff, remaining at 30 seconds while unavailable.
+- D2: Background attempts send only authenticated status requests, never explicit
+  mutation RPCs or client mutation replay, registration, removal or permission
+  changes. Existing helper status-triggered safety restoration/journal cleanup
+  remains unchanged. Verified OFF clears the warning; real recovery stays actionable.
+- D3: Preserve trust, session, ownership and freshness checks. Manual actions
+  supersede probes; stale responses cannot overwrite them. One bounded probe at
+  a time; no pending task or timer may retain the coordinator indefinitely.
+- D4: Stop on OFF, removal-required, setup-required, authoritative active/recovery
+  or manual supersession. Unowned active is not adopted. No sleep-preventing
+  activity is held by probes or retry timers.
+- D5: Warning copy and rendering remain unchanged.
+- D6: Audit startup, focus, wake, manual retry, activation, deactivation, setup,
+  removal and transport loss; preserve visible operator exits.
+- D7: No installation, production launch, helper lifecycle or live power action
+  during implementation. Separate lead authorization gates signing/installation.
+
+Native incident evidence supplied by lead: after 10:03:24 Pacific reboot, app
+connection attempts ended at 10:04:38.503; helper listener started at 10:05:48.916.
+No fresh client request arrived until manual Retry at 10:11:30.834 succeeded.
+The helper initialization delay's underlying cause is not established.
+
+Startup review ledger: independent code/manual security review at `4880b8c`
+REQUEST CHANGES, SR1/P2 (`SetupCoordinator.swift:63–66`): fired timer's queued Task
+could enter ordinary refresh after manual supersession. Owner: startup builder.
+Fix runtime `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce`: captured-epoch/unresolved checks
+at callback and Task entry. Compiled deterministic pre-fix 237/8; fixed debug/release
+237/0. Independent code/manual security delta review and lead review PASS at
+`b02ecf99ff3a906cf9e0b27634a460113f6af09a`: SR1 resolved, no new findings; reviewer
+reran debug/release237/0 and verified clean. Lead documentation nit (orphan
+lid-evidence heading) corrected. All roles inherited current model/effort; exact
+labels unavailable. CI38440556739 in progress; metadata/synthetic staging green.
+Historical staging gate was subsequently completed at signed source `b613570`.
+Steve then authorized Pane Management updates without a separate installation
+question (not unrelated installs). Lead installed that exact candidate and verified
+native OFF at 11:25:02 Pacific; see top VERIFICATION for receipt and limitations.
+No Always On activation or new native reboot/delayed-helper drill occurred.
+Documentation closeout and final CI/lead merge remain pending.
+
 ## Decisions locked October 12, 2026
 
 The user explicitly instructed "Let's build it anyway" after the documented

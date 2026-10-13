@@ -20,6 +20,7 @@ public enum SetupServiceStatus: Sendable { case notRegistered, enabled, requires
     var removalPending: Bool { get }
     var onChange: (() -> Void)? { get set }
     func status() async
+    func probeStartup() async -> (state: ClientState, retry: Bool)
     func activate() async
     func deactivate() async
     func remove(unregister: (@escaping @MainActor (Result<Void, Error>) -> Void) -> Void) async -> Bool
@@ -33,6 +34,7 @@ public enum SetupServiceStatus: Sendable { case notRegistered, enabled, requires
         self.client = client
         client.onObservation = { [weak self] _ in self?.onChange?() }
     }
+    public func probeStartup() async -> (state: ClientState, retry: Bool) { await client.probeStartup() }
     public func status() async { _ = await client.status() }
     public func activate() async { _ = await client.activate() }
     public func deactivate() async { _ = await client.deactivate() }

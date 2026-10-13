@@ -1,5 +1,61 @@
 # Pane Management — Current State
 
+## Bookmark — startup recovery installed; native OFF acceptance passed (2026-10-13)
+
+[PR21](https://github.com/ccmenshealth/pane-management/pull/21) is ready for lead
+merge after this documentation head's CI and review. Installed signed source is
+`b613570dc02bc18cfb3484143e5071cfa86e3cad` at the stable primary
+`dist/Pane Management.app`; exact hashes and rollback backup are at top VERIFICATION.
+Runtime `dd7fee3` passed independent code/manual security and lead review at
+`b02ecf9`; installed-source CI38440877868 passed. This follow-up is Markdown only.
+
+At 11:25:02 Pacific, lead verified app PID43906/helper PID43721, dual override OFF
+(pmset SleepDisabled0/root No), lid open, strict/deep signature and exact hashes.
+Native Settings showed OFF without the warning, recognized Accessibility and
+ScreenCaptureKit permissions, and snapping enabled; Settings was then closed.
+Always On was never activated during the update. Approved OFF-state acceptance
+passed; no further native check is required for that scope. Physical reboot or
+native >90-second delayed-helper recovery was not drilled; regression evidence is
+virtual. An initial helper signature-policy launch failure was followed by a
+scoped Login Items registration refresh and successful launch, without trust or
+security loosening. Cause beyond that sequence is not established.
+
+Steve said updates no longer need a separate installation question. This standing
+authority applies to Pane Management updates, not unrelated software installations.
+Final documentation CI/review and lead merge are the remaining steps; no builder
+merge, new build, test, staging or native action is part of this closeout.
+
+
+## Historical bookmark — startup reconciliation reviewed before installation (2026-10-13)
+
+`codex/startup-recovery` adds bounded status-only startup probes with 2/5/10/30s
+backoff, remaining at 30s until the delayed helper resolves or a manual action
+supersedes the check. Authenticated OFF clears the warning automatically; observed
+foreign active/recovery remains visible with Retry/Repair. Existing helper-owned
+safety restoration during status is unchanged. No autoactivation or client mutation
+replay. Warning rendering is unchanged; normal startup/focus/wake use the existing
+controller → adapter → coordinator path.
+
+Builder inherited the current model/effort; exact runtime labels unavailable.
+Final regression overlay on untouched `0687316` production compiled: 218 assertions,
+11 failures. Fixed setup suite: 218/0. Separate debug/release builds, all nine
+suites in both configurations and lint passed; exact evidence is at top VERIFICATION.md.
+[PR21](https://github.com/ccmenshealth/pane-management/pull/21) initial head `4880b8c`
+passed CI38439449506. Independent code/manual security review requested one P2
+queued-retry fence. Runtime fix `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce` reproduces
+237/8 on pre-fix runtime and passes 237/0 in debug/release, with both separate
+builds and lint green. Independent code/manual security delta review and lead
+review PASS at `b02ecf99ff3a906cf9e0b27634a460113f6af09a`; P2 fully resolved, no new
+findings. Reviewer independently reran debug/release 237/0 and verified a clean tree.
+All roles inherited the current model/effort; exact runtime labels unavailable.
+CI38440556739 is still in progress (metadata and synthetic staging checks passed).
+Lead authorized isolated local signed staging with the existing dedicated identity;
+manifest and hashes will be attached to PR21. Steve's explicit installation approval
+and native OFF-state acceptance remain pending. CodeRabbit stays excluded.
+No installed bundle, app/helper lifecycle, permissions or live power state changed.
+Installed source remains `9f133fe` at the stable primary `dist/Pane Management.app`.
+
+
 ## Follow-up — lid-close display check completed; Always On OFF (2026-10-13)
 
 User-approved hard-surface test captured internal display-driver brightness

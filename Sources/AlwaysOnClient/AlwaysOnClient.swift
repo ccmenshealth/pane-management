@@ -13,6 +13,7 @@ import AlwaysOnIPC
     private var busy = false, waiters: [CheckedContinuation<Void, Never>] = []
     private var stopRevision: UInt64 = 0
     private var renewal: ClientTimer?, stopRequested = false, recovering = false, removing = false
+    private var startupProbing = false
     private var pending: ((Result<Data, Error>) -> Void)?
     public init(transport: ClientTransport, scheduler: ClientScheduler, activity: ClientActivity = SystemClientActivity()) {
         self.transport = transport; self.scheduler = scheduler; activities = ClientActivities(activity)
@@ -30,6 +31,10 @@ import AlwaysOnIPC
     }
     private func lost(_ id: UInt64) {
         guard generation == id else { return }
+        if startupProbing {
+            let completion = pending
+            discard(); completion?(.failure(ClientFailure.connectionLost)); return
+        }
         let hold = activities.hold()
         defer { hold.finish() }
         let completion = pending
@@ -105,6 +110,23 @@ import AlwaysOnIPC
             return publishOff(result)
         } catch {
             discard(); return publish(.unknown("Normal sleep is not verified. Retry deactivation or repair helper setup."))
+        }
+    }
+    /// An isolated, status-only startup observation. Never adopts a foreign lease,
+    /// holds a process activity, publishes a stale result or sends mutation RPCs.
+    /// The helper's existing status-triggered safety recovery remains unchanged.
+    /// Close even a successful channel so later loss cannot enter recover().
+    public func probeStartup() async -> (state: ClientState, retry: Bool) {
+        await enter(); defer { leave() }
+        guard token == nil, !removing, !recovering else { return (observation.state, false) }
+        startupProbing = true
+        defer { discard(); startupProbing = false }
+        do {
+            let reply = try await ready()
+            if verifiedOff(reply) { return (reply.requiresRemoval ? .removalRequired : .off, false) }
+            return (.unknown("Normal sleep is not verified. Retry deactivation or repair helper setup."), false)
+        } catch {
+            return (.unknown("Normal sleep is not verified. Retry deactivation or repair helper setup."), true)
         }
     }
     public func status() async -> ClientObservation {

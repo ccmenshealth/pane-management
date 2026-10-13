@@ -1,3 +1,166 @@
+## Startup recovery update — installed OFF acceptance (2026-10-13)
+
+Lead completed the authorized update at the stable primary `dist/Pane Management.app`.
+Steve superseded the separate installation-confirmation gate for Pane Management
+updates; that authority does not cover unrelated software. This closeout only
+records lead-supplied evidence; its builder performed no new build, test, staging,
+installation, process or native UI action.
+
+Installed source: `b613570dc02bc18cfb3484143e5071cfa86e3cad`.
+
+| Artifact | SHA256 |
+| --- | --- |
+| App executable | `dc8e22b7fe63ddad26cc708c62663971d4fb3c1a38920f043da54ca71187a8db` |
+| Helper executable | `bb54b7a33e13ef3e96961f35daf7332787d6a9f0a862d92c29f6c2585a48f53c` |
+| Staging manifest | `b87396bb9fd221e9bc4ac4da7e918da9a83f9cd1a6422749e9752f6dc9bec43c` |
+
+Rollback bundle preserved at primary
+`dist/backups/before-startup-recovery-278bcb69-a5cc-4338-a039-3f7ec21bb161/Pane Management.app`.
+The exact candidate and manifest remain in PR21's staging evidence. Strict/deep
+signature verification and executable hashes matched before and after installation.
+Dedicated identity and bundle identifiers remained unchanged.
+
+Native sequence, distinct from automated regression evidence:
+
+- Old app PID852/helper PID564 began OFF. Native Remove helper completed with the
+  service and helper absent. Refresh with the retained root directory brought back
+  the expected unregistered recovery warning; lead terminated only the old GUI
+  with SIGTERM after fresh dual OFF and service-absent evidence.
+- With neither app nor helper running, lead used `ditto` into a unique `.update`
+  bundle and renamed the existing app to the backup before installing the candidate.
+- New app PID42729 showed expected unregistered recovery; native Repair helper
+  setup registered it. At 11:21:43 Pacific the initial launch failed with AMFI -423
+  (unknown certificate chain) / OS_REASON_CODESIGNING, under prior BTM UUID
+  `938CFF54-A9D5-45AA-A964-5326F18A89F9`.
+- Lead changed only Pane Management's background Login Items toggle OFF; Steve
+  approved the OS authentication prompt. At Steve's request to remove the popup,
+  lead terminated GUI PID42729 only after fresh dual OFF. Toggling Pane's entry ON
+  required no further authentication and started helper PID43721 (execs1), with
+  fresh BTM UUID `2E069386-D803-4AE9-8D6E-A514C6A5D17D`. No trust/global security
+  setting was loosened. The launch-failure cause beyond these observations is not
+  established; registration refresh success is not a root-cause proof.
+- Reopened app PID43906 showed Settings OFF with no warning, verified by actual
+  accessibility state and an app-only screenshot. Accessibility/ScreenCaptureKit
+  indicators were green and snapping was enabled. This is not a new snapping
+  functional test. Settings was closed as the final native action; no screenshot
+  file was published.
+
+At **11:25:02 Pacific**, lead confirmed app PID43906/helper PID43721, pmset
+SleepDisabled0 and root SleepDisabledNo, lid open, strict/deep signature success
+and both exact executable hashes above. **Always On was never activated during
+the update. Native OFF-state acceptance passed**, with no remaining required check
+for that scope. No new physical reboot or native >90-second helper-delay drill is
+claimed; delayed recovery remains proven by virtual regressions. No general claim
+about unrelated idle-sleep settings, backlight or emergency protection is inferred.
+
+Runtime `dd7fee3` passed independent code/manual security and lead review at
+`b02ecf9`, with P2 fully resolved. Installed-source CI38440877868 passed (1m53s).
+Final documentation CI and lead review/merge remain pending; CodeRabbit stays
+excluded. Historical implementation and pre-install evidence follows.
+
+## Startup helper delay reconciliation — build evidence (2026-10-13)
+
+### Review follow-up — queued retry fence
+
+Independent code/manual security review of `4880b8c` requested changes for one P2:
+`SetupCoordinator.swift:63–66` queued an untracked generic refresh after clearing
+its timer. Manual recovery/activation/setup/removal could finish before that Task
+ran; the obsolete Task could then enter ordinary status (including its existing
+mutating recovery path) and replace the settled observation.
+
+Runtime fix `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce` captures the startup epoch and
+checks both epoch and unresolved startup at timer callback and queued Task entry.
+The first guard also prevents a stale callback from clearing a newer timer.
+No dispatcher abstraction or other product path changed.
+
+Deterministic regression fires the fake timer synchronously without draining the
+actor, completes each manual operation on its valid immediate-completion path,
+then drains the queued Task. On untouched `4880b8c` production, it compiled and
+reported **237 assertions, 8 runtime failures** (ordinary status replay and state
+overwrite for all four manual paths). Fixed debug/release setup suites each pass
+**237/0**. It also proves an intervening fresh probe's newer timer survives and
+runs once. No sleeps or production scheduling hooks are used.
+
+Separate debug/release builds, shell syntax, six plist files and whitespace lint
+passed after the fix. Unchanged suites retain the earlier all-nine/both-config
+results below; the affected setup suite was rerun in both configurations. Race red,
+green and build logs are preserved as `.build/startup-recovery-evidence/pane-queued-retry-*.log`;
+initial pre-fix evidence is preserved separately. Initial CI38439449506 passed;
+CI38440556739 remains in progress, with metadata and synthetic staging checks passed.
+Independent code/manual security delta review and lead review PASS at
+`b02ecf99ff3a906cf9e0b27634a460113f6af09a`, covering runtime `dd7fee3`: P2 resolved,
+no new findings. Reviewer independently reran both setup suites (237/0 each) and
+confirmed a clean worktree. All roles inherited the current model/effort; exact
+runtime labels unavailable. Literal security-review remains unavailable; the
+independent manual security pass is the fallback. Lead authorized only isolated
+local signed staging of the subsequent clean documentation head, using dedicated
+identity `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F`. Candidate manifest/hash evidence
+will be added to PR21 without changing its staged source. No installation, native
+OFF-state acceptance, reboot or other new native proof is claimed.
+
+### Initial implementation evidence
+
+Lead observed app attempts ending 10:04:38.503 Pacific after a 10:03:24 reboot,
+helper listener beginning 10:05:48.916, and no fresh client request until manual
+Retry at 10:11:30.834 immediately confirmed OFF. That establishes the missing
+startup retry; the helper's initial delay cause is not established.
+
+The coordinator's first real controller/adapter refresh now probes authenticated
+status and retries unresolved startup failures at 2/5/10/30s, capped at 30s without
+permanent expiry. Each client readiness attempt is bounded at five seconds; native
+registration/power-proof reads retain their existing bounded readers. No process
+activity is held for a background probe or retry. One probe/timer at a time; weak
+closures release unused coordinators. Manual actions cancel the retry and advance
+an epoch so late probe results cannot replace activation, stop or lifecycle state.
+Subsequent probes preserve the warning's actionable Retry/Repair controls.
+
+Status-only means no explicit mutation RPCs or client mutation replay. It does NOT
+mean the helper cannot write: its existing status path may restore unsafe owned
+state or clean the journal. Production ServiceCoordinator/RecoveryEngine loopback
+checks prove a healthy lease on another connection survives a startup probe, while
+critical telemetry still permits existing helper-owned restoration to verified OFF.
+No daemon, engine, trust, identity, audit, freshness or ownership policy changed.
+
+Fail-first evidence: archived exact pre-fix production `06873169f210fc2619b70f284c97558bf229d5ea`
+into ignored `.build/startup-pre-fix`, overlaid only the three setup test files,
+and ran `swift run --package-path .build/startup-pre-fix --disable-sandbox
+--cache-path .build/cache -Xswiftc -DPRE_FIX AlwaysOnSetupChecks`. The transparent
+PRE_FIX convenience initializer only accepts/ignores the new scheduler argument;
+it delegates to the old initializer and changes no production behavior. Compile
+passed; **218 assertions, 11 runtime failures**. Failures include no automatic
+recovery after >90 virtual seconds, missing backoff, process activity, foreign
+active mutation, lost-probe recovery, and blocked lifecycle recovery. Fixed setup
+suite: **218 assertions, 0 failures**, including actual controller startup wiring,
+long delay, persistent unavailable, hung deadline, no explicit mutation requests,
+manual setup/removal/activation/Retry supersession, stale replies, transport loss,
+setup/removal-required termination and weak timer cleanup.
+
+Recoverability and sibling audit:
+
+| Path/state | Visible exit and evidence |
+| --- | --- |
+| Startup helper unavailable/hung | Existing recovery warning; Retry deactivation/Repair remain available during later probes; eventual authenticated OFF clears it |
+| Genuine recovery or foreign active | Stop background retry; explicit Retry/Repair; production loopback preserves another healthy lease |
+| Approval/missing signed helper | Existing Login Items/Set Up exits; no automatic registration; retries stop |
+| Removal required | Existing Finish removal exit; no autoactivation; removal loopback verifies final permit/unregister |
+| Manual activate/deactivate/Retry | Startup cancelled first; client FIFO serializes with any bounded probe; late replies cannot erase resulting state |
+| Manual setup/removal | Epoch fences old status; real registration/removal lifecycle unchanged; failed removal retains its specific retry exit |
+| Startup/focus/wake | App uses existing controller/adapter refresh; coalesced probe and capped backoff prevent overlapping attempts |
+| Owned active/ordinary refresh/client loss | Existing status, heartbeat and mutating safety-recovery paths unchanged; startup probe refuses to disturb owned token, closes its connection, and fences its loss callbacks |
+
+Both separate `swift build --disable-sandbox --cache-path .build/cache` and
+`swift build -c release --disable-sandbox --cache-path .build/cache` passed.
+All nine executables passed in BOTH configurations: SnapCore 60 scenarios,
+AlwaysOn/UI 84 assertions, engine 176, native 114, service 355, daemon 266,
+client 181, setup 218, signing 114, all zero failures. `bash -n scripts/*.sh`
+(each file), `plutil -lint Resources/*.plist` (six files) and `git diff --check`
+passed. Logs are retained locally in ignored `.build/startup-recovery-evidence`.
+Warning UI source is unchanged;
+existing 84 UI assertions run in both configurations. No new native render, reboot,
+installation or production power drill is claimed by this builder. Current review
+status is in the follow-up ledger above; literal security-review is unavailable
+and CodeRabbit is excluded by Steve. Installed build is unchanged.
+
 ## Lid-close display check — 2026-10-13
 
 Steve explicitly approved a brief Always On test on a hard surface, ending OFF.
