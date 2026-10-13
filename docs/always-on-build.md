@@ -40,7 +40,8 @@ Steve then authorized Pane Management updates without a separate installation
 question (not unrelated installs). Lead installed that exact candidate and verified
 native OFF at 11:25:02 Pacific; see top VERIFICATION for receipt and limitations.
 No Always On activation or new native reboot/delayed-helper drill occurred.
-Documentation closeout and final CI/lead merge remain pending.
+PR21 merged as `d5ab7ce` after final CI38446787298 and lead docs review passed;
+installed source `b613570` remains unchanged, with no runtime/install work remaining.
 
 ## Decisions locked October 12, 2026
 
