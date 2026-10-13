@@ -1,3 +1,56 @@
+## Approved native service drill — 2026-10-12, Pacific
+
+**Outcome: registration/approval and removal verified; root executable launch and
+successful authenticated communication remain inconclusive.** The user explicitly
+authorized “run and remove test helper” and personally completed the Login Items
+administrator approval. No negative fixture was run because no successful positive
+control was available. This is not proof that macOS rejects local certificates.
+
+- Lead copied the exact signed source12baca95 candidate to
+  `/Users/ccmh/Applications/Local Signing Probe.app`, reverified exact certificate
+  requirements on app/helper, and launched via CUA. Initial status was notFound;
+  Register returned generic error1, subsequent Check status correctly reported
+  requiresApproval. User approval followed; explicit Check status reached enabled.
+- First launchd submission18:05:36.949; root xpcproxyPID85425 remained pre-exec with
+  execs0/trampolined0 and inactive endpoint. Two five-second GUI Ping requests
+  timed out. At18:06:44.149, xpcproxy logged BTMManager.fetchItemWithUUID (~67 seconds
+  after spawn); BTM accepted its connection18:06:47.729 and activated peer
+  18:06:59.592, just before removal18:06:59.611. No daemon self-signature/listener
+  code ran according to the observed pre-exec launch state.
+- One bounded retry registered successfully/enabled without another approval
+  prompt at about18:08. Root xpcproxyPID86598 remained pre-exec for three minutes;
+  a third Ping timed out. Its BTMManager.fetchItemWithUUID log was18:10:45.801,
+  about164 seconds after submission. No executable launch or scoped certificate
+  denial was observed. No further retries or negative fixtures were attempted.
+- Read-only source/filesystem investigation: BundleProgram matches the actual
+  executable, file and bundle-directory modes are755, and linked dependencies
+  are system frameworks/libraries. BTM effectiveItemDisposition explicitly names
+  the installed `/Users/ccmh/Applications` bundle, which argues against selection
+  of the unsigned preview in this attempt. Apple DTS's working example uses the
+  same BundleProgram/Label/MachServices layout without ProgramArguments:
+  https://developer.apple.com/forums/thread/799910 . These checks do not establish
+  why BTM resolution stalled or exclude an OS policy issue.
+- Scoped launchd/BTM logs identify slow pre-exec resolution; targeted
+  amfid/syspolicyd/kernel/taskgated output contained no relevant rejection.
+  Absence of a diagnostic is not evidence of full signature-policy acceptance.
+  Ordinary root-process sampling was denied; read-only sudo-n sample required a
+  password, so no privileged sample was collected and no password was supplied.
+- GUI Remove completed and explicit Check status said not registered after each
+  attempt. Final launchctl job absent; PIDs85425/86598 and SigningProbeApp/Daemon
+  processes absent. Quit worked. Finder moved only the selected installed probe
+  app to Trash; item removal and filesystem path absence confirmed. Signed staging
+  candidate remains intact. Installed build5PID96007 retained executable SHA256
+  `3367ecbfc6d95a54bde086348d4c67988c8be8089042ba30a4c853f6634e978a`;
+  primary main clean. No power/production helper/global trust change occurred.
+
+Next investigation should gather a targeted privileged xpcproxy/BTM diagnostic
+with explicit human administrator approval, or separately scope a same-binary
+shared-/Applications location comparison. Do not change authentication based only
+on these timeouts. Local signing/strict static verification remains passed, but
+production local installation and always-on arming remain blocked on a successful
+harmless root-service drill. This update is Markdown only; reviewed productpin
+9458b946 and signed source12baca95 unchanged. Prior docs CI38329202819 passed.
+
 ## Native local probe signing succeeded — 2026-10-12
 
 The user created the dedicated credential after the handoff and reported it

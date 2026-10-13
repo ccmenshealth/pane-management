@@ -1,5 +1,31 @@
 # Pane Management — Current State
 
+## Bookmark — approved native probe inconclusive; removed safely (2026-10-12)
+
+- User explicitly authorized “run and remove test helper” and personally approved
+  the Login Items administrator sheet. Exact signed source12baca95 candidate was
+  copied to `/Users/ccmh/Applications/Local Signing Probe.app` and reverified.
+  Registration reached enabled, but no positive nonce echo succeeded.
+- First attempt: two bounded Ping timeouts; launchd held root xpcproxyPID85425
+  with execs0/trampolined0. One bounded retry reached enabled without another
+  approval prompt; after three minutes, third Ping timed out with xpcproxyPID86598
+  still pre-exec. Negative fixtures were NOT RUN because positive control failed.
+- Scoped logs show delayed BTM fetchItemWithUUID before executable launch, not a
+  demonstrated certificate rejection. Correct bundle path, executable permissions
+  and system-library dependencies were checked. Signature staging remains proven;
+  native root launch/authenticated communication remains inconclusive.
+- Native Remove and explicit Check status confirmed not registered after both
+  attempts. Final launchctl job and both xpcproxy PIDs absent; probe GUI quit and
+  probe app/daemon processes absent. Finder moved only the installed probe copy to
+  Trash; filesystem confirms original installed path absent. Signed candidate
+  remains. Build5PID96007, its original SHA256 and clean primary main preserved.
+- No power, production helper, global trust or unrelated certificate changes.
+  Product/review pin9458b946 unchanged; this evidence is Markdown only. Next is
+  targeted root-launch diagnosis (for example a human-approved privileged sample
+  of stalled xpcproxy), not another authentication workaround or production arming.
+  An ordinary sample was denied and sudo-n required a password; no privileged
+  sample was obtained. No further drill runs are planned in this handoff.
+
 ## Bookmark — native local signing succeeded; service drill awaits confirmation (2026-10-12)
 
 - User created the dedicated **Pane Management Local Signing** credential and

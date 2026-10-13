@@ -1092,3 +1092,21 @@ No install, register, signed-helper launch, power or production operation occurr
 Next is explicit user confirmation for the new ping-only administrator-service
 access and positive/negative/removal drill. Local SMAppService acceptance remains
 unproven; no production package or arming is authorized by this signing result.
+
+### Approved native service drill ledger — 2026-10-12
+
+User explicitly approved run-and-remove; personally completed administrator Login
+Items approval. Two registrations reached enabled, but three bounded GUI positive
+pings timed out across the initial attempt and one three-minute retry. Both root
+xpcproxy incarnations stayed pre-exec; delayed BTM fetchItemWithUUID logs support
+an unresolved startup/resolution delay, not a demonstrated certificate rejection.
+No negative fixture ran because positive controls failed. No source/auth changes.
+
+Both native removals completed with explicit status not registered; final job and
+probe processes absent. Installed probe copy moved to Finder Trash, original path
+absent; signed candidate retained. Original build5/hash and primary main preserved.
+No power, production helper or trust mutation. Details/timestamps in VERIFICATION.
+Next targeted root-launch diagnosis needs separate human administrator handoff if
+privileged sampling is required; no privileged sample obtained in this drill.
+Reviewed product9458b946 and signed source12baca95 remain unchanged. This closure is
+Markdown only; no further drill, signing, build or production activation performed.
