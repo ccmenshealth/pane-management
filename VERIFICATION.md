@@ -1,3 +1,47 @@
+## Console recovery fix installed; native OFF acceptance — 2026-10-13
+
+Lead-reported native evidence, all times Pacific. Steve explicitly approved the
+update and scoped Login Items stop/restart while keeping Always On OFF.
+
+- Around 06:57, Pane Management background OFF with Steve's Touch ID left app and
+  helper absent and both SleepDisabled receipts OFF. Ordinary system authentication
+  changed audit flags `0x2030`→`0x6030`; native acceptance therefore does not exercise
+  the missing-bit state. Re-enabling the old helper and opening the old app showed
+  authenticated OFF. Existing Remove helper succeeded: “Helper removed. Normal
+  sleep was verified.” Normal quit followed; CLI confirmed app/helper and launchd
+  service absent and dual override OFF.
+- Replaced the entire bundle with new files/inodes at
+  `/Users/ccmh/Developer/PaneManagement/dist/Pane Management.app`; helper inode
+  changed 347410186→348233807. Preserved rollback bundle:
+  `/Users/ccmh/Developer/PaneManagement/dist/backups/before-console-recovery-c94c4c20-efd8-4ef8-a40b-8e7b49c1485b/Pane Management.app`.
+  Signed source `9f133fe39573b310787bdac0d953250ca4218059`, existing dedicated leaf
+  `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F`; strict/deep and exact certificate/ID
+  verification passed. Installed SHA256: app
+  `e479f07dc08a77580991ab7382ad76211fd34ac0dc83f4a00c8b13970cf4c2c0`; helper
+  `74ced24b025be5f714ad68fe612cd89a320c6b13036357bcf3bcac7564f6786f`.
+- Updated startup initially showed expected recovery with the helper unregistered.
+  Repair helper setup registered it, but its 06:59:21 launch failed with AMFI -423
+  (unknown certificate chain) and OS_REASON_CODESIGNING launch constraint. The lead
+  closed the app after confirming dual OFF to remove the warning. A scoped Login
+  Items OFF/ON refreshed registration without another prompt or trust/global
+  change. Root helper PID70090 launched at 07:00:34, running with execs1. These are
+  observations, not proof of the first launch failure's underlying cause.
+- The updated app then showed OFF in an actual CUA Settings render, without the
+  warning and with both Accessibility/ScreenCaptureKit checkmarks. Normal Command-Q
+  left the app absent and helper running OFF; reopen passed. Final 07:02:14 readback:
+  app PID70254, helper PID70090 UID0, unchanged installed hashes, dual override OFF
+  and lid OPEN. Always On was never activated during this installation.
+
+Runtime `509687c` passed independent code/manual security and lead review with no
+findings; lead approved the Markdown-only `9f133fe` delta. PR18 CI38402208309 passed;
+merged `8cd8f789f3779a7040de9405cac24e6f352cf701` main
+[CI38402496439](https://github.com/ccmenshealth/pane-management/actions/runs/38402496439)
+passed. CodeRabbit remains excluded. Missing-bit behavior remains synthetic
+266/37 pre-fix → 266/0 fixed; native signed OFF startup/quit/reopen is separately
+proven above. No physical-backlight claim or new activation/closed-lid guarantee.
+No further native request is needed for the approved OFF scope. This follow-up
+changes Markdown only; its gates are diff lint and remote check inspection.
+
 ## Console-session recovery regression — 2026-10-13
 
 Scope: `BoundaryPolicy.auditValid` changes only required mask `0x6010` to
