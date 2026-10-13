@@ -26,7 +26,17 @@ passed after the fix. Unchanged suites retain the earlier all-nine/both-config
 results below; the affected setup suite was rerun in both configurations. Race red,
 green and build logs are preserved as `.build/startup-recovery-evidence/pane-queued-retry-*.log`;
 initial pre-fix evidence is preserved separately. Initial CI38439449506 passed;
-updated CI and independent/lead delta review are pending. No staging or installation.
+CI38440556739 remains in progress, with metadata and synthetic staging checks passed.
+Independent code/manual security delta review and lead review PASS at
+`b02ecf99ff3a906cf9e0b27634a460113f6af09a`, covering runtime `dd7fee3`: P2 resolved,
+no new findings. Reviewer independently reran both setup suites (237/0 each) and
+confirmed a clean worktree. All roles inherited the current model/effort; exact
+runtime labels unavailable. Literal security-review remains unavailable; the
+independent manual security pass is the fallback. Lead authorized only isolated
+local signed staging of the subsequent clean documentation head, using dedicated
+identity `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F`. Candidate manifest/hash evidence
+will be added to PR21 without changing its staged source. No installation, native
+OFF-state acceptance, reboot or other new native proof is claimed.
 
 ### Initial implementation evidence
 

@@ -30,8 +30,12 @@ REQUEST CHANGES, SR1/P2 (`SetupCoordinator.swift:63–66`): fired timer's queued
 could enter ordinary refresh after manual supersession. Owner: startup builder.
 Fix runtime `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce`: captured-epoch/unresolved checks
 at callback and Task entry. Compiled deterministic pre-fix 237/8; fixed debug/release
-237/0. Delta review pending. Lead documentation nit (orphan lid-evidence heading)
-also corrected. Current model/effort inherited; exact labels unavailable.
+237/0. Independent code/manual security delta review and lead review PASS at
+`b02ecf99ff3a906cf9e0b27634a460113f6af09a`: SR1 resolved, no new findings; reviewer
+reran debug/release237/0 and verified clean. Lead documentation nit (orphan
+lid-evidence heading) corrected. All roles inherited current model/effort; exact
+labels unavailable. CI38440556739 in progress; metadata/synthetic staging green.
+Isolated dedicated-identity staging authorized; installation remains Steve-gated.
 
 ## Decisions locked October 12, 2026
 

@@ -1,6 +1,6 @@
 # Pane Management — Current State
 
-## Bookmark — startup reconciliation built; review and installation pending (2026-10-13)
+## Bookmark — startup reconciliation reviewed; staging and installation pending (2026-10-13)
 
 `codex/startup-recovery` adds bounded status-only startup probes with 2/5/10/30s
 backoff, remaining at 30s until the delayed helper resolves or a manual action
@@ -18,8 +18,14 @@ suites in both configurations and lint passed; exact evidence is at top VERIFICA
 passed CI38439449506. Independent code/manual security review requested one P2
 queued-retry fence. Runtime fix `dd7fee38c3a2de7b3771abe096b3749cf8eeb3ce` reproduces
 237/8 on pre-fix runtime and passes 237/0 in debug/release, with both separate
-builds and lint green. Independent/lead delta review, updated CI, separate signed
-staging and Steve's installation approval remain pending. CodeRabbit stays excluded.
+builds and lint green. Independent code/manual security delta review and lead
+review PASS at `b02ecf99ff3a906cf9e0b27634a460113f6af09a`; P2 fully resolved, no new
+findings. Reviewer independently reran debug/release 237/0 and verified a clean tree.
+All roles inherited the current model/effort; exact runtime labels unavailable.
+CI38440556739 is still in progress (metadata and synthetic staging checks passed).
+Lead authorized isolated local signed staging with the existing dedicated identity;
+manifest and hashes will be attached to PR21. Steve's explicit installation approval
+and native OFF-state acceptance remain pending. CodeRabbit stays excluded.
 No installed bundle, app/helper lifecycle, permissions or live power state changed.
 Installed source remains `9f133fe` at the stable primary `dist/Pane Management.app`.
 
