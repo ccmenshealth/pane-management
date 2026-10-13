@@ -179,8 +179,11 @@ The dedicated local certificate and harmless native service probe have passed
 signing, root launch, reciprocal authentication and removal checks on this Mac.
 Production local staging is available below; native helper setup and authenticated
 off-state acceptance passed on this Mac. A separately approved brief open-lid
-activation and warning Deactivate drill passed and finished OFF. Physical lid,
-critical-event recovery, crash and removal behavior remain separately gated. The Developer ID staging script below remains a separate paid distribution
+activation and warning Deactivate drill passed and finished OFF. A later brief
+closed-lid hard-surface drill also passed and finished OFF; its sampling gap and
+continuous segment are documented in `VERIFICATION.md`. The user confirmed normal
+screen/input on reopening and the Dock Activate action. Longer-duration/backpack
+use and critical-event, crash and removal recovery remain unproven. The Developer ID staging script below remains a separate paid distribution
 route. Synthetic boundary checks do not prove local service acceptance.
 Signed IPC, approval, closed-lid behavior,
 critical-event recovery and native acceptance remain separate gates.

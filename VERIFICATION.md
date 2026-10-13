@@ -1,3 +1,42 @@
+## Brief native closed-lid execution and reopen acceptance PASS — 2026-10-12
+
+User separately approved a 30-second closed-lid test on the same open hard
+surface, finishing OFF. Lead used unchanged signed source ddba40d (runtime
+762ed660), started a read-only one-second sampler, then explicitly activated.
+
+First sampled closed state was 21:32:02.203758 and reopened state 21:33:41.731504
+Pacific on October 12. There were 67 closed samples across two monitor segments.
+The initial 180-second monitor expired after five closed samples; switching to a
+second 90-second monitor left a **31.969995737-second gap**. The full interval was
+NOT continuously sampled. The second segment alone contains **62 closed samples
+across 62.441519 seconds**, maximum gap **1.027101 seconds**, all with the override
+ON. The at-least-30-second observed process-execution target while lid-closed
+PASSED; useful coding-agent progress and the unobserved gap were not established.
+
+Lead parsed zero Sleep/Wake/DarkWake events from `pmset -g log` during the sampled
+drill interval. On detecting reopen, lead immediately used native Deactivate.
+Final UI off, pmset SleepDisabled0, IOPMrootDomain SleepDisabledNo and
+AppleClamshellStateNo confirmed the drill finished OFF. `pmset therm` recorded no
+warning; this was not a thermal stress or critical-event recovery test.
+
+User-reported native acceptance, distinct from lead CUA/CLI observations: Steve
+replied **“Yes—screen/input work and the Dock action is there”** when asked whether
+screen/keyboard returned normally after reopening and right-clicking the Pane
+Management Dock icon showed Activate always-on mode. These checks passed by human
+report; CUA could not inspect the Dock. No Dock activation click was tested.
+
+Raw samples remain local only:
+`/var/folders/dr/c980wd_57l5gsqhpm4_dcv6m0000gn/T/pane-lid-drill-1dkzfsp2/samples.jsonl`.
+No screenshot files or PHI were saved/published. Backpack use, longer duration,
+critical/crash/removal recovery, global Spaces/stacking and VoiceOver remain
+unproven. This result guarantees neither safe temperature nor emergency sleep
+protection. No further activation is authorized; the app was left OFF.
+
+This closure changes Markdown/PR evidence only. Signed/installed source, runtime
+pin and hashes remain unchanged; all feature PRs remain unmerged. Prior docs
+CI38346358836 passed; latest closure CI is checked separately. No builder native
+operation, code edit, build, signing or candidate change occurred.
+
 ## Native first activation and warning Deactivate PASS — 2026-10-12
 
 User explicitly approved a brief activate/deactivate drill with the laptop out

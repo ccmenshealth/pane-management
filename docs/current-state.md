@@ -1,6 +1,29 @@
 # Pane Management — Current State
 
-## Bookmark — brief native activation/Deactivate passed; finished OFF (2026-10-12)
+## Bookmark — brief closed-lid test passed; finished OFF (2026-10-12)
+
+User authorized the brief closed-lid hard-surface drill. Lead sampled 62 closed
+rows over 62.441519 seconds in the second monitor segment, maximum gap 1.027101
+seconds, all with the override ON: the ≥30-second observed execution target passed.
+A 31.969995737-second handoff gap separates the two monitors; the full closed
+interval was NOT continuously sampled. Exact times/counts and local evidence
+location are at top VERIFICATION.md. No Sleep/Wake/DarkWake event was found in
+the sampled drill interval. On reopen, lead Deactivated and verified UI OFF, dual
+false sleep-disabled receipts and lid-open state. No override was left on.
+
+USER-REPORTED acceptance: Steve confirmed normal screen/input after reopening and
+the Dock right-click Activate action. CUA could not inspect the Dock; a Dock
+activation click was not tested. Prior native setup/authentication, permissions,
+warning presentation, explicit warning Deactivate and safe quit/reopen passed.
+
+Installed signed source ddba40d66222b360d52124a09bffe87d5bd11629, runtime/review
+762ed660, stable app path and hashes unchanged. All feature PRs remain unmerged.
+This closure is Markdown only; prior docs CI38346358836 passed, latest CI pending.
+Backpack use, long duration, critical/crash/removal recovery, global Spaces and
+VoiceOver remain unproven. No temperature/emergency protection guarantee and no
+further activation authorized. Finish/current state remains OFF.
+
+## Historical bookmark — first open-lid activation/Deactivate passed (2026-10-12)
 
 User explicitly approved the brief drill out of the backpack, on an open hard
 surface, lid open, finish OFF. Lead activated the unchanged installed app, observed

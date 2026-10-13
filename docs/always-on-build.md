@@ -1324,3 +1324,16 @@ without a scrollbar. Full evidence at top VERIFICATION.md; no screenshot saved.
 Physical lid/critical/crash/removal were neither approved nor performed, and
 Dock/global Spaces/VoiceOver/backpack acceptance remains open. This documentation
 closure authorizes no further activation and changes no source/candidate.
+
+#### Brief closed-lid acceptance and human confirmation — 2026-10-12
+
+User separately approved the 30-second hard-surface closed-lid drill. Lead's
+second sampler segment recorded 62 closed samples over 62.441519 seconds, maximum
+gap 1.027101 seconds, all override ON; target passed. A 31.969995737-second gap
+between monitor segments prevents claiming full-interval continuous sampling.
+Lead detected reopening, Deactivated and verified UI OFF/dual false receipts/lid
+open. No Sleep/Wake/DarkWake event in the sampled interval. Steve separately
+reported normal screen/input and Dock Activate action present; Dock inspection
+was human-reported, not CUA, and no Dock activation click was tested. Full evidence
+at top VERIFICATION. No longer-duration/backpack/thermal/critical/crash/removal
+guarantee. Candidate unchanged; docs only, finished OFF, no further arming grant.
