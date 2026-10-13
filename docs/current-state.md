@@ -18,11 +18,14 @@ Main clean, original build5 backup preserved. Candidate/source unchanged by this
 Markdown-only closure; all feature PRs remain unmerged. Prior docs CI38343298496
 passed; final closure CI will be checked.
 
-Next: separate user gate for controlled activate/deactivate with lid open on a
-ventilated surface, then separately controlled closed-lid testing. Critical-event
-recovery and production removal also remain untested. Never auto-arm or claim
-guaranteed OS emergency sleep protection. Builder has no native action authority
-for these drills.
+Current user approval is install/helper OFF only. First activation is NOT
+authorized. Next: ask Steve to confirm laptop out of backpack, on an open hard
+surface, lid open for brief Activate → inspect warning/dual true receipts →
+warning Deactivate → UI off/dual false receipts, finish OFF. No physical lid,
+critical-event or crash drill is included. Failed activation goes to recovery;
+no blind retries or force quit while uncertain. Critical recovery, removal and
+physical testing remain separately gated. Never auto-arm or claim guaranteed OS
+emergency protection. Builder has no native action authority for these drills.
 
 ## Bookmark — patched local candidate ready for native setup (2026-10-12)
 

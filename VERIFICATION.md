@@ -39,9 +39,14 @@ authenticated off observation, not physical sleep or emergency protection.
   shared menu/Dock action code are not substituted for physical acceptance.
 - First activation, deactivation/restoration drill, closed-lid behavior, critical
   battery/thermal recovery and production removal remain unperformed and gated.
-  Next is explicit user approval for a controlled activate/deactivate drill with
-  lid open on a ventilated surface, before any physical closed-lid test. Never
-  auto-arm and never claim guaranteed macOS emergency sleep protection.
+  Current user approval covers installation/helper setup with Always On OFF only.
+  First activation is NOT authorized: ask Steve to confirm the laptop is out of
+  the backpack, on an open hard surface, lid open. The proposed brief drill is
+  Activate → inspect native active warning and both SleepDisabled receipts true
+  → click warning Deactivate → verify UI off and both receipts false, finish OFF.
+  It includes no physical lid, critical-event or crash test. Failed activation
+  goes to deactivation/recovery, without blind retries or force quit while
+  uncertain. Never auto-arm or claim guaranteed macOS emergency sleep protection.
 
 All feature PRs remain unmerged. Reviewed code, signed candidate and installed
 hashes are unchanged by this Markdown-only native-evidence closure. Prior docs
