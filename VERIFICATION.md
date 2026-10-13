@@ -1,3 +1,29 @@
+## Lid-close display check — 2026-10-13
+
+Steve explicitly approved a brief Always On test on a hard surface, ending OFF.
+The read-only sampler was running before activation and before requesting closure.
+From 07:15:27 Pacific it recorded 186 samples with no errors and a maximum 1.280s
+gap. Lid CLOSED was sampled 82 times from 07:17:02.887 through 07:18:24.267
+(81.379s); reopening was captured at 07:18:25.275. SleepDisabled stayed true in
+every closed sample, and the sampler continued running throughout.
+
+The internal AppleCLCD2 service (registry ID4294969358) reported
+`IOMFBBrightnessLevel` 11145342 before closure, **0 in all 82 closed samples**,
+and 12511380 on reopening. The built-in display disappeared from the online
+CoreGraphics display list while closed and returned awake on reopening; transient
+display-ID churn occurred during reconfiguration. This open/closed/open contrast
+supports the built-in screen turning off with the lid, not merely a saved brightness
+setting. It is software evidence, not a direct physical light measurement.
+AppleARMBacklight `CurrentNits` remained zero even while open and is not evidence
+of the backlight state. Its other saved brightness parameters also stayed constant.
+No keyboard-backlight reading, backpack/thermal stress or emergency-sleep claim.
+
+After Steve reported reopening, lead clicked the actual Deactivate button. Native
+Settings showed OFF; pmset SleepDisabled0, root SleepDisabledNo and lid OPEN were
+confirmed. No warning or recovery failure returned. Installed build unchanged;
+no software installed. Raw local samples are preserved in the primary checkout's
+ignored `.build/lid-display-evidence/2026-10-13-071527.jsonl`; no raw data is published.
+
 ## Console recovery fix installed; native OFF acceptance — 2026-10-13
 
 Lead-reported native evidence, all times Pacific. Steve explicitly approved the

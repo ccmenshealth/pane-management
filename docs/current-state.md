@@ -1,5 +1,14 @@
 # Pane Management — Current State
 
+## Follow-up — lid-close display check completed; Always On OFF (2026-10-13)
+
+User-approved hard-surface test captured internal display-driver brightness
+nonzero → zero for all 82 closed-lid samples → nonzero after reopening. The sampler
+kept running with Always On enabled. Software evidence supports the screen turning
+off on closure; no direct physical-light or keyboard-backlight measurement is claimed.
+Lead then Deactivated and verified native OFF, dual override OFF and lid OPEN.
+Installed build unchanged. Exact evidence and limitations are at top VERIFICATION.md.
+
 ## Bookmark — recovery fix installed; warning cleared; Always On OFF (2026-10-13)
 
 User-approved update is complete at the stable app path. Native Settings showed
