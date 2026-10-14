@@ -2,10 +2,13 @@ import Foundation
 import AlwaysOnClient
 
 @MainActor public final class SetupCoordinator {
-    public private(set) var observation = SetupObservation(revision: 0, state: .unknown("Check helper setup."), remedy: .checkAgain, lifecyclePending: false)
+    public private(set) var observation = SetupObservation(revision: 0, state: .startupUnverified("Checking helper availability. Normal sleep has not been verified."), remedy: .checkAgain, lifecyclePending: false)
     public var onObservation: ((SetupObservation) -> Void)?
     private let service: SetupService, client: SetupClient, proof: SetupProof
     private let scheduler: ClientScheduler
+    // Presentation provenance is independent of retry scheduling: an approval or
+    // missing-helper result may stop polling without becoming a power emergency.
+    private var quietStartup = true
     private var startupUnresolved = true, startupChecking = false, startupStep = 0
     private var startupTimer: ClientTimer?
     private var epoch: UInt64 = 0
@@ -24,6 +27,7 @@ import AlwaysOnClient
         onObservation?(observation)
     }
     private func clientChanged() {
+        quietStartup = false
         stopStartup()
         epoch &+= 1; approval = false
         publishClient(client.state)
@@ -37,9 +41,17 @@ import AlwaysOnClient
         }
     }
     public func startup() async { await refresh() }
+    public func checkAgain() async {
+        guard !pending, !refreshing, !startupChecking else { return }
+        // Explicit operator action may shorten backoff; focus/wake may not.
+        startupTimer?.cancel(); startupTimer = nil
+        epoch &+= 1
+        await refresh()
+    }
     public func refresh() async {
         guard !pending, !refreshing, !startupChecking else { return }
-        if startupUnresolved {
+        if startupUnresolved || quietStartup {
+            startupUnresolved = true
             // Focus/wake notifications do not accelerate an already scheduled retry.
             guard startupTimer == nil else { return }
             startupChecking = true
@@ -77,7 +89,8 @@ import AlwaysOnClient
         // An active warning remains actionable while its status is rechecked.
         // Safe off/unavailable snapshots expire as soon as a fresh proof starts.
         if observation.state != .active, !startupOnly || startupStep == 0 {
-            publish(.unknown("Checking normal sleep and helper setup."), .wait)
+            let reason = "Checking normal sleep and helper setup."
+            publish(quietStartup || observation.quitSafe ? .startupUnverified(reason) : .unknown(reason), .wait)
         }
         do {
             let status = try await service.status()
@@ -87,13 +100,17 @@ import AlwaysOnClient
                 if startupOnly {
                     let result = await client.probeStartup()
                     guard id == epoch else { return }
-                    if !result.retry { stopStartup() }
-                    publishClient(result.state)
+                    if result.retry {
+                        publish(.startupUnverified("The helper has not answered yet. Automatic checks continue; normal sleep has not been verified."), .checkAgain)
+                    } else {
+                        quietStartup = false; stopStartup()
+                        publishClient(result.state)
+                    }
                 } else { await client.status() }
             case .requiresApproval:
                 if startupOnly { stopStartup() }
                 approval = true
-                publish(.setupRequired("Approve the helper in Login Items, then check again."), .openLoginItems)
+                publishSetup("Approve the helper in Login Items, then check again.", .openLoginItems)
             case .notFound:
                 if startupOnly { stopStartup() }
                 do {
@@ -101,13 +118,16 @@ import AlwaysOnClient
                     let reason = registrationFailed
                         ? "Helper registration did not complete. Try Set Up again, or repair the signed installation and check again. Normal sleep is not verified."
                         : "The helper is not registered or could not be located. Choose Set up always-on helper to try setup. Normal sleep is not verified."
-                    publish(.setupRequired(reason), .setUp)
+                    publishSetup(reason, .setUp)
                 } catch {
-                    publish(.setupRequired("Install the app and helper signed with the same certificate, then check again."), .checkAgain)
+                    publishSetup("Install the app and helper signed with the same certificate, then check again.", .checkAgain)
                 }
             case .notRegistered:
                 let power = try await proof.power()
                 guard id == epoch else { return }
+                // A positive override receipt is risk evidence even before this process
+                // activates anything. Never hide it as mere startup uncertainty.
+                if power.preference == true || power.rootDomain == true { quietStartup = false }
                 guard power.verifiedOff else { throw SetupError.unverified }
                 let absent = try await proof.directoryAbsent()
                 guard id == epoch else { return }
@@ -125,12 +145,21 @@ import AlwaysOnClient
             }
         } catch {
             guard id == epoch else { return }
-            publish(.unknown("Normal sleep is not verified. Retry deactivation or repair helper setup."), .retryDeactivationAndRepair)
+            if quietStartup {
+                publish(.startupUnverified("The helper could not be checked. Normal sleep has not been verified. Check again or repair helper setup."), .checkAgain)
+            } else {
+                publish(.unknown("Normal sleep is not verified. Retry deactivation or repair helper setup."), .retryDeactivationAndRepair)
+                if startupOnly { stopStartup() }
+            }
         }
+    }
+    private func publishSetup(_ reason: String, _ remedy: SetupRemedy) {
+        publish(quietStartup ? .startupUnverified(reason) : .setupRequired(reason), remedy)
     }
     public func setup() async {
         stopStartup()
         guard !pending, !refreshing else { return }
+        quietStartup = false
         lifecycle = true; epoch &+= 1; approval = false
         publish(.setupRequired("Checking helper setup. Wait for completion."), .wait)
         var registrationFailed = false
@@ -156,6 +185,7 @@ import AlwaysOnClient
     public func activate() async {
         stopStartup()
         guard !pending, !refreshing, observation.state == .off else { return }
+        quietStartup = false
         foreground += 1; epoch &+= 1; publish(.unknown("Activating always-on mode."), .deactivate)
         await client.activate(); foreground -= 1; clientChanged()
     }
@@ -163,12 +193,14 @@ import AlwaysOnClient
         stopStartup()
         // A stop can queue behind activation, preserving the client's late-enable latch.
         guard !lifecycle, !client.removalPending else { return }
+        quietStartup = false
         foreground += 1; epoch &+= 1; publish(.unknown("Restoring normal sleep."), .wait)
         await client.deactivate(); foreground -= 1; clientChanged()
     }
     public func remove() async -> Bool {
         stopStartup()
         guard !pending, !refreshing else { return false }
+        quietStartup = false
         lifecycle = true; epoch &+= 1; approval = false
         publish(.unknown("Preparing helper removal. Wait for completion."), .wait)
         let success = await client.remove { completion in self.service.unregister(completion) }

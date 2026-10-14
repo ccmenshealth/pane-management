@@ -7,7 +7,7 @@ import AlwaysOnUI
 @MainActor final class PreviewBackend: ObservableObject, AlwaysOnBackend {
     @Published var failNextRestoration = false
     @Published var fixture = "Off"
-    let fixtures = ["Off", "Active", "Setup available", "Missing signing", "Approval", "Repair installation", "Unknown recovery", "Activation pending", "Removal pending", "Removal failed", "Finish removal"]
+    let fixtures = ["Startup checking", "Startup unavailable", "Startup approval", "Off", "Active", "Setup available", "Missing signing", "Approval", "Repair installation", "Unknown recovery", "Activation pending", "Removal pending", "Removal failed", "Finish removal"]
     var snapshot = AlwaysOnSnapshot(revision: 0, state: .off, action: .activate, quitSafe: true)
     var onChange: ((AlwaysOnSnapshot) -> Void)?
     private func emit(_ state: AlwaysOnState, _ action: AlwaysOnAction, _ secondary: String? = nil, pending: Bool = false, safe: Bool = false) {
@@ -16,6 +16,9 @@ import AlwaysOnUI
     }
     func select() {
         switch fixture {
+        case "Startup checking": emit(.statusUnverified("Checking helper availability. Normal sleep has not been verified."), .wait)
+        case "Startup unavailable": emit(.statusUnverified("The helper has not answered yet. Automatic checks continue; normal sleep has not been verified."), .checkSetup, "Repair setup in Settings")
+        case "Startup approval": emit(.statusUnverified("Approve the helper in Login Items, then check again."), .checkSetup, "Open Login Items")
         case "Active": emit(.active, .deactivate)
         case "Setup available": emit(.unavailable("Always-on helper is not set up."), .setUp, safe: true)
         case "Missing signing": emit(.unavailable("Install the app and helper signed with the same certificate, then check again."), .checkSetup, safe: true)

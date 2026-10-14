@@ -1,5 +1,50 @@
 # Always-on mode — authorized build
 
+## Startup warning presentation decisions — October 14, 2026
+
+D1: Routine startup uncertainty is a distinct quiet state, never a false OFF claim.
+Initial checking, delayed/unreachable helper, and initial setup/approval problems
+remain visible in menu/Dock/Settings without an always-on-top warning. Snapping
+stays usable. This supersedes October 13 D5 only for these presentation paths.
+
+D2: Authenticated active/recovery replies, either positive override receipt,
+client loss outside startup probing, and explicit activation/restoration/removal
+uncertainty keep the conspicuous warning and recovery action. Do not infer safety
+from no activation in this process. Root/helper power, auth and storage code are
+unchanged; no automatic activation or new privileged operation is introduced.
+
+D3: Check again explicitly requests one fresh status probe during startup backoff;
+focus/wake do not shorten the backoff. Quiet approval/missing-helper provenance
+survives rechecks and resumes startup polling when the service becomes available.
+Repair remains in the Settings footer. Existing stale-task/epoch fences remain.
+
+D4: Quiet presentation never changes `quitSafe`. A denied quiet-state quit reveals
+ordinary Settings with checking/repair actions, not a screen-blocking warning.
+Confirmed active or failed-restoration quit continues the existing recovery path.
+Synchronous focus/wake revalidation of a previously safe observation is quiet,
+while pending lifecycle work retains the existing warning.
+
+D5: Implementation and native preview are isolated. The preview uses an in-memory
+backend without helper/power APIs. Installing the reviewed Pane Management update
+is already authorized; activation remains separately gated and OFF during update.
+Native reboot/delayed-helper timing is not inferred from synthetic checks.
+
+Fresh incident evidence: app858 launched 07:23:48.775 Pacific and terminated at
+07:24:01.161; helper532's listener began at 07:24:48.758. An app retry already
+occurred at 07:23:56.604. The app exited about 47.6 seconds before the helper was
+ready, so these logs do not disprove the prior retry fix. The confirmed defect is
+the intrusive startup presentation. The helper initialization delay is unexplained.
+
+| State at 3 a.m. | Visible 8 a.m. exit / verification |
+| --- | --- |
+| Initial or indefinitely unavailable helper | Quiet unverified status; automatic retries, explicit Check again and Settings Repair; never claim OFF |
+| Startup approval/missing helper | Quiet reason plus Login Items/setup/recheck; no automatic registration |
+| Quiet denied quit | Ordinary Settings opens; snapping remains usable, no forced-quit needed to escape a modal warning; quit still requires proof |
+| Positive override receipt / authoritative active or recovery | Mandatory warning with explicit deactivation/repair; no background adoption or activation |
+| Manual activation/deactivation/removal uncertainty | Existing mandatory warning, bounded client recovery, explicit retry and lifecycle exclusion |
+| Focus/wake safe-state revalidation | Revoke stale safe proof immediately without flashing a warning; newer unsafe observations still win |
+| Fired timer superseded by manual check/lifecycle | Epoch fence rejects old queued work; exactly one new timer or settled state remains |
+
 ## Startup reconciliation decisions locked October 13, 2026
 
 - D1: Only unresolved startup checks retry, with bounded attempts and 2/5/10/30

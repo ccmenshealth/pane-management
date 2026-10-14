@@ -7,6 +7,7 @@ extension AlwaysOnState {
     public var heading: String {
         switch self {
         case .checking: return "Checking always-on status"
+        case .statusUnverified: return "Always-on status is not yet verified"
         case .off: return "Always-on mode is off"
         case .activating: return "Activating always-on mode…"
         case .active: return "Always-on mode is activated"
@@ -26,11 +27,12 @@ extension AlwaysOnState {
         case .stopping: return "Keep Pane Management open. This warning stays until normal sleep has been confirmed."
         case .recoveryRequired(let reason): return "Normal sleep could not be confirmed. \(reason) Keep the Mac out of your bag and retry deactivation."
         case .unavailable(let reason), .setupRequired(let reason): return reason
+        case .statusUnverified(let reason): return "\(reason) Window snapping remains available. Keep Pane Management running to finish checking, and do not rely on Always On until its status is confirmed."
         case .removalRequired: return "Normal sleep is verified. Finish removing the helper in Settings before setting it up again."
         }
     }
     public var showsWarning: Bool {
-        switch self { case .off, .unavailable, .removalRequired: return false; default: return true }
+        switch self { case .off, .unavailable, .removalRequired, .statusUnverified: return false; default: return true }
     }
 }
 
@@ -89,7 +91,7 @@ public struct AlwaysOnActions: View {
                     if controller.needsRepair {
                         Button("Repair helper setup") { controller.repairHelperFromSettings() }.disabled(!controller.canRemove)
                         if controller.action != .checkSetup {
-                            Button("Check again") { controller.checkSetup() }.disabled(!controller.canRemove)
+                            Button("Check again") { controller.checkSetup(manual: true) }.disabled(!controller.canRemove)
                         }
                     }
                     Button("Remove always-on helper") { controller.removeHelperFromSettings() }.disabled(!controller.canRemove)

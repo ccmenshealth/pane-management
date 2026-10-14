@@ -1,5 +1,6 @@
 import Foundation
 import AlwaysOnCore
+import AlwaysOnUI
 import AlwaysOnClient
 import AlwaysOnIPC
 import AlwaysOnSetup
@@ -11,6 +12,12 @@ extension SetupCoordinator {
     convenience init(service: SetupService, client: SetupClient, proof: SetupProof, scheduler: ClientScheduler) {
         self.init(service: service, client: client, proof: proof)
     }
+}
+#endif
+// API-only pre-fix overlay: Check again previously used the same refresh path.
+#if STARTUP_WARNING_PRE_FIX
+extension SetupCoordinator {
+    func checkAgain() async { await refresh() }
 }
 #endif
 @MainActor private final class StartupTimer: ClientTimer {
@@ -101,10 +108,15 @@ private final class StartupActivity: ClientActivity {
 @MainActor func startupChecks(_ check: (Bool, String) -> Void) async {
     do {
         let h = StartupHarness()
-        h.controller.checkSetup(); await settle() // Actual App startup driver through adapter.
-        check(h.controller.needsRepair, "startup unavailable retains recovery warning")
+        check(!h.controller.state.showsWarning && h.controller.state != .off, "initial unverified startup has no warning or false OFF")
+        check(!h.adapter.snapshot.quitSafe, "quiet initial state does not weaken quit proof")
+        h.controller.checkSetup()
+        check(!h.controller.state.showsWarning, "synchronous startup never flashes a warning")
+        await settle() // Actual App startup driver through adapter.
+        check(!h.controller.state.showsWarning, "retryable startup failure stays nonmodal")
+        check(h.controller.needsRepair, "startup unavailable retains repair affordance")
         await h.clock.advance(99)
-        check(h.controller.needsRepair, "startup remains truthful beyond original deadline")
+        check(h.controller.needsRepair && !h.controller.state.showsWarning && h.controller.state != .off, "startup remains quiet and truthful beyond original deadline")
         await h.clock.advance(35)
         check(h.controller.state == .off, "delayed helper over 90 seconds clears warning automatically")
         check(h.transport.requests.allSatisfy { $0 == .status }, "startup never replays restoration or any mutation")
@@ -119,17 +131,35 @@ private final class StartupActivity: ClientActivity {
     do {
         let h = StartupHarness(); h.transport.availableAt = .infinity
         await h.adapter.refresh(); await h.clock.advance(200)
-        check(h.controller.needsRepair && h.controller.action == .deactivate, "persistent unavailability keeps manual recovery exit")
+        check(h.controller.needsRepair && h.controller.action == .checkSetup && !h.controller.state.showsWarning, "persistent unavailability keeps quiet Check again and Repair exits")
+        var opened = 0, replies: [Bool] = []
+        h.controller.onOpenSettings = { opened += 1 }; h.controller.onQuitDecision = { replies.append($0) }
+        check(!h.controller.requestQuit(), "quiet unverified startup does not claim safe quit")
+        await settle()
+        check(opened == 1 && replies == [false] && !h.controller.state.showsWarning, "denied quiet quit reveals ordinary Settings without warning")
+        check(h.transport.requests.allSatisfy { $0 == .status }, "quiet quit performs no restoration mutation")
         check(h.transport.times == [0, 2, 7, 17, 47, 77, 107, 137, 167, 197], "startup bounded backoff persists at thirty seconds")
         check(h.clock.live == 1, "only one retry timer remains")
         h.transport.availableAt = 0; await h.adapter.deactivate()
         let calls = h.transport.times.count; await h.clock.advance(90)
         check(h.controller.state == .off && h.transport.times.count == calls, "manual Retry supersedes scheduled startup work")
     }
+    do {
+        let h = StartupHarness(); h.transport.availableAt = .infinity
+        await h.adapter.refresh(); await h.clock.advance(1)
+        let calls = h.transport.times.count
+        h.controller.checkSetup(); await settle()
+        check(h.transport.times.count == calls, "automatic focus respects startup backoff")
+        h.controller.perform(.checkSetup); await settle()
+        check(h.transport.times.count == calls + 1 && h.transport.times.last == 1, "explicit Check again immediately probes during backoff")
+        check(h.clock.live == 1 && h.transport.requests.allSatisfy { $0 == .status }, "explicit recheck leaves one status-only retry")
+        await h.clock.advance(1)
+        check(h.transport.times.count == calls + 1, "cancelled earlier timer cannot duplicate explicit recheck")
+    }
     for state in [ServiceState.recoveryRequired, .active] {
         let h = StartupHarness(); h.transport.availableAt = 0; h.transport.reply = .init(state: state)
         await h.adapter.refresh(); let calls = h.transport.times.count; await h.clock.advance(90)
-        check(h.controller.needsRepair && h.controller.action == .deactivate, "authoritative \(state) retains explicit deactivation exit")
+        check(h.controller.needsRepair && h.controller.action == .deactivate && h.controller.state.showsWarning, "authoritative \(state) retains mandatory warning and deactivation exit")
         check(h.transport.requests == [.status] && h.transport.times.count == calls, "authoritative \(state) stops retries without mutation")
         h.transport.reply = .init(state: .off); await h.adapter.deactivate()
         check(h.controller.state == .off, "manual recovery from \(state) accepts verified OFF")
@@ -140,8 +170,8 @@ private final class StartupActivity: ClientActivity {
         await h.adapter.refresh(); await h.adapter.refresh()
         check(h.transport.times.count == 1, "focus and wake coalesce during pending startup probe")
         await h.clock.advance(10); await initial.value
-        check(h.controller.needsRepair, "hung probe has bounded deadline and truthful warning")
-        check(h.controller.action == .deactivate && h.controller.canRemove && h.adapter.snapshot.secondaryTitle == "Repair setup in Settings", "background hung retry keeps manual Retry and Repair actionable")
+        check(h.controller.needsRepair && !h.controller.state.showsWarning, "hung probe has bounded deadline and quiet truthful status")
+        check(h.controller.action == .checkSetup && h.controller.canRemove && h.adapter.snapshot.secondaryTitle == "Repair setup in Settings", "background hung retry keeps Check again and Repair actionable")
         h.transport.hang = false; h.transport.availableAt = 0
         let stop = Task { await h.adapter.deactivate() }; await settle()
         await h.clock.advance(5); await stop.value; await h.adapter.activate()
@@ -185,7 +215,13 @@ private final class StartupActivity: ClientActivity {
         await h.clock.advance(2)
         let calls = h.transport.times.count; await h.clock.advance(90)
         check(h.transport.times.count == calls && h.clock.live == 0, "setup-required \(status) stops retries")
-        check(h.controller.state != .off && h.service.registrations == 0, "setup-required stays explicit without registration")
+        check(h.controller.state != .off && h.service.registrations == 0 && !h.controller.state.showsWarning, "startup setup-required stays quiet and explicit without registration")
+        await h.adapter.refresh()
+        check(!h.controller.state.showsWarning, "focus recheck preserves quiet startup setup provenance")
+        h.service.value = .enabled; h.transport.availableAt = .infinity
+        await h.adapter.refresh()
+        check(!h.controller.state.showsWarning && h.clock.live == 1, "startup approval resolving to unavailable helper resumes quiet polling")
+        check(h.transport.requests.allSatisfy { $0 == .status }, "startup approval recheck cannot replay restore")
     }
     do {
         var h: StartupHarness? = StartupHarness(); let clock = h!.clock
@@ -236,6 +272,19 @@ private final class StartupActivity: ClientActivity {
         await clock.advance(60)
         check(client.probes == probes && client.activations + client.stops + client.removals == mutations && clock.live == 0,
               "manual \(action) leaves no stale retry or mutation replay")
+    }
+    do {
+        let clock = StartupClock(), client = ImmediateStartupClient()
+        let coordinator = SetupCoordinator(service: StartupService(), client: client, proof: StartupProof(), scheduler: clock)
+        await coordinator.refresh(); clock.fireWithoutDraining(after: 2)
+        await coordinator.checkAgain()
+        let observation = coordinator.observation
+        check(client.probes == 2 && clock.live == 1, "explicit check replaces fired timer with one new probe and timer")
+        await settle()
+        check(client.probes == 2 && clock.live == 1 && coordinator.observation == observation, "queued old timer cannot overwrite explicit check or clear its timer")
+        await clock.advance(5)
+        check(client.probes == 3 && clock.live == 1, "explicit recheck replacement timer remains live")
+        await coordinator.deactivate()
     }
     do {
         let clock = StartupClock(), client = ImmediateStartupClient()

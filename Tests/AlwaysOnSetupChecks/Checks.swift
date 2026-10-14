@@ -1,6 +1,7 @@
 import Foundation
 import Darwin
 import AlwaysOnCore
+import AlwaysOnUI
 import AlwaysOnClient
 import AlwaysOnReadOnly
 import AlwaysOnSetup
@@ -105,13 +106,14 @@ private enum Failure: Error { case fixture }
         check(fresh.service.opens == 0 && fresh.client.activations == 0, "fresh state cannot activate or open approval")
         for a: Bool? in [false, true, nil] { for b: Bool? in [false, true, nil] {
             let h = Harness(); h.proof.receipt = .init(preference: a, rootDomain: b); await h.setup.startup()
+            check(SetupPresentationAdapter.map(h.setup.observation).state.showsWarning == (a == true || b == true), "positive override evidence warns; missing receipt remains unverified")
             check(h.setup.observation.quitSafe == (a == false && b == false), "strict receipt \(String(describing:a))/\(String(describing:b))")
         } }
         for fault in 0..<5 {
             let h = Harness()
             switch fault { case 0: h.service.failRead = true; case 1: h.proof.failPower = true; case 2: h.proof.failAbsence = true; case 3: h.proof.absent = false; default: h.service.values = [.notRegistered, .enabled] }
             await h.setup.startup()
-            check(!h.setup.observation.quitSafe && h.setup.observation.remedy == .retryDeactivationAndRepair, "uncertain proof \(fault)")
+            check(!h.setup.observation.quitSafe && h.setup.observation.remedy == .checkAgain, "uncertain proof \(fault)")
             check(h.service.registrations == 0, "uncertain proof cannot register \(fault)")
         }
         for status in [SetupServiceStatus.enabled, .requiresApproval] {
@@ -150,6 +152,7 @@ private enum Failure: Error { case fixture }
         let wake = Harness(); await wake.setup.startup(); wake.proof.holdPower = true
         let wakeTask = Task { await wake.setup.refresh() }; await spin { wake.proof.gate != nil }
         check(!wake.setup.observation.quitSafe, "wake revalidation never exposes old quiet proof")
+        check(!SetupPresentationAdapter.map(wake.setup.observation).state.showsWarning, "wake revalidation of safe state stays quiet")
         wake.proof.gate?.resume(); await wakeTask.value
         check(wake.setup.observation.quitSafe, "fresh completed wake proof permits quiet state")
         let activeRefresh = Harness(); activeRefresh.service.values = [.enabled]; activeRefresh.client.state = .active
@@ -303,7 +306,7 @@ private enum Failure: Error { case fixture }
             let adapter = SetupPresentationAdapter(h.setup), controller: AlwaysOnController
             controller = AlwaysOnController(backend: adapter)
             await adapter.refresh()
-            check(controller.needsRepair && controller.action == .deactivate, "retained journal needs explicit repair exit")
+            check(controller.needsRepair && controller.action == .checkSetup && !controller.state.showsWarning, "retained journal needs explicit quiet repair exit")
             check(h.service.registrations == 0, "uncertain startup never registers automatically")
             controller.perform(.openSettings)
             check(h.service.registrations == 0, "repair navigation never registers")

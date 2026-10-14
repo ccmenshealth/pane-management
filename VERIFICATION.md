@@ -1,3 +1,62 @@
+## Quiet startup warning presentation — build evidence (2026-10-14)
+
+The startup retry introduced October 13 was running during the reported reboot:
+app858 started 07:23:48.775 Pacific, retried 07:23:56.604 and terminated
+07:24:01.161; helper532's listener began 07:24:48.758. The app exited about 47.6
+seconds before the helper was ready. The presentation incorrectly treated pending
+startup as a mandatory recovery emergency. The helper's initialization delay is
+not explained by this evidence.
+
+Implementation adds explicit startup-unverified provenance and a quiet shared UI
+state. Quiet does not mean OFF or quit-safe. Authenticated active/recovery, either
+positive override receipt, ordinary client loss and uncertain manual operations
+retain the mandatory warning. Explicit Check again bypasses scheduled backoff
+through the status-only startup path; focus/wake do not. Quiet approval/missing
+helper rechecks retain provenance. A denied quiet quit opens ordinary Settings.
+All root/helper power, IPC authentication and journal code remain unchanged.
+
+**Fail-first:** archived untouched production `4b91728` into ignored
+`.build/startup-warning-pre-fix`, overlaid only final setup/UI tests and the test
+manifest dependency on AlwaysOnUI. Compiled with `-DSTARTUP_WARNING_PRE_FIX`; its
+API-only test shim forwards the newly named `checkAgain` to the old `refresh`,
+which was the prior Check again behavior. Production sources were untouched.
+Setup267 assertions/**27 failures**; UI85/**1 failure**, both exit1. Failures cover
+initial flash, delayed/permanent helper unavailability, startup approval rechecks,
+quiet denied quit, immediate explicit check, proof failures and safe wake flash.
+No missing-symbol/compile failure is counted as regression evidence.
+
+**Green local gates:** separate debug and release builds passed. All nine suites
+passed in both configurations: Snap60 scenarios, UI85, Engine176, Native114,
+Service355, Daemon266, Client181, Setup267, SigningProbe114, all zero failures.
+Shell syntax checked each `scripts/*.sh`; all six Resource plists passed lint;
+`git diff --check` passed. Evidence logs are preserved locally in ignored
+`.build/startup-warning-evidence` (red/green build and per-suite logs).
+
+Setup regressions exercise the production controller → presentation adapter →
+coordinator → client with virtual time: >90-second helper delay, permanent failure,
+quiet constructor/first refresh, bounded status probes, no App Nap hold, visible
+Check again/Repair, denied quit with ordinary Settings, authoritative foreign
+active/recovery, either positive/missing/disagreeing power receipt, stale probe
+completion, startup/focus/wake, setup/removal cancellation and queued-timer fences.
+Explicit recheck after a fired timer cannot clear its replacement or publish a
+stale observation. Manual activation/deactivation/lifecycle and client-loss paths
+retain existing warning/quit tests; no safety proof was relaxed.
+
+**Native preview prepared, not yet inspected:** isolated ad-hoc signed bundle
+`PaneManagement-worktrees/startup-warning/dist/Always-on Preview.app` passed
+strict/deep signature verification. New fixtures are Startup checking, Startup
+unavailable and Startup approval; existing Active/Unknown recovery/Activation and
+Removal pending fixtures verify the mandatory-warning siblings. The preview uses
+an in-memory backend only. Select Off before quitting after a quiet-unverified
+fixture: quit deliberately remains denied until a safe simulated observation.
+
+Builder inherited current model/effort; exact labels unavailable. Independent code
+and manual security review, lead review, final-head CI and real native preview
+inspection remain pending. CodeRabbit unavailable by the explicit repository
+exclusion. No production app/helper launch/stop, installation, registration,
+permission, trust or power change occurred during the build. Actual reboot timing,
+helper delay cause, physical thermal/battery safety and backpack use are not proven.
+
 ## Startup recovery update — installed OFF acceptance (2026-10-13)
 
 Lead completed the authorized update at the stable primary `dist/Pane Management.app`.

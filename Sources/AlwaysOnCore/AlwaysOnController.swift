@@ -3,7 +3,7 @@ import Combine
 
 public enum AlwaysOnState: Equatable, Sendable {
     case checking, off, activating, active, stopping, removalRequired
-    case recoveryRequired(String), unavailable(String), setupRequired(String)
+    case recoveryRequired(String), unavailable(String), setupRequired(String), statusUnverified(String)
 }
 public enum AlwaysOnAction: Equatable, Sendable {
     case activate, deactivate, checkSetup, setUp, openSettings, openLoginItems, wait
@@ -25,11 +25,16 @@ public struct AlwaysOnSnapshot: Equatable, Sendable {
     var snapshot: AlwaysOnSnapshot { get }
     var onChange: ((AlwaysOnSnapshot) -> Void)? { get set }
     func refresh() async
+    func checkAgain() async
     func activate() async
     func deactivate() async
     func setup() async
     func remove() async
     func openLoginItems()
+}
+
+public extension AlwaysOnBackend {
+    func checkAgain() async { await refresh() }
 }
 
 /// Presentation consumes authoritative revisioned observations. The client owns
@@ -45,7 +50,7 @@ public struct AlwaysOnSnapshot: Equatable, Sendable {
     private var operations = Set<UUID>()
     private var activation: UUID?, stopping: UUID?
     private var stopCompleted = false
-    private var refreshing = false, refreshAgain = false, quitPending = false
+    private var refreshing = false, refreshAgain = false, manualRefresh = false, quitPending = false
     public init(backend: AlwaysOnBackend) {
         self.backend = backend; latest = backend.snapshot
         backend.onChange = { [weak self] in self?.receive($0) }
@@ -54,7 +59,7 @@ public struct AlwaysOnSnapshot: Equatable, Sendable {
     public var actionEnabled: Bool { action != .wait }
     public var canRemove: Bool { operations.isEmpty && !refreshing && !latest.lifecyclePending }
     public var needsRepair: Bool {
-        switch latest.state { case .recoveryRequired, .setupRequired: return true; default: return false }
+        switch latest.state { case .recoveryRequired, .setupRequired, .statusUnverified: return true; default: return false }
     }
     public var canOpenLoginItems: Bool { secondaryTitle == "Open Login Items" && canRemove }
     private var safe: Bool { latest.quitSafe && operations.isEmpty && !refreshing && !latest.lifecyclePending }
@@ -66,21 +71,27 @@ public struct AlwaysOnSnapshot: Equatable, Sendable {
         secondaryTitle = latest.secondaryTitle
         if stopping != nil { state = .stopping; action = .wait }
         else if activation != nil { state = .activating; action = .deactivate }
-        else if refreshing && latest.quitSafe { state = .checking; action = .wait }
+        else if refreshing && latest.quitSafe { state = .statusUnverified("Checking normal sleep and helper setup."); action = .wait }
         else { state = latest.state; action = latest.action }
     }
     private func settleQuit() {
         guard quitPending, operations.isEmpty, !refreshing, !latest.lifecyclePending else { return }
-        quitPending = false; onQuitDecision?(safe)
+        quitPending = false
+        let allowed = safe
+        onQuitDecision?(allowed)
+        if !allowed, case .statusUnverified = state { onOpenSettings?() }
     }
     /// App startup, wake and focus all enter this coalescing driver. Revocation of
     /// stale safe state is synchronous, before the first suspension.
-    public func checkSetup() {
+    public func checkSetup(manual: Bool = false) {
+        manualRefresh = manualRefresh || manual
         if refreshing { refreshAgain = true; return }
         refreshing = true; render()
         Task {
             while true {
-                await backend.refresh(); receive(backend.snapshot)
+                let explicit = manualRefresh; manualRefresh = false
+                if explicit { await backend.checkAgain() } else { await backend.refresh() }
+                receive(backend.snapshot)
                 guard refreshAgain else { break }
                 refreshAgain = false
             }
@@ -91,7 +102,7 @@ public struct AlwaysOnSnapshot: Equatable, Sendable {
         switch requested {
         case .openSettings: onOpenSettings?()
         case .openLoginItems: if canOpenLoginItems { backend.openLoginItems() }
-        case .checkSetup: checkSetup()
+        case .checkSetup: checkSetup(manual: true)
         case .wait: break
         case .activate:
             guard action == .activate, canRemove, !quitPending else { return }

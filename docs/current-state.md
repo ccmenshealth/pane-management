@@ -1,5 +1,27 @@
 # Pane Management — Current State
 
+## Bookmark — quiet startup presentation built; review/install pending (2026-10-14)
+
+`codex/startup-warning` separates routine startup uncertainty from a confirmed
+power-recovery condition. Initial helper checking, delayed startup and setup/approval
+problems are quiet unverified status in Settings/menu/Dock. Automatic retry remains;
+Check again explicitly requests a fresh status probe. Confirmed active/recovery,
+either positive override receipt and uncertain manual operations retain the warning.
+`quitSafe` is unchanged; denied quiet-state quit opens ordinary Settings.
+
+The current installed app is still signed source `b613570` below; this slice has not
+installed, launched/stopped the production app/helper or changed any power setting.
+Lead confirmed override OFF after the user's forced quit. New incident logs show the
+app exited about 47.6 seconds before the helper listener became ready; a retry had
+already occurred. Prior retry behavior is not disproven; underlying helper startup
+delay is not established. D1–D5 and recovery exits are in `always-on-build.md`.
+
+Builder inherited current model/effort; exact runtime labels unavailable. Final tests
+compiled on untouched `4b91728`: Setup267/27 failures and UI85/1. See top VERIFICATION
+for green gates, preview path and remaining independent/native acceptance gates.
+CodeRabbit remains excluded. Steve's standing update authority applies; activating
+Always On remains separately gated. Keep it OFF for installation acceptance.
+
 ## Bookmark — startup fix merged and installed; Always On OFF (2026-10-13)
 
 [PR21](https://github.com/ccmenshealth/pane-management/pull/21) merged at 11:29:28
