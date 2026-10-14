@@ -50,8 +50,12 @@ review PASS at `fbeb2173a67e96143eb61b79c4d9cb7baccdb360`, no findings. Reviewer
 independently passed affected debug/release suites and clean-tree check. Lead CUA
 native preview PASS for quiet startup states, ordinary controls after denied quit,
 mandatory active/recovery warning and Deactivate/Retry → OFF; warning art unclipped.
-Actual reboot remains unperformed. Isolated local staging authorized after these
-gates; installation and final-head CI still pending. Exact evidence is in VERIFICATION.
+Signed source `93bd33d` passed CI38584327703 (1m18s) and installed OFF acceptance:
+native quiet unavailable/approval → authenticated OFF, normal quit/fresh launch,
+recognized permissions, snapping enabled, exact hashes/signatures and dual OFF at
+07:57:06 Pacific. No installation work remains. Actual reboot remains unperformed;
+observe the next natural restart. Final docs review/CI and merge remain. No live
+activation occurred. Exact installation evidence and limitations are in VERIFICATION.
 
 ## Startup reconciliation decisions locked October 13, 2026
 

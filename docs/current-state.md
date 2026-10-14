@@ -1,32 +1,35 @@
 # Pane Management — Current State
 
-## Bookmark — quiet startup presentation reviewed; staging/install pending (2026-10-14)
+## Bookmark — quiet startup update installed; Always On OFF (2026-10-14)
 
-`codex/startup-warning` separates routine startup uncertainty from a confirmed
-power-recovery condition. Initial helper checking, delayed startup and setup/approval
-problems are quiet unverified status in Settings/menu/Dock. Automatic retry remains;
-Check again explicitly requests a fresh status probe. Confirmed active/recovery,
-either positive override receipt and uncertain manual operations retain the warning.
-`quitSafe` is unchanged; denied quiet-state quit opens ordinary Settings.
+[PR23](https://github.com/ccmenshealth/pane-management/pull/23) installs signed source
+`93bd33d958b7a566a2914f045e1fcee91059b94d` at the stable primary
+`dist/Pane Management.app`. Exact hashes/manifest and rollback are at top VERIFICATION.
+Runtime `fbeb217` passed independent code/manual security and lead review without
+findings; affected debug/release suites independently passed. All nine suites passed
+in both configurations; pre-fix Setup267/27 and UI85/1 became267/0 and85/0.
+Installed-source CI38584327703 passed in1m18s. Final documentation-head review/CI and
+merge remain; this update changes Markdown only.
 
-The current installed app is still signed source `b613570` below; this slice has not
-installed, launched/stopped the production app/helper or changed any power setting.
-Lead confirmed override OFF after the user's forced quit. New incident logs show the
-app exited about 47.6 seconds before the helper listener became ready; a retry had
-already occurred. Prior retry behavior is not disproven; underlying helper startup
-delay is not established. D1–D5 and recovery exits are in `always-on-build.md`.
+At 07:57:06 Pacific, lead verified app5209/helper5158, dual override OFF, lid OPEN,
+exact hashes and strict/deep signatures. Native Settings showed OFF with no warning,
+recognized Accessibility/ScreenCaptureKit permissions and snapping enabled; Settings
+was then closed. Normal Command-Q quit and fresh launch passed. Always On was never
+activated. No further installation work remains.
 
-Builder inherited current model/effort; exact runtime labels unavailable. Final tests
-compiled on untouched `4b91728`: Setup267/27 failures and UI85/1. See top VERIFICATION
-for green gates and native preview evidence. Independent code/manual security and
-lead review PASS at `fbeb217`; affected debug/release suites independently passed,
-with clean tree verified. Lead CUA real preview passed quiet startup, ordinary
-controls after denied quit, active/recovery warning and deactivation/retry flows;
-stripes/red triangle were unclipped. Actual reboot remains unperformed.
-CI38583821202 is in progress; final-head CI and installed acceptance remain.
-Lead authorized isolated local signing with the existing dedicated identity.
-CodeRabbit remains excluded. Steve's standing update authority applies; activating
-Always On remains separately gated. Keep it OFF for installation acceptance.
+Native unavailable/approval startup states stayed quiet during the helper restart;
+explicit Check again reached authenticated OFF. Prior isolated CUA preview also
+verified genuine active/recovery warnings, Deactivate/Retry and unclipped warning
+art. Quiet presentation preserves unverified status and existing quit proof.
+Actual reboot/delayed-boot acceptance remains unperformed: observe the next natural
+restart. No immediate reboot or live activation is required for this closeout.
+The helper initialization-delay cause and initial AMFI launch failure remain
+unestablished; a scoped Login Items refresh subsequently launched the helper,
+without changing certificate trust or security policy. See VERIFICATION for sequence.
+
+All roles inherited current model/effort; exact labels unavailable. CodeRabbit
+remains excluded. Steve's standing update authority applies to Pane Management;
+Always On activation stays separately gated. Worktrees and rollback remain preserved.
 
 ## Bookmark — startup fix merged and installed; Always On OFF (2026-10-13)
 

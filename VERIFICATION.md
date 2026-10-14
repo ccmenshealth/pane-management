@@ -1,3 +1,55 @@
+## Quiet startup presentation — installed OFF acceptance (2026-10-14)
+
+Lead installed exact signed source `93bd33d958b7a566a2914f045e1fcee91059b94d`
+at primary `dist/Pane Management.app` under Steve's standing update authority.
+This docs-only handoff records lead-supplied evidence; no new runtime, staging,
+installation, lifecycle or power action was performed by the ledger builder.
+
+| Artifact | SHA256 |
+| --- | --- |
+| App executable | `ec005865e8946c3d50f2262485b91fdf8800827189f6412de449b1d8cfcd68a4` |
+| Helper executable | `6912130262ba6cdd992b37bc6fd2e2ea03dfd5c67b7a824316409daee377c4af` |
+| Staging manifest | `d5fb25328e9e097d868d1ce143227081c6f49b1173015b5441d2e60988053c0f` |
+
+Candidate/manifest remain in startup-warning worktree under
+`dist/local-signed-staging/93bd33d958b7a566a2914f045e1fcee91059b94d-9b9d0213-50ac-4a7a-a259-c8318454737a/artifacts`.
+Rollback is preserved at
+`/Users/ccmh/Developer/PaneManagement/dist/backups/before-startup-warning-bbecf651-3ff0-4b6b-ae05-353467a50edb/Pane Management.app`.
+Dedicated signing identity and bundle identifiers are unchanged.
+
+Native sequence, all times Pacific:
+
+- 07:52:19: dual override OFF, app absent/helper532. Scoped Pane Management
+  background OFF showed an OS authentication prompt; by 07:54 it had cleared and
+  both helper process and service were absent. The later request to reopen the
+  prompt required no action because no prompt remained.
+- With app/helper absent, lead copied with `ditto`, verified signatures/hashes,
+  and atomically renamed the preserved old bundle and new candidate into place.
+- Initial background ON at 07:54:38 failed with AMFI -423 / unknown certificate
+  chain / OS_REASON_CODESIGNING under old BTM `2E069386-D803-4AE9-8D6E-A514C6A5D17D`.
+  No certificate-trust or security weakening occurred.
+- New app5116 showed quiet unverified/helper-unanswered Settings with no warning;
+  permissions were recognized and snapping enabled. Scoped background OFF/ON
+  after app registration was recognized yielded new BTM
+  `BFBDA8FE-8FE7-47A7-9A72-FFE53C7C3F30` and helper5158, runs1/no exits.
+  While background was OFF, startup approval stayed quiet. Explicit Check again
+  then reached authenticated OFF.
+- Normal Command-Q quit was proven by app process absence. Fresh app5209 launch
+  showed native OFF/no warning, recognized permissions and snapping enabled;
+  Settings was closed.
+- Final 07:57:06: app5209/helper5158, dual override OFF, lid OPEN, exact executable
+  hashes and strict/deep signature verification PASS. Always On was never activated.
+
+Installed OFF-state acceptance and native quiet unavailable/approval → OFF passed.
+No installation work remains. Actual reboot/delayed-boot acceptance is unperformed;
+observe the next natural restart. The helper initialization-delay cause and initial
+AMFI launch failure cause remain unestablished, separate from the fixed warning
+presentation. No physical heat/battery/backpack guarantee is inferred.
+
+Runtime `fbeb217` passed independent code/manual security and lead review; signed
+source `93bd33d` passed lead docs review and CI38584327703 (1m18s). Final docs-only
+head still needs lead delta review and CI before merge. CodeRabbit stays excluded.
+
 ## Quiet startup warning presentation — build evidence (2026-10-14)
 
 The startup retry introduced October 13 was running during the reported reboot:
@@ -56,9 +108,10 @@ reviewer reran affected debug/release suites successfully and verified a clean t
 Literal `/security-review` was unavailable; the named fallback is independent
 manual review of presentation provenance, quit proof, cancellation and risk-state
 siblings. All roles inherited current model/effort; exact labels unavailable.
-CI38583821202 is in progress. CodeRabbit remains unavailable under the repository
+CI38583821202 passed. CodeRabbit remains unavailable under the repository
 exclusion. This ledger update is Markdown only; `git diff --check` and remote
-workflow inspection are its local gates. Final-head CI and installation remain.
+workflow inspection are its local gates. Installed-source CI38584327703 passed
+in 1m18s; installed acceptance is recorded above. Final documentation-head CI remains.
 
 Lead authorized isolated local signing with the existing dedicated certificate
 `EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F` after these gates. No production app/helper
