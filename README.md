@@ -196,7 +196,11 @@ Settings provides explicit setup, approval navigation, repair and verified helpe
 removal. A valid signed bundle can be reported as notFound before its first
 registration: Set up always-on helper or Repair helper setup explicitly attempts
 registration, then checks real status. Check again alone never registers. This
-state remains a visible warning and is not proof of normal sleep. Invalid signing
+state remains visible in Settings and is not proof of normal sleep. Initial startup
+uncertainty stays quiet while status checks retry; Check again requests a fresh
+check and Repair helper setup remains available. A denied quit in that quiet state
+opens Settings without an always-on-top warning. Confirmed active/recovery and
+uncertain manual operations retain the warning. Invalid signing
 instead offers signed-install repair and recheck; failed setup remains retryable. Its helper actions stay in a fixed footer for a layout below the warning. Native window renders and clicks verify these
 controls; whole-desktop stacking/occlusion remains unverified. Removal first restores normal sleep,
 seals activation admission and verifies the same helper connection before asking
@@ -229,7 +233,8 @@ bash scripts/build-always-on-preview.sh
 open "dist/Always-on Preview.app"
 ```
 
-Choose a fixture to inspect active, setup, signing, approval, repair, activation,
+Choose a fixture to inspect quiet startup checking/unavailability/approval, active,
+setup, signing, approval, repair, activation,
 removal and failed-recovery states. Preview setup/removal/navigation are inert.
 Activation/restoration takes about two seconds; Fail next restoration exercises
 the persistent recovery warning. No power settings or installed apps change.

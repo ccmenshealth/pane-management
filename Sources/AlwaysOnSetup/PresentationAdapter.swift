@@ -9,6 +9,7 @@ import AlwaysOnCore
         coordinator.onObservation = { [weak self] in self?.onChange?(Self.map($0)) }
     }
     public func refresh() async { await coordinator.refresh() }
+    public func checkAgain() async { await coordinator.checkAgain() }
     public func activate() async { await coordinator.activate() }
     public func deactivate() async { await coordinator.deactivate() }
     public func setup() async { await coordinator.setup() }
@@ -23,6 +24,7 @@ import AlwaysOnCore
         case .unavailable(let reason): state = .unavailable(reason)
         case .setupRequired(let reason): state = .setupRequired(reason)
         case .unknown(let reason): state = .recoveryRequired(reason)
+        case .startupUnverified(let reason): state = .statusUnverified(reason)
         }
         let action: AlwaysOnAction, secondary: String?
         switch value.remedy {
@@ -31,7 +33,9 @@ import AlwaysOnCore
         case .setUp: action = .setUp; secondary = nil
         case .finishRemoval: action = .openSettings; secondary = nil
         case .openLoginItems: action = .checkSetup; secondary = "Open Login Items"
-        case .checkAgain: action = .checkSetup; secondary = nil
+        case .checkAgain:
+            action = .checkSetup
+            if case .startupUnverified = value.state { secondary = "Repair setup in Settings" } else { secondary = nil }
         case .retryDeactivationAndRepair: action = .deactivate; secondary = "Repair setup in Settings"
         case .retryRemoval: action = .deactivate; secondary = "Retry helper removal in Settings"
         case .wait: action = .wait; secondary = nil

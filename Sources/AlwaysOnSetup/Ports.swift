@@ -42,7 +42,7 @@ public enum SetupServiceStatus: Sendable { case notRegistered, enabled, requires
         await client.remove(unregister: unregister)
     }
 }
-public enum SetupState: Equatable, Sendable { case unavailable(String), off, active, removalRequired, setupRequired(String), unknown(String) }
+public enum SetupState: Equatable, Sendable { case unavailable(String), off, active, removalRequired, setupRequired(String), unknown(String), startupUnverified(String) }
 public enum SetupRemedy: Equatable, Sendable { case setUp, activate, deactivate, finishRemoval, openLoginItems, checkAgain, retryDeactivationAndRepair, retryRemoval, wait }
 public struct SetupObservation: Equatable, Sendable {
     public let revision: UInt64

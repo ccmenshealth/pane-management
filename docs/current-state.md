@@ -1,5 +1,36 @@
 # Pane Management — Current State
 
+## Bookmark — quiet startup update installed; Always On OFF (2026-10-14)
+
+[PR23](https://github.com/ccmenshealth/pane-management/pull/23) installs signed source
+`93bd33d958b7a566a2914f045e1fcee91059b94d` at the stable primary
+`dist/Pane Management.app`. Exact hashes/manifest and rollback are at top VERIFICATION.
+Runtime `fbeb217` passed independent code/manual security and lead review without
+findings; affected debug/release suites independently passed. All nine suites passed
+in both configurations; pre-fix Setup267/27 and UI85/1 became267/0 and85/0.
+Installed-source CI38584327703 passed in1m18s. Final documentation-head review/CI and
+merge remain; this update changes Markdown only.
+
+At 07:57:06 Pacific, lead verified app5209/helper5158, dual override OFF, lid OPEN,
+exact hashes and strict/deep signatures. Native Settings showed OFF with no warning,
+recognized Accessibility/ScreenCaptureKit permissions and snapping enabled; Settings
+was then closed. Normal Command-Q quit and fresh launch passed. Always On was never
+activated. No further installation work remains.
+
+Native unavailable/approval startup states stayed quiet during the helper restart;
+explicit Check again reached authenticated OFF. Prior isolated CUA preview also
+verified genuine active/recovery warnings, Deactivate/Retry and unclipped warning
+art. Quiet presentation preserves unverified status and existing quit proof.
+Actual reboot/delayed-boot acceptance remains unperformed: observe the next natural
+restart. No immediate reboot or live activation is required for this closeout.
+The helper initialization-delay cause and initial AMFI launch failure remain
+unestablished; a scoped Login Items refresh subsequently launched the helper,
+without changing certificate trust or security policy. See VERIFICATION for sequence.
+
+All roles inherited current model/effort; exact labels unavailable. CodeRabbit
+remains excluded. Steve's standing update authority applies to Pane Management;
+Always On activation stays separately gated. Worktrees and rollback remain preserved.
+
 ## Bookmark — startup fix merged and installed; Always On OFF (2026-10-13)
 
 [PR21](https://github.com/ccmenshealth/pane-management/pull/21) merged at 11:29:28

@@ -129,7 +129,8 @@ import AppKit
         }
         do {
             let b = Backend(), c = AlwaysOnController(backend: b); b.holdRefresh = true
-            c.checkSetup(); check(c.state == .checking && !c.requestQuit(), "wake immediately revokes safe snapshot")
+            c.checkSetup(); check(c.state != .off && !c.requestQuit(), "wake immediately revokes safe snapshot")
+            check(!c.state.showsWarning, "controller safe wake check never flashes warning")
             for _ in 0..<20 { c.checkSetup() }
             await wait("refresh held") { b.refreshGate != nil }
             check(b.refreshes == 1, "refresh coalesces in-flight")
