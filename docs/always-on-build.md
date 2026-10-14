@@ -45,6 +45,14 @@ the intrusive startup presentation. The helper initialization delay is unexplain
 | Focus/wake safe-state revalidation | Revoke stale safe proof immediately without flashing a warning; newer unsafe observations still win |
 | Fired timer superseded by manual check/lifecycle | Epoch fence rejects old queued work; exactly one new timer or settled state remains |
 
+Startup presentation review ledger: independent code/manual security and lead
+review PASS at `fbeb2173a67e96143eb61b79c4d9cb7baccdb360`, no findings. Reviewer
+independently passed affected debug/release suites and clean-tree check. Lead CUA
+native preview PASS for quiet startup states, ordinary controls after denied quit,
+mandatory active/recovery warning and Deactivate/Retry → OFF; warning art unclipped.
+Actual reboot remains unperformed. Isolated local staging authorized after these
+gates; installation and final-head CI still pending. Exact evidence is in VERIFICATION.
+
 ## Startup reconciliation decisions locked October 13, 2026
 
 - D1: Only unresolved startup checks retry, with bounded attempts and 2/5/10/30

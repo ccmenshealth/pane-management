@@ -42,20 +42,29 @@ Explicit recheck after a fired timer cannot clear its replacement or publish a
 stale observation. Manual activation/deactivation/lifecycle and client-loss paths
 retain existing warning/quit tests; no safety proof was relaxed.
 
-**Native preview prepared, not yet inspected:** isolated ad-hoc signed bundle
-`PaneManagement-worktrees/startup-warning/dist/Always-on Preview.app` passed
-strict/deep signature verification. New fixtures are Startup checking, Startup
-unavailable and Startup approval; existing Active/Unknown recovery/Activation and
-Removal pending fixtures verify the mandatory-warning siblings. The preview uses
-an in-memory backend only. Select Off before quitting after a quiet-unverified
-fixture: quit deliberately remains denied until a safe simulated observation.
+**Native preview PASS (lead CUA):** isolated ad-hoc signed preview rendered the
+new Startup checking, Startup unavailable and Startup approval fixtures as ordinary
+controls without a warning panel. Quit from Startup unavailable left ordinary
+controls accessible. Active showed the mandatory warning; Deactivate reached OFF.
+Unknown recovery showed the mandatory warning; Retry reached OFF. The stripes,
+red triangle and contents were visible without clipping. Preview then quit. These
+are actual native renders with an in-memory backend, not a live power/reboot test.
 
-Builder inherited current model/effort; exact labels unavailable. Independent code
-and manual security review, lead review, final-head CI and real native preview
-inspection remain pending. CodeRabbit unavailable by the explicit repository
-exclusion. No production app/helper launch/stop, installation, registration,
-permission, trust or power change occurred during the build. Actual reboot timing,
-helper delay cause, physical thermal/battery safety and backpack use are not proven.
+**Review PASS:** independent code and manual security review and lead review of
+`fbeb2173a67e96143eb61b79c4d9cb7baccdb360` reported no findings. The independent
+reviewer reran affected debug/release suites successfully and verified a clean tree.
+Literal `/security-review` was unavailable; the named fallback is independent
+manual review of presentation provenance, quit proof, cancellation and risk-state
+siblings. All roles inherited current model/effort; exact labels unavailable.
+CI38583821202 is in progress. CodeRabbit remains unavailable under the repository
+exclusion. This ledger update is Markdown only; `git diff --check` and remote
+workflow inspection are its local gates. Final-head CI and installation remain.
+
+Lead authorized isolated local signing with the existing dedicated certificate
+`EE48D3317B0AFBC3615CD0CA27331EDEAE2CA81F` after these gates. No production app/helper
+launch/stop, installation, registration, permission, trust or power change occurred
+during the build or preview. Actual reboot timing, helper delay cause, physical
+thermal/battery safety and backpack use remain unproven.
 
 ## Startup recovery update — installed OFF acceptance (2026-10-13)
 

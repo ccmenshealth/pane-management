@@ -1,6 +1,6 @@
 # Pane Management — Current State
 
-## Bookmark — quiet startup presentation built; review/install pending (2026-10-14)
+## Bookmark — quiet startup presentation reviewed; staging/install pending (2026-10-14)
 
 `codex/startup-warning` separates routine startup uncertainty from a confirmed
 power-recovery condition. Initial helper checking, delayed startup and setup/approval
@@ -18,7 +18,13 @@ delay is not established. D1–D5 and recovery exits are in `always-on-build.md`
 
 Builder inherited current model/effort; exact runtime labels unavailable. Final tests
 compiled on untouched `4b91728`: Setup267/27 failures and UI85/1. See top VERIFICATION
-for green gates, preview path and remaining independent/native acceptance gates.
+for green gates and native preview evidence. Independent code/manual security and
+lead review PASS at `fbeb217`; affected debug/release suites independently passed,
+with clean tree verified. Lead CUA real preview passed quiet startup, ordinary
+controls after denied quit, active/recovery warning and deactivation/retry flows;
+stripes/red triangle were unclipped. Actual reboot remains unperformed.
+CI38583821202 is in progress; final-head CI and installed acceptance remain.
+Lead authorized isolated local signing with the existing dedicated identity.
 CodeRabbit remains excluded. Steve's standing update authority applies; activating
 Always On remains separately gated. Keep it OFF for installation acceptance.
 
