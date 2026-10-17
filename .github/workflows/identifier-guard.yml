@@ -1,0 +1,37 @@
+name: identifier-guard
+# Blocks patient-identifier-shaped text (MRN/FIN/DOB/phone/LAST, FIRST/personal e-mail) in added lines.
+# Runs on ready pull requests (three-dot diff against the base) and once a week over the default branch's last 8 days.
+# Cost: one short GitHub-hosted Linux job per run, billed as 1 minute ($0.006). Estimate per repo in the PR body.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  schedule:
+    - cron: '17 15 * * 1'   # Mondays 8:17 AM PT
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: identifier-guard-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  guard:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan added lines
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            exec python3 scripts/identifier-guard.py --three-dot --base "$PR_BASE" --head "$PR_HEAD"
+          fi
+          BASE="$(git rev-list -1 --before='8 days ago' HEAD || true)"
+          if [ -z "$BASE" ]; then BASE="$(git hash-object -t tree /dev/null)"; fi
+          exec python3 scripts/identifier-guard.py --base "$BASE" --head HEAD
